@@ -1,0 +1,74 @@
+{
+  "dataset_name": "customer_support_intents_for_cn_ecommerce_agent",
+  "language": "zh-CN",
+  "description": "面向中文电商售后客服 Agent 的意图分类数据，参考公开客服意图数据集和电商 Agent 项目的业务覆盖面整理。",
+  "sources": [
+    {
+      "name": "agent-service-toolkit",
+      "url": "https://github.com/JoshuaC215/agent-service-toolkit",
+      "usage": "复用其 customer support agent 的订单、售后政策和服务化接口思路。"
+    },
+    {
+      "name": "Bitext customer-support-llm-chatbot-training-dataset",
+      "url": "https://github.com/bitext/customer-support-llm-chatbot-training-dataset",
+      "usage": "参考其客服意图分类覆盖面，整理为中文电商售后场景。"
+    }
+  ],
+  "intents": [
+    {
+      "intent": "order_status",
+      "description": "查询订单状态、物流状态、签收时间",
+      "typical_tools": ["order_lookup"]
+    },
+    {
+      "intent": "return_refund",
+      "description": "咨询退货、退款、七天无理由、退款进度",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "warranty_repair",
+      "description": "咨询保修、维修、检测、质量问题",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "shipping_exception",
+      "description": "物流不更新、延迟、拦截、改派、丢件",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "cancel_or_modify_order",
+      "description": "取消订单、修改地址、修改订单信息",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "payment_issue",
+      "description": "支付失败、重复扣款、支付状态不同步",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "invoice",
+      "description": "电子发票、发票抬头、补开发票、修改发票",
+      "typical_tools": ["order_lookup", "policy_search"]
+    },
+    {
+      "intent": "stock_restock",
+      "description": "库存不足、缺货、补货提醒、预售发货",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "membership",
+      "description": "会员权益、优惠券、售后加急权益",
+      "typical_tools": ["policy_search"]
+    },
+    {
+      "intent": "complaint_escalation",
+      "description": "投诉商家、投诉客服、要求人工升级",
+      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
+    },
+    {
+      "intent": "prompt_injection_or_risky_action",
+      "description": "绕过审核、忽略规则、直接退款赔付等高风险或注入请求",
+      "typical_tools": []
+    }
+  ]
+}

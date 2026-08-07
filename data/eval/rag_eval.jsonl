@@ -1,0 +1,8 @@
+{"id":"rag_001","query":"定制杯子可以七天无理由退货吗？","expected_sources":["退换货政策.md"],"expected_keywords":["定制","不支持","七天无理由"],"notes":"定制商品退货规则应命中退换货政策。"}
+{"id":"rag_002","query":"耳机坏了还在保修期内，应该怎么处理？","expected_sources":["保修政策.md","售后FAQ.md"],"expected_keywords":["12 个月","保修","检测工单"],"notes":"保修维修场景应召回保修范围或售后FAQ。"}
+{"id":"rag_003","query":"物流超过48小时没有更新怎么办？","expected_sources":["物流配送政策.md","售后FAQ.md"],"expected_keywords":["48 小时","物流异常","工单"],"notes":"物流长时间不更新应召回物流政策。"}
+{"id":"rag_004","query":"银行卡已经扣款了，但是订单还是未支付怎么办？","expected_sources":["支付与发票政策.md"],"expected_keywords":["扣款","30 分钟","支付异常工单"],"notes":"支付扣款不同步应召回支付失败政策。"}
+{"id":"rag_005","query":"订单完成后可以开电子发票吗？","expected_sources":["支付与发票政策.md"],"expected_keywords":["电子发票","发票抬头","税号","邮箱"],"notes":"发票问题应召回支付与发票政策。"}
+{"id":"rag_006","query":"黑金会员能不能跳过售后检测直接换新？","expected_sources":["会员权益政策.md"],"expected_keywords":["不能","绕过","质量检测"],"notes":"会员权益限制应召回会员权益政策。"}
+{"id":"rag_007","query":"订单还没发货，我想修改收货地址。","expected_sources":["订单取消与修改政策.md"],"expected_keywords":["修改收货地址","出库前","地址修改工单"],"notes":"待发货改地址应召回订单取消与修改政策。"}
+{"id":"rag_008","query":"商品缺货了，我还能等补发吗？","expected_sources":["库存与补货政策.md"],"expected_keywords":["缺货","补发","继续等待"],"notes":"缺货补发问题应召回库存与补货政策。"}

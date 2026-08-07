@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+data/cache/
+data/eval_reports/
+data/feedback.jsonl
+data/customer_support.db
+data/customer_support.db-*
+uvicorn.*.log
+data/traces/

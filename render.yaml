@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: customer-support-agent
+    runtime: docker
+    autoDeployTrigger: off
+    healthCheckPath: /health
+    disk:
+      name: customer-support-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: 8012
+      - key: DATABASE_PATH
+        value: /var/data/customer_support.db
+      - key: RAG_EMBEDDING_PROVIDER
+        value: zhipu
+      - key: ZHIPU_EMBEDDING_MODEL
+        value: embedding-3
+      - key: EMBEDDING_DIMENSIONS
+        value: 1024
+      - key: ZHIPU_MODEL
+        value: glm-4-flash
+      - key: LLM_TIMEOUT_SECONDS
+        value: 60
+      - key: LLM_API_KEY
+        sync: false
