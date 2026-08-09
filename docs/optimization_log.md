@@ -609,6 +609,58 @@ api_smoke_test: 通过
 - 节点边界更清晰，方便后续插入条件边和人工审核节点。
 - 面试中可以讲清楚 LangGraph 的核心价值：不是替代业务逻辑，而是让复杂 Agent 流程更可维护、更可观测、更容易扩展。
 
+## 11. 节点级 SSE 流式输出
+
+### 问题
+
+早期前端虽然使用 SSE 展示流式回复，但后端实现是先完整执行 Agent：
+
+```text
+run_customer_support_agent()
+-> 完成路由、工具调用、模型回复
+-> 再把结果拆成 token 发给前端
+```
+
+当开启真实智谱模型时，用户需要等待模型完整返回后才能看到页面变化，体验上容易误以为系统卡住。
+
+### 优化
+
+基于 LangGraph `stream(..., stream_mode="updates")` 改造 `/agent/stream`：
+
+```text
+route 节点完成 -> 立即推送路由判断
+execute_tools 节点完成 -> 立即推送订单查询、RAG、工单结果
+generate_reply 节点完成 -> 推送最终客服回复
+persist_result 节点完成 -> 推送 done 事件
+```
+
+前端不需要改变协议，仍然消费 SSE 事件：
+
+```text
+route
+tool_result
+token / message
+done
+```
+
+### 结果
+
+验证结果：
+
+```text
+compileall: 通过
+api_smoke_test: 通过
+Agent eval: 16/16
+RAG eval: 8/8
+Answer eval: 16/16
+```
+
+### 价值
+
+- 用户可以更早看到 Agent 的路由和工具执行进度。
+- 面试展示时能更清晰体现 Agent 的执行链路。
+- 后续如果接入真正的 LLM token streaming，只需要继续改造 `generate_reply` 节点，不需要推翻整体 SSE 协议。
+
 ## 面试表达摘要
 
 可以将项目概括为：

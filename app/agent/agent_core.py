@@ -588,45 +588,80 @@ async def stream_customer_support_agent(
 ) -> AsyncGenerator[dict, None]:
     """流式执行 Agent。
 
-    这个接口借鉴参考项目的 SSE 思路：先返回 route，再返回工具结果，
-    最后把客服回复拆成小片段流式发给前端。
+    通过 LangGraph stream 按节点返回结果：
+    route 节点完成后立即返回路由，execute_tools 节点完成后返回工具结果，
+    最后再返回客服回复。这样真实 LLM 较慢时，前端也能先看到执行进度。
     """
 
-    result = run_customer_support_agent(
-        user_message=user_message,
-        conversation_id=conversation_id,
-        use_llm=use_llm,
-    )
-
-    yield {
-        "type": "route",
-        "content": result["route"],
-        "conversation_id": result["conversation_id"],
+    real_conversation_id = memory.ensure_id(conversation_id)
+    trace = start_trace(user_message=user_message, conversation_id=real_conversation_id)
+    initial_state: AgentWorkflowState = {
+        "user_message": user_message,
+        "conversation_id": conversation_id,
+        "real_conversation_id": real_conversation_id,
+        "use_llm": use_llm,
+        "trace": trace,
     }
 
-    for tool_result in result["tool_results"]:
-        yield {
-            "type": "tool_result",
-            "content": tool_result,
-            "conversation_id": result["conversation_id"],
-        }
+    try:
+        final_result = None
 
-    if stream_tokens:
-        for character in result["reply"]:
-            yield {
-                "type": "token",
-                "content": character,
-                "conversation_id": result["conversation_id"],
-            }
-    else:
-        yield {
-            "type": "message",
-            "content": result["reply"],
-            "conversation_id": result["conversation_id"],
-        }
+        for chunk in agent_workflow.stream(initial_state, stream_mode="updates"):
+            if "route" in chunk:
+                route = chunk["route"]["route"]
+                yield {
+                    "type": "route",
+                    "content": dump_model(route),
+                    "conversation_id": real_conversation_id,
+                }
 
-    yield {
-        "type": "done",
-        "content": result,
-        "conversation_id": result["conversation_id"],
-    }
+            if "execute_tools" in chunk:
+                tool_results = chunk["execute_tools"]["tool_results"]
+                for tool_result in tool_results:
+                    yield {
+                        "type": "tool_result",
+                        "content": dump_model(tool_result),
+                        "conversation_id": real_conversation_id,
+                    }
+
+            if "generate_reply" in chunk:
+                reply = chunk["generate_reply"]["reply"]
+                if stream_tokens:
+                    for character in reply:
+                        yield {
+                            "type": "token",
+                            "content": character,
+                            "conversation_id": real_conversation_id,
+                        }
+                else:
+                    yield {
+                        "type": "message",
+                        "content": reply,
+                        "conversation_id": real_conversation_id,
+                    }
+
+            if "persist_result" in chunk:
+                final_result = chunk["persist_result"]["result"]
+
+        yield {
+            "type": "done",
+            "content": final_result,
+            "conversation_id": real_conversation_id,
+        }
+        yield {
+            "type": "workflow",
+            "content": "langgraph_stream",
+            "conversation_id": real_conversation_id,
+        }
+    except Exception as error:
+        add_trace_event(
+            trace,
+            event_type="error",
+            data={
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
+        finished_trace = finish_trace(trace, reply="", success=False)
+        save_trace(finished_trace)
+        raise

@@ -16,7 +16,7 @@
 - 结构化证据上下文：将订单信息、RAG 政策证据、工单结果整理后再交给模型，减少无依据回答。
 - Citation 可追溯：回答政策类问题时引用知识库来源，例如 `订单取消与修改政策.md - 修改收货地址`。
 - SQLite 持久化：订单、工单、会话消息、pending task 和 feedback 统一保存到数据库。
-- 流式前端展示：浏览器页面支持 SSE 流式回复、路由展示、工具结果展开和用户评分。
+- 节点级流式展示：浏览器页面支持 SSE，LangGraph 每完成一个节点就推送路由、工具结果或最终回复。
 - 自动化评估：覆盖 Agent 路由、RAG 检索、最终回答质量和多轮槽位补全。
 
 ## 项目架构
@@ -134,6 +134,8 @@ load_context
 - 让 Agent 执行链路从“一个长函数”升级为可观察、可扩展的状态图。
 - Router、Tool Executor、Prompt 构造和持久化各自独立，后续更容易插入条件边、人工审核节点或异步任务节点。
 - 所有中间状态都集中在共享 state 中，便于 tracing、debug 和前端执行轨迹展示。
+
+`/agent/stream` 使用 LangGraph `stream(..., stream_mode="updates")` 监听节点更新。`route` 节点完成后立即推送路由判断，`execute_tools` 节点完成后立即推送工具结果，`generate_reply` 节点完成后再推送最终回复。这样即使真实大模型响应较慢，前端也能先展示 Agent 正在执行哪些步骤。
 
 ## RAG 设计
 
