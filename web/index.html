@@ -532,6 +532,18 @@
         `;
       }
 
+      function buildTicketDecisionSummary(result) {
+        const decision = result.result || {};
+        return `
+          <div>系统已完成工单创建前的业务资格判断。</div>
+          <ul>
+            <li>是否创建工单：${yesNo(decision.can_create)}</li>
+            <li>原因：${escapeHtml(decision.reason || "未返回原因")}</li>
+            <li>建议优先级：${escapeHtml(decision.priority || "normal")}</li>
+          </ul>
+        `;
+      }
+
       function buildToolSummary(toolResult) {
         if (toolResult.tool_name === "order_lookup") {
           return buildOrderSummary(toolResult);
@@ -543,6 +555,10 @@
 
         if (toolResult.tool_name === "create_ticket") {
           return buildTicketSummary(toolResult);
+        }
+
+        if (toolResult.tool_name === "ticket_decision") {
+          return buildTicketDecisionSummary(toolResult);
         }
 
         return "<div>工具执行完成，详细结果见下方 JSON。</div>";

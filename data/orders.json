@@ -128,5 +128,18 @@
     "return_window_days": 7,
     "can_refund_directly": false,
     "notes": "缺货订单可选择继续等待、申请取消或登记补货提醒，最终处理需人工确认。"
+  },
+  {
+    "order_id": "10011",
+    "user_name": "何安",
+    "product_name": "运动手表 V3",
+    "category": "电子产品",
+    "order_status": "已发货",
+    "shipping_status": "2026-08-09 10:30 快件离开发货仓",
+    "signed_date": null,
+    "warranty_months": 12,
+    "return_window_days": 7,
+    "can_refund_directly": false,
+    "notes": "物流刚刚更新，未超过48小时，暂不建议创建物流异常工单。"
   }
 ]

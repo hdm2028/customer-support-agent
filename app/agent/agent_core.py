@@ -12,6 +12,7 @@ from app.agent.pending_task import (
     should_store_pending_task,
 )
 from app.agent.router import infer_issue_type, route_tools
+from app.agent.ticket_policy import evaluate_ticket_creation
 from app.core.schemas import RouteDecision, ToolResult
 from app.llm.llm_client import call_zhipu_chat, call_zhipu_chat_stream
 from app.observability.tracing import (
@@ -251,6 +252,33 @@ def execute_tools(
             tool_results.append(policy_search(rag_query))
 
     if route.need_ticket:
+        order_result = get_order_lookup_result(tool_results)
+        order = order_result.result if order_result and order_result.success else None
+        issue_type = infer_issue_type(user_message)
+        ticket_decision = evaluate_ticket_creation(
+            route=route,
+            order=order,
+            issue_type=issue_type,
+            user_message=user_message,
+        )
+
+        if not ticket_decision["can_create"]:
+            decision_result = ToolResult(
+                tool_name="ticket_decision",
+                success=False,
+                result=ticket_decision,
+            )
+            tool_results.append(decision_result)
+
+            if trace:
+                add_trace_event(
+                    trace,
+                    event_type="ticket_blocked",
+                    data=ticket_decision,
+                )
+
+            return tool_results
+
         if trace:
             tool_results.append(
                 timed_step(
@@ -258,9 +286,9 @@ def execute_tools(
                     "tool.create_ticket",
                     lambda: create_ticket(
                         order_id=route.order_id,
-                        issue_type=infer_issue_type(user_message),
+                        issue_type=issue_type,
                         user_request=user_message,
-                        priority="normal",
+                        priority=ticket_decision["priority"],
                     ),
                     {"tool_name": "create_ticket"},
                 )
@@ -269,9 +297,9 @@ def execute_tools(
             tool_results.append(
                 create_ticket(
                     order_id=route.order_id,
-                    issue_type=infer_issue_type(user_message),
+                    issue_type=issue_type,
                     user_request=user_message,
-                    priority="normal",
+                    priority=ticket_decision["priority"],
                 )
             )
 
@@ -442,6 +470,7 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
         )
 
     policy_result = next((item for item in tool_results if item.tool_name == "policy_search"), None)
+    ticket_decision_result = next((item for item in tool_results if item.tool_name == "ticket_decision"), None)
     ticket_result = next((item for item in tool_results if item.tool_name == "create_ticket"), None)
 
     parts = []
@@ -463,6 +492,10 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
         parts.append(
             f"我已生成{ticket['issue_type']}工单草稿，后续需要人工客服核对订单和凭证后处理。"
         )
+
+    if ticket_decision_result and not ticket_decision_result.success:
+        reason = ticket_decision_result.result.get("reason", "当前订单状态暂不满足创建工单条件。")
+        parts.append(f"根据订单状态，当前暂不创建工单：{reason}")
 
     if not parts:
         return "您好，我暂时没有找到足够信息。请补充订单号和具体售后问题，我再帮您判断。"
