@@ -772,6 +772,91 @@ api_smoke_test: 通过
 - 路由、工具、模型 token 都能在一个 SSE 通道里展示，演示效果更接近真实客服工作台。
 - 面试中可以说明：我区分了“节点级流式”和“模型原生 token 流式”，并把两者组合到同一个 Agent 执行链路中。
 
+## 14. Agent 性能 Trace 与耗时拆解
+
+### 问题
+
+当线上页面出现“回答慢”时，单看用户体验无法判断慢点在哪里：
+
+```text
+可能是 Render 冷启动
+可能是 Router 或槽位补全
+可能是 RAG 检索
+可能是订单 / 工单数据库操作
+可能是智谱 Chat 生成
+```
+
+如果没有耗时拆解，只能凭感觉猜，无法支撑后续优化。
+
+### 优化
+
+在 `tracing.py` 中新增 `timings` 字段和 `add_trace_timing()`：
+
+```text
+trace
+├─ events: 发生了什么
+└─ timings: 每一步花了多久
+```
+
+在 Agent 主链路记录节点耗时：
+
+```text
+node.load_context
+node.route
+node.execute_tools
+node.build_model_context
+node.generate_reply
+node.persist_result
+```
+
+在工具层记录细分耗时：
+
+```text
+tool.order_lookup
+tool.policy_search
+tool.create_ticket
+```
+
+同时修复 `duration_ms` 计算问题：原来字段名是毫秒，但实际记录的是秒级整数；现在统一使用真实毫秒值。
+
+前端新增 `timing` 事件展示，并在 `done` 事件中展示总耗时。`scripts/analyze_traces.py` 也增加了阶段平均耗时和最大耗时统计。
+
+### 结果
+
+本地流式接口验证：
+
+```text
+HTTP 200
+timing_count: 9
+```
+
+历史 trace 分析报告可以输出：
+
+```text
+平均耗时
+路由触发次数
+工具调用次数
+回复模式
+各阶段平均耗时和最大耗时
+```
+
+完整回归：
+
+```text
+compileall: 通过
+Agent eval: 17/17
+RAG eval: 8/8
+Answer eval: 17/17
+multi_turn_smoke_test: 通过
+api_smoke_test: 通过
+```
+
+### 价值
+
+- 用户反馈慢时，可以用 trace 判断慢在 RAG、LLM、数据库还是平台冷启动。
+- 前端演示能展示 Agent 不只是“会回答”，还知道自己每一步做了什么、花了多久。
+- 面试中可以表达为：我为 Agent 建设了基础可观测性，把执行链路、工具结果和阶段耗时统一记录到 trace，并提供分析脚本支持慢请求定位。
+
 ## 面试表达摘要
 
 可以将项目概括为：

@@ -222,6 +222,44 @@ data/customer_support.db
 data/customer_support.db-*
 ```
 
+## 可观测性
+
+每次 Agent 请求都会写入 trace：
+
+```text
+data/traces/agent_trace.jsonl
+```
+
+trace 中包含：
+
+- `route`：本轮路由判断结果。
+- `tool_results`：订单查询、RAG 检索、工单创建等工具结果。
+- `model_context`：进入模型前的上下文长度和消息数量。
+- `reply`：回复模式和回复长度。
+- `timings`：每个节点和工具的耗时。
+
+流式接口会把关键耗时同步推给前端，浏览器工作台可以看到：
+
+```text
+node.load_context
+node.route
+tool.order_lookup
+tool.policy_search
+tool.create_ticket
+node.build_model_context
+node.generate_reply
+node.persist_result
+总耗时
+```
+
+分析历史 trace：
+
+```powershell
+py -3.13 scripts\analyze_traces.py
+```
+
+该脚本会输出请求数量、成功率、平均耗时、路由触发次数、工具调用次数、回复模式，以及各阶段平均耗时和最大耗时。
+
 ## 接口说明
 
 | 接口 | 方法 | 作用 |

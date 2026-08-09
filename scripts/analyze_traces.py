@@ -44,7 +44,7 @@ def analyze_basic_stats(traces:list[dict]) -> dict:
     durations=[
         trace.get("duration_ms",0)
         for trace in traces
-        if isinstance(trace.get("duration_ms"), int)
+        if isinstance(trace.get("duration_ms"), int | float)
     ]
     avg_duration = sum(durations) / len(durations) if durations else 0
     return {
@@ -110,6 +110,32 @@ def analyze_reply_modes(traces: list[dict]) -> dict:
         counter[reply_mode] += 1
 
     return dict(counter)
+
+
+def analyze_timing_stats(traces: list[dict]) -> dict:
+    """按阶段统计平均耗时，帮助定位 Agent 慢在哪个步骤。"""
+
+    timing_values = {}
+
+    for trace in traces:
+        for step, timing in trace.get("timings", {}).items():
+            duration_ms = timing.get("duration_ms")
+
+            if not isinstance(duration_ms, int | float):
+                continue
+
+            timing_values.setdefault(step, []).append(duration_ms)
+
+    return {
+        step: {
+            "count": len(values),
+            "avg_ms": round(sum(values) / len(values), 2),
+            "max_ms": round(max(values), 2),
+        }
+        for step, values in sorted(timing_values.items())
+    }
+
+
 def print_report(report: dict) -> None:
     """把分析结果打印成方便阅读的文本报告。"""
 
@@ -137,6 +163,10 @@ def print_report(report: dict) -> None:
     for key, value in report["reply_modes"].items():
         print(f"- {key}: {value}")
 
+    print("\n阶段耗时：")
+    for key, value in report["timings"].items():
+        print(f"- {key}: 平均 {value['avg_ms']} ms，最大 {value['max_ms']} ms，样本 {value['count']} 次")
+
     print("=" * 60)
 def main() -> None:
     traces = load_traces()
@@ -150,6 +180,7 @@ def main() -> None:
         "routes": analyze_route_stats(traces),
         "tools": analyze_tool_stats(traces),
         "reply_modes": analyze_reply_modes(traces),
+        "timings": analyze_timing_stats(traces),
     }
 
     print_report(report)

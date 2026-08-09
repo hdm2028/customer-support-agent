@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from time import perf_counter
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -13,7 +14,13 @@ from app.agent.pending_task import (
 from app.agent.router import infer_issue_type, route_tools
 from app.core.schemas import RouteDecision, ToolResult
 from app.llm.llm_client import call_zhipu_chat, call_zhipu_chat_stream
-from app.observability.tracing import add_trace_event, finish_trace, save_trace, start_trace
+from app.observability.tracing import (
+    add_trace_event,
+    add_trace_timing,
+    finish_trace,
+    save_trace,
+    start_trace,
+)
 from app.tools.support_tools import create_ticket, order_lookup, policy_search
 
 memory = ConversationMemory()
@@ -50,6 +57,57 @@ def dump_model(model):
         return model.model_dump()
 
     return model.dict()
+
+
+def timed_step(trace: dict, step_name: str, callback, data: dict | None = None):
+    """执行一个步骤并记录耗时，避免每个节点重复写 perf_counter 代码。"""
+
+    start = perf_counter()
+
+    try:
+        result = callback()
+    except Exception as error:
+        duration_ms = (perf_counter() - start) * 1000
+        add_trace_timing(
+            trace,
+            step_name,
+            duration_ms,
+            {
+                "success": False,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                **(data or {}),
+            },
+        )
+        raise
+
+    duration_ms = (perf_counter() - start) * 1000
+    add_trace_timing(
+        trace,
+        step_name,
+        duration_ms,
+        {
+            "success": True,
+            **(data or {}),
+        },
+    )
+
+    return result
+
+
+def build_timing_event(trace: dict, step_name: str, conversation_id: str) -> dict | None:
+    """把 trace 中某个步骤的耗时包装成前端可以展示的 SSE 事件。"""
+
+    timing = trace.get("timings", {}).get(step_name)
+
+    if not timing:
+        return None
+
+    return {
+        "type": "timing",
+        "content": timing,
+        "conversation_id": conversation_id,
+    }
 
 
 def get_conversation_history(conversation_id: str) -> list[dict]:
@@ -120,7 +178,11 @@ def build_rag_query(
     return "\n".join(part for part in query_parts if part)
 
 
-def execute_tools(user_message: str, route: RouteDecision) -> list[ToolResult]:
+def execute_tools(
+    user_message: str,
+    route: RouteDecision,
+    trace: dict | None = None,
+) -> list[ToolResult]:
     """按照路由结果依次执行订单查询、政策检索、工单创建等工具。"""
 
     if route.blocked_by_guardrail:
@@ -134,21 +196,56 @@ def execute_tools(user_message: str, route: RouteDecision) -> list[ToolResult]:
     tool_results = []
 
     if route.need_order and route.order_id:
-        tool_results.append(order_lookup(route.order_id))
+        if trace:
+            tool_results.append(
+                timed_step(
+                    trace,
+                    "tool.order_lookup",
+                    lambda: order_lookup(route.order_id),
+                    {"tool_name": "order_lookup"},
+                )
+            )
+        else:
+            tool_results.append(order_lookup(route.order_id))
 
     if route.need_policy:
         rag_query = build_rag_query(user_message, route, tool_results)
-        tool_results.append(policy_search(rag_query))
+        if trace:
+            tool_results.append(
+                timed_step(
+                    trace,
+                    "tool.policy_search",
+                    lambda: policy_search(rag_query),
+                    {"tool_name": "policy_search"},
+                )
+            )
+        else:
+            tool_results.append(policy_search(rag_query))
 
     if route.need_ticket:
-        tool_results.append(
-            create_ticket(
-                order_id=route.order_id,
-                issue_type=infer_issue_type(user_message),
-                user_request=user_message,
-                priority="normal",
+        if trace:
+            tool_results.append(
+                timed_step(
+                    trace,
+                    "tool.create_ticket",
+                    lambda: create_ticket(
+                        order_id=route.order_id,
+                        issue_type=infer_issue_type(user_message),
+                        user_request=user_message,
+                        priority="normal",
+                    ),
+                    {"tool_name": "create_ticket"},
+                )
             )
-        )
+        else:
+            tool_results.append(
+                create_ticket(
+                    order_id=route.order_id,
+                    issue_type=infer_issue_type(user_message),
+                    user_request=user_message,
+                    priority="normal",
+                )
+            )
 
     return tool_results
 
@@ -351,159 +448,196 @@ def should_force_fallback(route: RouteDecision) -> bool:
 def load_context_node(state: AgentWorkflowState) -> dict:
     """加载会话历史和 pending task，并把用户本轮输入合并成有效任务输入。"""
 
-    real_conversation_id = state["real_conversation_id"]
-    pending_task = memory.get_pending_task(real_conversation_id)
-    (
-        effective_user_message,
-        used_pending_task,
-        slots,
-        required_slots,
-    ) = prepare_pending_task_context(
-        user_message=state["user_message"],
-        pending_task=pending_task,
-    )
+    def work() -> dict:
+        real_conversation_id = state["real_conversation_id"]
+        pending_task = memory.get_pending_task(real_conversation_id)
+        (
+            effective_user_message,
+            used_pending_task,
+            slots,
+            required_slots,
+        ) = prepare_pending_task_context(
+            user_message=state["user_message"],
+            pending_task=pending_task,
+        )
 
-    return {
-        "history": memory.load(real_conversation_id),
-        "pending_task": pending_task,
-        "effective_user_message": effective_user_message,
-        "used_pending_task": used_pending_task,
-        "slots": slots,
-        "required_slots": required_slots,
-    }
+        return {
+            "history": memory.load(real_conversation_id),
+            "pending_task": pending_task,
+            "effective_user_message": effective_user_message,
+            "used_pending_task": used_pending_task,
+            "slots": slots,
+            "required_slots": required_slots,
+        }
+
+    return timed_step(state["trace"], "node.load_context", work)
 
 
 def route_node(state: AgentWorkflowState) -> dict:
     """执行 Router，并根据槽位要求决定是否追问用户补充信息。"""
 
-    real_conversation_id = state["real_conversation_id"]
-    pending_task = state.get("pending_task")
-    effective_user_message = state["effective_user_message"]
-    slots = state["slots"]
-    required_slots = state["required_slots"]
+    def work() -> dict:
+        real_conversation_id = state["real_conversation_id"]
+        pending_task = state.get("pending_task")
+        effective_user_message = state["effective_user_message"]
+        slots = state["slots"]
+        required_slots = state["required_slots"]
 
-    route = route_tools(effective_user_message)
-    route, missing_slots = apply_slot_requirements(
-        route=route,
-        required_slots=required_slots,
-        slots=slots,
-    )
-
-    if state["used_pending_task"] and not missing_slots:
-        memory.clear_pending_task(real_conversation_id)
-
-    if should_store_pending_task(route, missing_slots):
-        pending_user_request = (
-            pending_task.get("user_request")
-            if pending_task
-            else effective_user_message
-        )
-        memory.set_pending_task(
-            real_conversation_id,
-            build_pending_task(
-                user_message=pending_user_request,
-                route=route,
-                slots=slots,
-                required_slots=required_slots,
-                missing_slots=missing_slots,
-            ),
+        route = route_tools(effective_user_message)
+        route, missing_slots = apply_slot_requirements(
+            route=route,
+            required_slots=required_slots,
+            slots=slots,
         )
 
-    add_trace_event(state["trace"], event_type="route", data=dump_model(route))
-    add_trace_event(
-        state["trace"],
-        event_type="pending_task",
-        data={
-            "used_pending_task": state["used_pending_task"],
-            "has_pending_task": memory.get_pending_task(real_conversation_id) is not None,
-            "effective_user_message": effective_user_message,
-            "slots": slots,
-            "required_slots": required_slots,
+        if state["used_pending_task"] and not missing_slots:
+            memory.clear_pending_task(real_conversation_id)
+
+        if should_store_pending_task(route, missing_slots):
+            pending_user_request = (
+                pending_task.get("user_request")
+                if pending_task
+                else effective_user_message
+            )
+            memory.set_pending_task(
+                real_conversation_id,
+                build_pending_task(
+                    user_message=pending_user_request,
+                    route=route,
+                    slots=slots,
+                    required_slots=required_slots,
+                    missing_slots=missing_slots,
+                ),
+            )
+
+        add_trace_event(state["trace"], event_type="route", data=dump_model(route))
+        add_trace_event(
+            state["trace"],
+            event_type="pending_task",
+            data={
+                "used_pending_task": state["used_pending_task"],
+                "has_pending_task": memory.get_pending_task(real_conversation_id) is not None,
+                "effective_user_message": effective_user_message,
+                "slots": slots,
+                "required_slots": required_slots,
+                "missing_slots": missing_slots,
+            },
+        )
+
+        return {
+            "route": route,
             "missing_slots": missing_slots,
-        },
-    )
+        }
 
-    return {
-        "route": route,
-        "missing_slots": missing_slots,
-    }
+    return timed_step(state["trace"], "node.route", work)
 
 
 def execute_tools_node(state: AgentWorkflowState) -> dict:
     """根据 route 调用订单查询、RAG 检索和工单创建工具。"""
 
-    tool_results = execute_tools(
-        user_message=state["effective_user_message"],
-        route=state["route"],
-    )
-    add_trace_event(
-        state["trace"],
-        event_type="tool_results",
-        data={
-            "count": len(tool_results),
-            "items": [dump_model(item) for item in tool_results],
-        },
-    )
+    def work() -> dict:
+        tool_results = execute_tools(
+            user_message=state["effective_user_message"],
+            route=state["route"],
+            trace=state["trace"],
+        )
+        add_trace_event(
+            state["trace"],
+            event_type="tool_results",
+            data={
+                "count": len(tool_results),
+                "items": [dump_model(item) for item in tool_results],
+            },
+        )
 
-    return {"tool_results": tool_results}
+        return {"tool_results": tool_results}
+
+    return timed_step(state["trace"], "node.execute_tools", work)
 
 
 def build_model_context_node(state: AgentWorkflowState) -> dict:
     """把历史消息、工具结果和当前问题整理成大模型上下文。"""
 
-    model_messages = build_model_messages(
-        user_message=state["effective_user_message"],
-        history=state["history"],
-        tool_results=state["tool_results"],
-    )
-    add_trace_event(
-        state["trace"],
-        event_type="model_context",
-        data={
-            "message_count": len(model_messages),
-            "context_chars": sum(len(item["content"]) for item in model_messages),
-        },
-    )
+    def work() -> dict:
+        model_messages = build_model_messages(
+            user_message=state["effective_user_message"],
+            history=state["history"],
+            tool_results=state["tool_results"],
+        )
+        add_trace_event(
+            state["trace"],
+            event_type="model_context",
+            data={
+                "message_count": len(model_messages),
+                "context_chars": sum(len(item["content"]) for item in model_messages),
+            },
+        )
 
-    return {"model_messages": model_messages}
+        return {"model_messages": model_messages}
+
+    return timed_step(state["trace"], "node.build_model_context", work)
 
 
 def generate_reply_node(state: AgentWorkflowState) -> dict:
     """根据配置选择真实大模型回复或本地兜底回复。"""
 
-    if should_force_fallback(state["route"]):
-        reply = fallback_answer(state["route"], state["tool_results"])
-        reply_mode = "rule_fallback"
-    elif state["use_llm"]:
-        reply = call_zhipu_chat(state["model_messages"])
-        reply_mode = "llm"
-    else:
-        reply = fallback_answer(state["route"], state["tool_results"])
-        reply_mode = "fallback"
+    def work() -> dict:
+        if should_force_fallback(state["route"]):
+            reply = fallback_answer(state["route"], state["tool_results"])
+            reply_mode = "rule_fallback"
+        elif state["use_llm"]:
+            reply = call_zhipu_chat(state["model_messages"])
+            reply_mode = "llm"
+        else:
+            reply = fallback_answer(state["route"], state["tool_results"])
+            reply_mode = "fallback"
 
-    add_trace_event(
-        state["trace"],
-        event_type="reply",
-        data={
+        add_trace_event(
+            state["trace"],
+            event_type="reply",
+            data={
+                "reply_mode": reply_mode,
+                "reply_chars": len(reply),
+            },
+        )
+
+        return {
+            "reply": reply,
             "reply_mode": reply_mode,
-            "reply_chars": len(reply),
-        },
-    )
+        }
 
-    return {
-        "reply": reply,
-        "reply_mode": reply_mode,
-    }
+    return timed_step(state["trace"], "node.generate_reply", work)
 
 
 def persist_result_node(state: AgentWorkflowState) -> dict:
     """保存会话和 trace，并组装 API 层需要返回的最终结果。"""
 
+    start = perf_counter()
     real_conversation_id = state["real_conversation_id"]
     reply = state["reply"]
 
-    memory.append(real_conversation_id, "user", state["user_message"])
-    memory.append(real_conversation_id, "assistant", reply)
+    try:
+        memory.append(real_conversation_id, "user", state["user_message"])
+        memory.append(real_conversation_id, "assistant", reply)
+    except Exception as error:
+        add_trace_timing(
+            state["trace"],
+            "node.persist_result",
+            (perf_counter() - start) * 1000,
+            {
+                "success": False,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
+        raise
+
+    add_trace_timing(
+        state["trace"],
+        "node.persist_result",
+        (perf_counter() - start) * 1000,
+        {"success": True},
+    )
     finished_trace = finish_trace(state["trace"], reply, success=True)
     save_trace(finished_trace)
 
@@ -520,6 +654,8 @@ def persist_result_node(state: AgentWorkflowState) -> dict:
             "slots": state["slots"],
             "missing_slots": state["missing_slots"],
             "workflow_engine": "langgraph",
+            "timings": finished_trace.get("timings", {}),
+            "duration_ms": finished_trace.get("duration_ms"),
         }
     }
 
@@ -619,6 +755,9 @@ async def stream_customer_support_agent(
         state = dict(initial_state)
 
         state.update(load_context_node(state))
+        timing_event = build_timing_event(state["trace"], "node.load_context", real_conversation_id)
+        if timing_event:
+            yield timing_event
 
         state.update(route_node(state))
         yield {
@@ -626,6 +765,9 @@ async def stream_customer_support_agent(
             "content": dump_model(state["route"]),
             "conversation_id": real_conversation_id,
         }
+        timing_event = build_timing_event(state["trace"], "node.route", real_conversation_id)
+        if timing_event:
+            yield timing_event
 
         state.update(execute_tools_node(state))
         for tool_result in state["tool_results"]:
@@ -634,11 +776,26 @@ async def stream_customer_support_agent(
                 "content": dump_model(tool_result),
                 "conversation_id": real_conversation_id,
             }
+            timing_event = build_timing_event(
+                state["trace"],
+                f"tool.{tool_result.tool_name}",
+                real_conversation_id,
+            )
+            if timing_event:
+                yield timing_event
+
+        timing_event = build_timing_event(state["trace"], "node.execute_tools", real_conversation_id)
+        if timing_event:
+            yield timing_event
 
         state.update(build_model_context_node(state))
+        timing_event = build_timing_event(state["trace"], "node.build_model_context", real_conversation_id)
+        if timing_event:
+            yield timing_event
 
         if state["use_llm"] and stream_tokens and not should_force_fallback(state["route"]):
             reply_parts = []
+            llm_start = perf_counter()
 
             yield {
                 "type": "status",
@@ -669,6 +826,19 @@ async def stream_customer_support_agent(
                     "reply_chars": len(reply),
                 },
             )
+            add_trace_timing(
+                state["trace"],
+                "node.generate_reply",
+                (perf_counter() - llm_start) * 1000,
+                {
+                    "success": True,
+                    "reply_mode": "llm_stream",
+                    "reply_chars": len(reply),
+                },
+            )
+            timing_event = build_timing_event(state["trace"], "node.generate_reply", real_conversation_id)
+            if timing_event:
+                yield timing_event
         else:
             state.update(generate_reply_node(state))
             yield {
@@ -676,9 +846,15 @@ async def stream_customer_support_agent(
                 "content": state["reply"],
                 "conversation_id": real_conversation_id,
             }
+            timing_event = build_timing_event(state["trace"], "node.generate_reply", real_conversation_id)
+            if timing_event:
+                yield timing_event
 
         state.update(persist_result_node(state))
         final_result = state["result"]
+        timing_event = build_timing_event(state["trace"], "node.persist_result", real_conversation_id)
+        if timing_event:
+            yield timing_event
 
         yield {
             "type": "done",

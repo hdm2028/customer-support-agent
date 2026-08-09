@@ -359,6 +359,12 @@
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
 
+      // 展示单个执行阶段的耗时，帮助定位慢请求发生在哪一步。
+      function addTimingPanel(timing) {
+        const title = `耗时：${timing.step} ${timing.duration_ms}ms`;
+        addToolPanel(title, timing);
+      }
+
       // 切换执行轨迹显示状态。已生成的轨迹面板也会同步隐藏或展示。
       function syncTracePanels() {
         localStorage.setItem("customer_support_show_trace", String(traceToggle.checked));
@@ -445,7 +451,7 @@
         addFeedback();
       }
 
-      // 根据后端事件类型更新页面：route、tool_result、token、done。
+      // 根据后端事件类型更新页面：route、tool_result、timing、token、done。
       function handleStreamEvent(event, assistantEl) {
         if (event.conversation_id && event.conversation_id !== conversationId) {
           conversationId = event.conversation_id;
@@ -460,6 +466,11 @@
 
         if (event.type === "tool_result") {
           addToolPanel(`工具结果：${event.content.tool_name}`, event.content);
+          return;
+        }
+
+        if (event.type === "timing") {
+          addTimingPanel(event.content);
           return;
         }
 
@@ -482,6 +493,14 @@
 
         if (event.type === "message") {
           assistantEl.textContent = event.content;
+          return;
+        }
+
+        if (event.type === "done" && event.content && event.content.duration_ms) {
+          addToolPanel(`总耗时：${event.content.duration_ms}ms`, {
+            duration_ms: event.content.duration_ms,
+            timings: event.content.timings || {},
+          });
           return;
         }
 
