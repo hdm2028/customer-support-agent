@@ -72,12 +72,33 @@ result
 
 ### 优化方案
 
-RAG 侧做了四层优化：
+RAG 侧做了五层优化：
 
 - 文档解析：支持 Markdown、TXT、PDF。
 - Chunk 切分：按章节标题切分，保留 `source`、`section`、`page`、`citation`。
 - 混合检索：智谱 `embedding-3` 向量相似度 + 业务关键词召回。
+- 两阶段检索：先初召回更多候选 chunk，再用业务 rerank 选出最终 top_k。
+- 可解释重排：保留 `retrieval_score`、`rerank_score`、`rerank_bonus` 和 `rerank_reasons`。
 - Query enrichment：把用户问题、订单状态、物流状态、商品名称、订单备注和业务意图一起拼入检索 query。
+
+当前检索流程：
+
+```text
+用户问题
+-> embedding + keyword 初召回 candidate_k
+-> rerank_documents 业务重排序
+-> 返回 top_k 证据给模型
+```
+
+Rerank 加分依据包括：
+
+```text
+source_match：是否命中对应业务政策文档
+section_match：是否命中正确章节标题
+phrase_match：是否命中关键政策短语
+keyword_coverage：用户问题中的业务关键词覆盖度
+order_state_match：订单状态和政策条款是否匹配
+```
 
 模型上下文不直接塞原始工具 JSON，而是整理成 evidence context：
 
@@ -119,7 +140,7 @@ Citation 通过率: 1.0
 
 ### 面试表达
 
-> 我没有只做向量检索，而是做了带 citation 的 evidence context。文档按章节切分，chunk 保留 source、section、page 和 citation；检索时结合 embedding 相似度和业务关键词，并用订单状态、物流状态、商品信息做 query enrichment。最终回答必须引用本轮检索到的 citation，证据不足时不能编造。
+> 我没有只做向量检索，而是做了两阶段 RAG。第一阶段用 embedding + 关键词召回候选 chunk，第二阶段基于业务意图、章节标题、政策短语和订单状态做 rerank，并保留 rerank reasons。最终进入模型上下文的是带 citation 的 evidence context，模型必须引用本轮证据，证据不足时不能编造。
 
 ## 3. 多轮槽位补全
 

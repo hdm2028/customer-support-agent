@@ -20,7 +20,7 @@ https://customer-support-agent-dnhl.onrender.com
 - **售后意图路由**：识别订单查询、政策检索、工单创建、信息追问、人工审核和安全拦截。
 - **工具调用**：封装订单查询、RAG 政策检索、工单草稿创建等工具。
 - **RAG 政策检索**：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，保留 `source`、`section`、`page`、`citation` 元数据。
-- **混合检索优化**：结合智谱 `embedding-3` 向量检索和业务关键词召回，提高条款级命中率。
+- **两阶段检索与 Rerank**：先用 embedding + 关键词混合检索召回候选 chunk，再基于业务意图、章节标题、政策短语和订单状态做二次排序。
 - **多轮槽位补全**：支持用户分多轮补充订单号、新收货地址等信息，信息不完整时不会提前创建工单。
 - **业务风险控制**：退款、赔付、取消订单、修改地址等高风险动作只生成待人工审核工单，不直接执行业务变更。
 - **工单资格判断**：创建工单前结合订单状态、签收状态、物流更新时间和保修期做二次校验。
@@ -313,11 +313,10 @@ DATABASE_PATH=/var/data/customer_support.db
 
 ## 项目亮点
 
-详细优化过程见 [docs/optimization_log.md](docs/optimization_log.md)。核心亮点包括：
-
 - 使用 LangGraph 将 Agent 主流程拆成可观察、可扩展的状态图。
 - 将 Router、工具执行、RAG 证据上下文和持久化解耦。
 - 建立 Router、RAG、Answer 三层自动化评估闭环。
 - 对高风险售后动作做确定性兜底和人工审核控制。
 - 通过订单优先和工单资格判断避免模型对不存在订单或未满足条件的订单生成错误结果。
+- 在 RAG 中加入两阶段检索和业务 rerank，保留 `retrieval_score`、`rerank_score` 和 `rerank_reasons`，提升证据排序可解释性。
 - 通过 trace 和前端执行轨迹展示 Agent 每一步判断、工具结果和耗时。

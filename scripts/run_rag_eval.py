@@ -74,6 +74,10 @@ def simplify_result(result: dict) -> dict:
         "score": result.get("score"),
         "vector_score": result.get("vector_score"),
         "keyword_score": result.get("keyword_score"),
+        "retrieval_score": result.get("retrieval_score"),
+        "rerank_bonus": result.get("rerank_bonus"),
+        "rerank_score": result.get("rerank_score"),
+        "rerank_reasons": result.get("rerank_reasons", []),
         "text_preview": result.get("text", "")[:160],
     }
 

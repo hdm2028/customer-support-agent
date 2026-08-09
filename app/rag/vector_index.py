@@ -1,5 +1,6 @@
 from app.rag.document_loader import DocumentChunk
 from app.rag.embedding_client import get_embedding_provider, keyword_score
+from app.rag.reranker import rerank_documents
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
@@ -24,10 +25,12 @@ class InMemoryVectorIndex:
     # 检索流程：
     # 1. 把用户问题转成向量。
     # 2. 和每个 chunk 的向量计算余弦相似度。
-    # 3. 再混合关键词分数，提升业务关键词命中的稳定性。
+    # 3. 混合关键词分数做初召回，先保留更多候选。
+    # 4. 用业务规则 rerank 候选结果，再取最终 top_k。
     def search(self, query: str, top_k: int = 3) -> list[dict]:
         query_embedding = self.embedding_provider.embed_text(query)
         results = []
+        candidate_k = max(top_k * 3, 10)
 
         for item in self.items:
             chunk = item["chunk"]
@@ -45,5 +48,7 @@ class InMemoryVectorIndex:
             results.append(chunk_data)
 
         results.sort(key=lambda item: item["score"], reverse=True)
+        candidates = results[:candidate_k]
+        reranked_results = rerank_documents(query, candidates)
 
-        return results[:top_k]
+        return reranked_results[:top_k]

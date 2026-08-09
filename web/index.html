@@ -501,7 +501,9 @@
             <li>
               证据 ${index + 1}：
               ${escapeHtml(item.citation || item.source || "未知来源")}
-              ${item.score === undefined ? "" : `，相关分数：${escapeHtml(String(item.score))}`}
+              ${item.rerank_score === undefined ? "" : `，重排分数：${escapeHtml(String(item.rerank_score))}`}
+              ${item.retrieval_score === undefined ? "" : `，初召回分数：${escapeHtml(String(item.retrieval_score))}`}
+              ${Array.isArray(item.rerank_reasons) && item.rerank_reasons.length ? `，原因：${escapeHtml(item.rerank_reasons.slice(0, 2).join("；"))}` : ""}
             </li>
           `)
           .join("");
