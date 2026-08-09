@@ -155,6 +155,34 @@
         font-weight: 600;
       }
 
+      .trace-summary {
+        margin-top: 10px;
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .trace-summary ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+
+      .trace-summary li {
+        margin-top: 4px;
+      }
+
+      .trace-badge {
+        display: inline-flex;
+        align-items: center;
+        margin: 3px 6px 3px 0;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
       pre {
         overflow-x: auto;
         margin: 10px 0 0;
@@ -378,19 +406,135 @@
         return item;
       }
 
-      // 展示 Agent 执行轨迹，包含路由判断、订单查询、RAG 检索和工单创建结果。
-      function addToolPanel(title, data) {
+      // 展示 Agent 执行轨迹：先给业务摘要，再保留原始 JSON 方便调试。
+      function addToolPanel(title, data, summaryHtml = "") {
         const wrapper = document.createElement("div");
         wrapper.className = "tool-panel";
         wrapper.hidden = !traceToggle.checked;
         wrapper.innerHTML = `
           <details>
             <summary>${title}</summary>
+            ${summaryHtml ? `<div class="trace-summary">${summaryHtml}</div>` : ""}
             <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
           </details>
         `;
         messagesEl.appendChild(wrapper);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function yesNo(value) {
+        return value ? "是" : "否";
+      }
+
+      function badge(text) {
+        return `<span class="trace-badge">${escapeHtml(text)}</span>`;
+      }
+
+      function buildRouteSummary(route) {
+        const actions = [];
+
+        if (route.need_order) actions.push("订单查询");
+        if (route.need_policy) actions.push("政策检索");
+        if (route.need_ticket) actions.push("创建工单");
+        if (route.need_clarification) actions.push("追问信息");
+        if (route.handoff_required) actions.push("人工审核");
+        if (route.blocked_by_guardrail) actions.push("安全拦截");
+
+        return `
+          <div>Agent 已完成意图路由，判断本轮问题的处理方式如下：</div>
+          <ul>
+            <li>订单号：${escapeHtml(route.order_id || "未提供")}</li>
+            <li>风险等级：${escapeHtml(route.risk_level || "low")}</li>
+            <li>需要订单查询：${yesNo(route.need_order)}</li>
+            <li>需要政策检索：${yesNo(route.need_policy)}</li>
+            <li>需要创建工单：${yesNo(route.need_ticket)}</li>
+            <li>需要追问用户：${yesNo(route.need_clarification)}</li>
+            <li>需要人工审核：${yesNo(route.handoff_required)}</li>
+          </ul>
+          <div>${actions.length ? actions.map(badge).join("") : badge("普通回复")}</div>
+          ${route.clarification_question ? `<div>追问内容：${escapeHtml(route.clarification_question)}</div>` : ""}
+          ${route.handoff_reason ? `<div>人工审核原因：${escapeHtml(route.handoff_reason)}</div>` : ""}
+          ${route.guardrail_reason ? `<div>安全拦截原因：${escapeHtml(route.guardrail_reason)}</div>` : ""}
+        `;
+      }
+
+      function buildOrderSummary(result) {
+        if (!result.success) {
+          return `<div>订单查询失败：${escapeHtml(String(result.result))}</div>`;
+        }
+
+        const order = result.result || {};
+        return `
+          <div>已查询到订单信息，后续回复会基于这些订单字段判断售后方案。</div>
+          <ul>
+            <li>订单号：${escapeHtml(order.order_id || "未知")}</li>
+            <li>商品：${escapeHtml(order.product_name || "未知")}</li>
+            <li>订单状态：${escapeHtml(order.order_status || "未知")}</li>
+            <li>物流状态：${escapeHtml(order.shipping_status || "未知")}</li>
+            <li>签收日期：${escapeHtml(order.signed_date || "未签收")}</li>
+            <li>是否可直接退款：${yesNo(order.can_refund_directly)}</li>
+          </ul>
+          ${order.notes ? `<div>订单备注：${escapeHtml(order.notes)}</div>` : ""}
+        `;
+      }
+
+      function buildPolicySummary(result) {
+        if (!result.success) {
+          return `<div>政策检索失败：${escapeHtml(String(result.result))}</div>`;
+        }
+
+        const policies = Array.isArray(result.result) ? result.result : [];
+        const rows = policies
+          .slice(0, 3)
+          .map((item, index) => `
+            <li>
+              证据 ${index + 1}：
+              ${escapeHtml(item.citation || item.source || "未知来源")}
+              ${item.score === undefined ? "" : `，相关分数：${escapeHtml(String(item.score))}`}
+            </li>
+          `)
+          .join("");
+
+        return `
+          <div>RAG 从售后知识库中命中 ${policies.length} 条政策证据，模型回答时应引用这些来源。</div>
+          <ul>${rows || "<li>没有可展示的政策证据。</li>"}</ul>
+        `;
+      }
+
+      function buildTicketSummary(result) {
+        if (!result.success) {
+          return `<div>工单创建失败：${escapeHtml(String(result.result))}</div>`;
+        }
+
+        const ticket = result.result || {};
+        return `
+          <div>系统已生成待人工审核的工单草稿，不会直接修改订单或执行退款。</div>
+          <ul>
+            <li>工单号：${escapeHtml(ticket.ticket_id || "未返回")}</li>
+            <li>工单状态：${escapeHtml(ticket.status || "未知")}</li>
+            <li>关联订单：${escapeHtml(ticket.order_id || "未知")}</li>
+            <li>问题类型：${escapeHtml(ticket.issue_type || "未知")}</li>
+            <li>优先级：${escapeHtml(ticket.priority || "normal")}</li>
+            <li>下一步：${escapeHtml(ticket.next_step || "等待人工客服处理")}</li>
+          </ul>
+          ${ticket.risk_notice ? `<div>风险提示：${escapeHtml(ticket.risk_notice)}</div>` : ""}
+        `;
+      }
+
+      function buildToolSummary(toolResult) {
+        if (toolResult.tool_name === "order_lookup") {
+          return buildOrderSummary(toolResult);
+        }
+
+        if (toolResult.tool_name === "policy_search") {
+          return buildPolicySummary(toolResult);
+        }
+
+        if (toolResult.tool_name === "create_ticket") {
+          return buildTicketSummary(toolResult);
+        }
+
+        return "<div>工具执行完成，详细结果见下方 JSON。</div>";
       }
 
       // 把技术性的 step 名称翻译成页面上更容易读懂的中文。
@@ -543,12 +687,16 @@
         }
 
         if (event.type === "route") {
-          addToolPanel("路由判断", event.content);
+          addToolPanel("路由判断", event.content, buildRouteSummary(event.content));
           return;
         }
 
         if (event.type === "tool_result") {
-          addToolPanel(`工具结果：${event.content.tool_name}`, event.content);
+          addToolPanel(
+            `工具结果：${event.content.tool_name}`,
+            event.content,
+            buildToolSummary(event.content),
+          );
           return;
         }
 
