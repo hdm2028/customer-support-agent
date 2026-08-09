@@ -1,5 +1,7 @@
 ORDER_RELATED_KEYWORDS = [
     "订单",
+    "不想要",
+    "不要了",
     "物流",
     "发货",
     "签收",
@@ -25,6 +27,8 @@ ORDER_RELATED_KEYWORDS = [
 ORDER_ID_REQUIRED_KEYWORDS = [
     "我的订单",
     "订单",
+    "不想要",
+    "不要了",
     "物流",
     "发货",
     "签收",

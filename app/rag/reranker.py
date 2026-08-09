@@ -51,6 +51,13 @@ BUSINESS_RERANK_RULES = [
         "sections": ["缺货订单处理", "库存不足导致拆单"],
         "phrases": ["缺货", "补发", "继续等待", "补货提醒", "拆单"],
     },
+    {
+        "name": "complaint",
+        "triggers": ["投诉", "没人处理", "商家", "客服"],
+        "sources": ["售后FAQ"],
+        "sections": ["我要投诉客服或商家怎么办？"],
+        "phrases": ["投诉升级工单", "人工客服", "记录用户诉求"],
+    },
 ]
 
 

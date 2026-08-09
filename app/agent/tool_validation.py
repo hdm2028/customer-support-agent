@@ -1,0 +1,61 @@
+from app.core.schemas import RouteDecision, ToolResult
+
+
+def validate_tool_plan(route: RouteDecision) -> tuple[bool, list[str]]:
+    """执行工具前校验路由计划，防止明显不合法的工具链继续执行。"""
+
+    errors = []
+
+    if route.need_order and not route.order_id:
+        errors.append("需要查询订单，但缺少订单号。")
+
+    if route.need_ticket and not route.order_id:
+        errors.append("创建工单必须先有订单号。")
+
+    if route.need_ticket and not route.need_order:
+        errors.append("创建工单前必须先执行订单查询。")
+
+    return len(errors) == 0, errors
+
+
+def validate_tool_chain(route: RouteDecision, tool_results: list[ToolResult]) -> tuple[bool, list[str]]:
+    """执行工具后校验工具链，防止少调、多调或下游越权执行。"""
+
+    errors = []
+    tool_names = [
+        item.tool_name
+        for item in tool_results
+    ]
+
+    if route.need_order and route.order_id and "order_lookup" not in tool_names:
+        errors.append("路由要求查询订单，但实际没有调用 order_lookup。")
+
+    if "policy_search" in tool_names and "order_lookup" in tool_names:
+        if tool_names.index("policy_search") < tool_names.index("order_lookup"):
+            errors.append("policy_search 不能早于 order_lookup 执行。")
+
+    if "create_ticket" in tool_names:
+        if "order_lookup" not in tool_names:
+            errors.append("create_ticket 前缺少 order_lookup。")
+
+        if route.need_policy and "policy_search" not in tool_names:
+            errors.append("create_ticket 前缺少 policy_search。")
+
+        if "ticket_decision" in tool_names:
+            errors.append("ticket_decision 拒绝后不应继续 create_ticket。")
+
+    order_result = next((item for item in tool_results if item.tool_name == "order_lookup"), None)
+    if order_result and not order_result.success:
+        downstream_tools = [
+            name
+            for name in tool_names
+            if name in {"policy_search", "ticket_decision", "create_ticket"}
+        ]
+        if downstream_tools:
+            errors.append(f"订单查询失败后不应继续执行下游工具：{downstream_tools}")
+
+    policy_result = next((item for item in tool_results if item.tool_name == "policy_search"), None)
+    if policy_result and not policy_result.success and "create_ticket" in tool_names:
+        errors.append("政策检索失败后不应继续 create_ticket。")
+
+    return len(errors) == 0, errors

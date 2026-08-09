@@ -4,6 +4,8 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from app.agent.conversation_context import apply_conversation_context
+from app.agent.evidence_guardrail import apply_policy_evidence_guardrail
 from app.agent.memory import ConversationMemory
 from app.agent.pending_task import (
     apply_slot_requirements,
@@ -13,6 +15,7 @@ from app.agent.pending_task import (
 )
 from app.agent.router import infer_issue_type, route_tools
 from app.agent.ticket_policy import evaluate_ticket_creation
+from app.agent.tool_validation import validate_tool_chain, validate_tool_plan
 from app.core.schemas import RouteDecision, ToolResult
 from app.llm.llm_client import call_zhipu_chat, call_zhipu_chat_stream
 from app.observability.tracing import (
@@ -42,6 +45,8 @@ class AgentWorkflowState(TypedDict, total=False):
     pending_task: dict | None
     effective_user_message: str
     used_pending_task: bool
+    used_conversation_context: bool
+    conversation_context: dict
     slots: dict
     required_slots: list[str]
     missing_slots: list[str]
@@ -126,11 +131,14 @@ def infer_policy_intent(user_message: str) -> str:
     if "取消" in user_message:
         return "取消订单 待发货 出库前"
 
-    if "退款" in user_message or "退货" in user_message:
+    if "退款" in user_message or "退货" in user_message or "不想要" in user_message or "不要了" in user_message:
         return "退货退款 七天无理由 质检 审核"
 
     if "物流" in user_message or "没更新" in user_message or "不更新" in user_message:
         return "物流查询 物流异常 48 小时 工单"
+
+    if "投诉" in user_message or "没人处理" in user_message:
+        return "投诉升级 升级工单 人工客服 记录用户诉求"
 
     if "保修" in user_message or "维修" in user_message or "检测" in user_message or "坏了" in user_message:
         return "保修范围 保修处理方式 检测工单"
@@ -167,14 +175,23 @@ def build_rag_query(
 
     if order_result and order_result.success:
         order = order_result.result
+        is_shipping_query = any(
+            keyword in user_message
+            for keyword in ["物流", "快递", "发货", "没更新", "不更新", "延迟", "丢件"]
+        )
         query_parts.extend(
             [
                 f"订单状态：{order.get('order_status')}",
-                f"物流状态：{order.get('shipping_status')}",
                 f"商品名称：{order.get('product_name')}",
-                f"订单备注：{order.get('notes')}",
+                f"商品类目：{order.get('category')}",
             ]
         )
+
+        if is_shipping_query:
+            query_parts.append(f"物流状态：{order.get('shipping_status')}")
+
+        if any(keyword in user_message for keyword in ["退款", "退货", "不想要", "不要了", "保修", "维修", "坏了"]):
+            query_parts.append(f"签收日期：{order.get('signed_date')}")
 
     return "\n".join(part for part in query_parts if part)
 
@@ -185,12 +202,106 @@ def get_order_lookup_result(tool_results: list[ToolResult]) -> ToolResult | None
     return next((item for item in tool_results if item.tool_name == "order_lookup"), None)
 
 
+def safe_tool_call(
+    tool_name: str,
+    callback,
+    fallback_action: str = "handoff_to_human",
+) -> ToolResult:
+    """安全调用工具，把异常统一转成 ToolResult，避免工具故障打断整个 Agent。
+
+    正常的业务失败仍由工具自己返回 success=False；
+    这里主要兜住超时、网络错误、解析错误、数据库错误等系统异常。
+    """
+
+    try:
+        result = callback()
+    except Exception as error:
+        return ToolResult(
+            tool_name=tool_name,
+            success=False,
+            result={
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                "fallback_action": fallback_action,
+                "reason": f"{tool_name} 工具调用失败，已进入降级处理。",
+            },
+        )
+
+    if isinstance(result, ToolResult):
+        return result
+
+    return ToolResult(
+        tool_name=tool_name,
+        success=True,
+        result=result,
+    )
+
+
 def has_failed_order_lookup(tool_results: list[ToolResult]) -> bool:
     """判断订单查询是否失败；失败时后续政策检索和工单创建都必须停止。"""
 
     order_result = get_order_lookup_result(tool_results)
 
     return bool(order_result and not order_result.success)
+
+
+def get_tool_result(tool_results: list[ToolResult], tool_name: str) -> ToolResult | None:
+    """按工具名获取工具结果，减少后续判断里的重复遍历。"""
+
+    return next((item for item in tool_results if item.tool_name == tool_name), None)
+
+
+def is_system_tool_failure(tool_result: ToolResult | None) -> bool:
+    """判断工具失败是否属于系统异常，而不是正常业务拒绝。"""
+
+    if not tool_result or tool_result.success:
+        return False
+
+    return isinstance(tool_result.result, dict) and bool(tool_result.result.get("error_type"))
+
+
+def is_low_confidence_evidence(tool_result: ToolResult | None) -> bool:
+    """判断 RAG 失败是否来自证据低置信或意图不匹配。"""
+
+    if not tool_result or tool_result.success or not isinstance(tool_result.result, dict):
+        return False
+
+    return tool_result.result.get("error_type") == "LowConfidenceEvidence"
+
+
+def has_failed_policy_search(tool_results: list[ToolResult]) -> bool:
+    """判断政策检索是否失败；失败时不允许模型编造政策，也不继续自动建单。"""
+
+    policy_result = get_tool_result(tool_results, "policy_search")
+
+    return bool(policy_result and not policy_result.success)
+
+
+def has_failed_tool_call(tool_results: list[ToolResult]) -> bool:
+    """判断是否存在工具调用失败，供回复生成阶段选择确定性兜底。"""
+
+    return any(
+        not item.success
+        and item.tool_name != "ticket_decision"
+        for item in tool_results
+    )
+
+
+def add_tool_failure_trace(trace: dict | None, tool_result: ToolResult) -> None:
+    """把工具失败写入 trace，方便前端执行轨迹和日志排查。"""
+
+    if not trace or tool_result.success:
+        return
+
+    add_trace_event(
+        trace,
+        event_type="tool_failed",
+        data={
+            "tool_name": tool_result.tool_name,
+            "result": tool_result.result,
+            "is_system_failure": is_system_tool_failure(tool_result),
+        },
+    )
 
 
 def execute_tools(
@@ -208,6 +319,31 @@ def execute_tools(
     if route.handoff_required and not route.order_id:
         return []
 
+    plan_valid, plan_errors = validate_tool_plan(route)
+    if trace:
+        add_trace_event(
+            trace,
+            event_type="tool_plan_validation",
+            data={
+                "passed": plan_valid,
+                "errors": plan_errors,
+            },
+        )
+
+    if not plan_valid:
+        return [
+            ToolResult(
+                tool_name="tool_plan_validation",
+                success=False,
+                result={
+                    "error_type": "InvalidToolPlan",
+                    "error_message": "工具调用计划不合法，已停止执行。",
+                    "errors": plan_errors,
+                    "fallback_action": "ask_user_or_handoff_to_human",
+                },
+            )
+        ]
+
     tool_results = []
 
     if route.need_order and route.order_id:
@@ -216,14 +352,25 @@ def execute_tools(
                 timed_step(
                     trace,
                     "tool.order_lookup",
-                    lambda: order_lookup(route.order_id),
+                    lambda: safe_tool_call(
+                        "order_lookup",
+                        lambda: order_lookup(route.order_id),
+                        fallback_action="ask_user_to_retry_or_handoff",
+                    ),
                     {"tool_name": "order_lookup"},
                 )
             )
         else:
-            tool_results.append(order_lookup(route.order_id))
+            tool_results.append(
+                safe_tool_call(
+                    "order_lookup",
+                    lambda: order_lookup(route.order_id),
+                    fallback_action="ask_user_to_retry_or_handoff",
+                )
+            )
 
         if has_failed_order_lookup(tool_results):
+            add_tool_failure_trace(trace, tool_results[-1])
             if trace:
                 add_trace_event(
                     trace,
@@ -244,23 +391,77 @@ def execute_tools(
                 timed_step(
                     trace,
                     "tool.policy_search",
-                    lambda: policy_search(rag_query),
+                    lambda: safe_tool_call(
+                        "policy_search",
+                        lambda: policy_search(rag_query),
+                        fallback_action="handoff_to_human",
+                    ),
                     {"tool_name": "policy_search"},
                 )
             )
         else:
-            tool_results.append(policy_search(rag_query))
+            tool_results.append(
+                safe_tool_call(
+                    "policy_search",
+                    lambda: policy_search(rag_query),
+                    fallback_action="handoff_to_human",
+                )
+            )
+
+        if tool_results[-1].tool_name == "policy_search":
+            tool_results[-1] = apply_policy_evidence_guardrail(user_message, tool_results[-1])
+            if trace:
+                report = (
+                    tool_results[-1].result.get("guardrail_report")
+                    if isinstance(tool_results[-1].result, dict)
+                    else tool_results[-1].result[0].get("evidence_guardrail", {})
+                    if tool_results[-1].result
+                    else {}
+                )
+                add_trace_event(
+                    trace,
+                    event_type="evidence_guardrail",
+                    data={
+                        "passed": tool_results[-1].success,
+                        "report": report,
+                    },
+                )
+
+        if has_failed_policy_search(tool_results):
+            add_tool_failure_trace(trace, tool_results[-1])
+            if trace:
+                add_trace_event(
+                    trace,
+                    event_type="execution_blocked",
+                    data={
+                        "reason": "policy_search_failed",
+                        "message": "政策检索失败，已停止自动工单创建，避免缺少政策依据时误处理。",
+                    },
+                )
+
+            return tool_results
 
     if route.need_ticket:
         order_result = get_order_lookup_result(tool_results)
         order = order_result.result if order_result and order_result.success else None
         issue_type = infer_issue_type(user_message)
-        ticket_decision = evaluate_ticket_creation(
-            route=route,
-            order=order,
-            issue_type=issue_type,
-            user_message=user_message,
+        ticket_decision_result = safe_tool_call(
+            "ticket_decision",
+            lambda: evaluate_ticket_creation(
+                route=route,
+                order=order,
+                issue_type=issue_type,
+                user_message=user_message,
+            ),
+            fallback_action="handoff_to_human",
         )
+
+        if not ticket_decision_result.success:
+            tool_results.append(ticket_decision_result)
+            add_tool_failure_trace(trace, ticket_decision_result)
+            return tool_results
+
+        ticket_decision = ticket_decision_result.result
 
         if not ticket_decision["can_create"]:
             decision_result = ToolResult(
@@ -284,24 +485,60 @@ def execute_tools(
                 timed_step(
                     trace,
                     "tool.create_ticket",
-                    lambda: create_ticket(
-                        order_id=route.order_id,
-                        issue_type=issue_type,
-                        user_request=user_message,
-                        priority=ticket_decision["priority"],
+                    lambda: safe_tool_call(
+                        "create_ticket",
+                        lambda: create_ticket(
+                            order_id=route.order_id,
+                            issue_type=issue_type,
+                            user_request=user_message,
+                            priority=ticket_decision["priority"],
+                        ),
+                        fallback_action="retry_or_handoff_to_human",
                     ),
                     {"tool_name": "create_ticket"},
                 )
             )
         else:
             tool_results.append(
-                create_ticket(
-                    order_id=route.order_id,
-                    issue_type=issue_type,
-                    user_request=user_message,
-                    priority=ticket_decision["priority"],
+                safe_tool_call(
+                    "create_ticket",
+                    lambda: create_ticket(
+                        order_id=route.order_id,
+                        issue_type=issue_type,
+                        user_request=user_message,
+                        priority=ticket_decision["priority"],
+                    ),
+                    fallback_action="retry_or_handoff_to_human",
                 )
             )
+
+        add_tool_failure_trace(trace, tool_results[-1])
+
+    chain_valid, chain_errors = validate_tool_chain(route, tool_results)
+    if trace:
+        add_trace_event(
+            trace,
+            event_type="tool_chain_validation",
+            data={
+                "passed": chain_valid,
+                "errors": chain_errors,
+                "tool_names": [item.tool_name for item in tool_results],
+            },
+        )
+
+    if not chain_valid:
+        tool_results.append(
+            ToolResult(
+                tool_name="tool_chain_validation",
+                success=False,
+                result={
+                    "error_type": "InvalidToolChain",
+                    "error_message": "工具执行链路不符合业务约束，已进入降级处理。",
+                    "errors": chain_errors,
+                    "fallback_action": "handoff_to_human",
+                },
+            )
+        )
 
     return tool_results
 
@@ -472,8 +709,16 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
     policy_result = next((item for item in tool_results if item.tool_name == "policy_search"), None)
     ticket_decision_result = next((item for item in tool_results if item.tool_name == "ticket_decision"), None)
     ticket_result = next((item for item in tool_results if item.tool_name == "create_ticket"), None)
+    plan_validation_result = next((item for item in tool_results if item.tool_name == "tool_plan_validation"), None)
+    chain_validation_result = next((item for item in tool_results if item.tool_name == "tool_chain_validation"), None)
 
     parts = []
+
+    if plan_validation_result and not plan_validation_result.success:
+        return (
+            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
+            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
+        )
 
     if order_result and order_result.success:
         order = order_result.result
@@ -482,15 +727,47 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
             f"当前订单状态为{order.get('order_status')}。"
         )
 
+    if policy_result and not policy_result.success:
+        if is_low_confidence_evidence(policy_result):
+            parts.append(
+                "但本轮没有检索到足够匹配的售后政策证据，我不能强行判断或创建工单。"
+                "建议补充问题细节，或转人工客服核对政策后继续处理。"
+            )
+        elif is_system_tool_failure(policy_result):
+            parts.append(
+                "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。"
+                "建议转人工客服核对政策后继续处理。"
+            )
+        else:
+            parts.append(
+                "但本轮没有检索到足够匹配的售后政策，我不能编造不存在的政策结论。"
+                "建议补充问题细节或转人工客服确认。"
+            )
+
     if policy_result and policy_result.success:
         first_policy = policy_result.result[0]
         citation = first_policy.get("citation") or first_policy.get("source")
         parts.append(f"根据知识库来源《{citation}》，本问题需要结合售后政策进一步判断。")
 
+    if ticket_result and not ticket_result.success:
+        if is_system_tool_failure(ticket_result):
+            parts.append(
+                "工单创建工具本轮调用失败，暂时没有生成工单。"
+                "建议稍后重试，或由人工客服继续接入处理。"
+            )
+        else:
+            parts.append(f"工单暂未创建成功：{ticket_result.result}")
+
     if ticket_result and ticket_result.success:
         ticket = ticket_result.result
         parts.append(
             f"我已生成{ticket['issue_type']}工单草稿，后续需要人工客服核对订单和凭证后处理。"
+        )
+
+    if chain_validation_result and not chain_validation_result.success:
+        parts.append(
+            "另外，本轮工具执行链路没有通过一致性校验，我不会继续扩大自动处理范围。"
+            "建议转人工客服复核。"
         )
 
     if ticket_decision_result and not ticket_decision_result.success:
@@ -516,6 +793,7 @@ def should_force_fallback(
         or route.need_clarification
         or (route.handoff_required and not route.order_id)
         or has_failed_order_lookup(tool_results)
+        or has_failed_tool_call(tool_results)
     )
 
 
@@ -534,12 +812,23 @@ def load_context_node(state: AgentWorkflowState) -> dict:
             user_message=state["user_message"],
             pending_task=pending_task,
         )
+        (
+            effective_user_message,
+            used_conversation_context,
+            conversation_context,
+        ) = apply_conversation_context(
+            user_message=effective_user_message,
+            history=memory.load(real_conversation_id),
+            used_pending_task=used_pending_task,
+        )
 
         return {
             "history": memory.load(real_conversation_id),
             "pending_task": pending_task,
             "effective_user_message": effective_user_message,
             "used_pending_task": used_pending_task,
+            "used_conversation_context": used_conversation_context,
+            "conversation_context": conversation_context,
             "slots": slots,
             "required_slots": required_slots,
         }
@@ -590,6 +879,8 @@ def route_node(state: AgentWorkflowState) -> dict:
             event_type="pending_task",
             data={
                 "used_pending_task": state["used_pending_task"],
+                "used_conversation_context": state.get("used_conversation_context", False),
+                "conversation_context": state.get("conversation_context", {}),
                 "has_pending_task": memory.get_pending_task(real_conversation_id) is not None,
                 "effective_user_message": effective_user_message,
                 "slots": slots,
@@ -724,6 +1015,8 @@ def persist_result_node(state: AgentWorkflowState) -> dict:
             "reply": reply,
             "model_messages": state["model_messages"],
             "used_pending_task": state["used_pending_task"],
+            "used_conversation_context": state.get("used_conversation_context", False),
+            "conversation_context": state.get("conversation_context", {}),
             "effective_user_message": state["effective_user_message"],
             "slots": state["slots"],
             "missing_slots": state["missing_slots"],

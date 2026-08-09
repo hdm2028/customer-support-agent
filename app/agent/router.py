@@ -11,6 +11,8 @@ from app.core.schemas import RouteDecision
 POLICY_KEYWORDS = [
     "退货",
     "退款",
+    "不想要",
+    "不要了",
     "换货",
     "取消",
     "修改",
@@ -128,7 +130,7 @@ def infer_issue_type(user_message: str) -> str:
     if "改收货地址" in user_message or "修改地址" in user_message or "改地址" in user_message:
         return "地址修改"
 
-    if "退款" in user_message or "退货" in user_message:
+    if "退款" in user_message or "退货" in user_message or "不想要" in user_message or "不要了" in user_message:
         return "退货退款"
 
     if "物流" in user_message:

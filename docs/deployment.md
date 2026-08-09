@@ -178,15 +178,3 @@ LLM_API_KEY 在控制台手动配置，不写进代码
 ```
 
 说明云平台已经读取到智谱 API Key。
-
-## 面试表达
-
-可以这样讲：
-
-```text
-我给项目补了 Dockerfile 和 Render 部署配置。Dockerfile 固定 Python 3.13 运行环境，安装 requirements.txt 里的依赖，并用 uvicorn 启动 FastAPI 服务。启动时监听 0.0.0.0，并通过 PORT 环境变量适配云平台端口。
-
-因为项目使用 SQLite 保存订单、工单、会话和 feedback，所以我把数据库路径做成 DATABASE_PATH 环境变量。云部署时将它指向持久化磁盘路径 /var/data/customer_support.db，避免容器重启后数据丢失。
-
-同时我提供 .dockerignore 排除 .env、缓存、数据库和运行日志，避免密钥和本地数据进入镜像。
-```

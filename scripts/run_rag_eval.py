@@ -8,6 +8,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.core.config import BASE_DIR
+from app.core.schemas import ToolResult
+from app.agent.evidence_guardrail import validate_policy_evidence
 from app.rag.rag import search_documents
 
 
@@ -92,8 +94,16 @@ def run_single_case(case: dict, top_k: int = DEFAULT_TOP_K) -> dict:
     top1_source_hit = source_hit(results, expected_sources, top_n=1)
     topk_source_hit = source_hit(results, expected_sources, top_n=top_k)
     keywords_pass, missing_keywords = keyword_hit(results, expected_keywords)
+    evidence_guardrail_pass, evidence_guardrail_report = validate_policy_evidence(
+        case["query"],
+        ToolResult(
+            tool_name="policy_search",
+            success=bool(results),
+            result=results if results else "RAG 没有返回任何政策证据。",
+        ),
+    )
 
-    passed = topk_source_hit and keywords_pass
+    passed = topk_source_hit and keywords_pass and evidence_guardrail_pass
     errors = []
 
     if not topk_source_hit:
@@ -105,6 +115,9 @@ def run_single_case(case: dict, top_k: int = DEFAULT_TOP_K) -> dict:
     if missing_keywords:
         errors.append(f"missing_keywords={missing_keywords}")
 
+    if not evidence_guardrail_pass:
+        errors.append(f"evidence_guardrail_failed={evidence_guardrail_report}")
+
     return {
         "id": case["id"],
         "query": case["query"],
@@ -112,6 +125,8 @@ def run_single_case(case: dict, top_k: int = DEFAULT_TOP_K) -> dict:
         "top1_source_hit": top1_source_hit,
         "topk_source_hit": topk_source_hit,
         "keywords_pass": keywords_pass,
+        "evidence_guardrail_pass": evidence_guardrail_pass,
+        "evidence_guardrail_report": evidence_guardrail_report,
         "expected_sources": expected_sources,
         "expected_keywords": expected_keywords,
         "missing_keywords": missing_keywords,
@@ -129,6 +144,7 @@ def build_report(results: list[dict], top_k: int) -> dict:
     top1_hit_count = sum(1 for item in results if item["top1_source_hit"])
     topk_hit_count = sum(1 for item in results if item["topk_source_hit"])
     keyword_pass_count = sum(1 for item in results if item["keywords_pass"])
+    evidence_guardrail_pass_count = sum(1 for item in results if item["evidence_guardrail_pass"])
 
     failed_cases = [
         item for item in results
@@ -145,6 +161,7 @@ def build_report(results: list[dict], top_k: int) -> dict:
         "top1_source_hit_rate": round(top1_hit_count / total, 4) if total else 0,
         "topk_source_hit_rate": round(topk_hit_count / total, 4) if total else 0,
         "keyword_pass_rate": round(keyword_pass_count / total, 4) if total else 0,
+        "evidence_guardrail_pass_rate": round(evidence_guardrail_pass_count / total, 4) if total else 0,
         "failed_cases": failed_cases,
         "results": results,
     }
@@ -179,6 +196,7 @@ def print_report(report: dict, report_path: Path) -> None:
     print(f"Top1 来源命中率：{report['top1_source_hit_rate']}")
     print(f"Top{report['top_k']} 来源命中率：{report['topk_source_hit_rate']}")
     print(f"关键词命中率：{report['keyword_pass_rate']}")
+    print(f"证据校验通过率：{report['evidence_guardrail_pass_rate']}")
     print(f"报告文件：{report_path}")
 
     if report["failed_cases"]:

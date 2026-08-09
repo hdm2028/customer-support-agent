@@ -21,12 +21,15 @@ https://customer-support-agent-dnhl.onrender.com
 - **工具调用**：封装订单查询、RAG 政策检索、工单草稿创建等工具。
 - **RAG 政策检索**：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，保留 `source`、`section`、`page`、`citation` 元数据。
 - **两阶段检索与 Rerank**：先用 embedding + 关键词混合检索召回候选 chunk，再基于业务意图、章节标题、政策短语和订单状态做二次排序。
+- **RAG 证据兜底**：对检索结果做分数阈值、来源文档和关键政策词校验，召回不全时停止自动动作。
 - **知识库增量 Ingest**：通过文档 hash 生成 manifest，识别新增、修改、未变化和删除文档，并结合 embedding cache 复用已有向量。
 - **多轮槽位补全**：支持用户分多轮补充订单号、新收货地址等信息，信息不完整时不会提前创建工单。
+- **多轮上下文继承**：用户后续只说“退款”“投诉”等短追问时，系统会从会话历史继承最近订单号继续处理。
 - **业务风险控制**：退款、赔付、取消订单、修改地址等高风险动作只生成待人工审核工单，不直接执行业务变更。
 - **工单资格判断**：创建工单前结合订单状态、签收状态、物流更新时间和保修期做二次校验。
 - **可观测性**：记录 route、tool results、model context、reply、timings，并在 Web 页面展示执行轨迹。
 - **自动化评估**：覆盖 Router 工具调用、RAG 召回、最终回答质量、API 主链路和多轮槽位补全。
+- **端到端业务评估**：从用户输入开始检查路由、槽位、工具序列、工具参数、最终业务动作和回复约束。
 
 ## 技术栈
 
@@ -306,7 +309,11 @@ chunk 总数: 31
 | `scripts/run_eval.py` | Router 路由和工具调用 | 21/21 |
 | `scripts/run_rag_eval.py` | RAG 来源命中和关键词命中 | 8/8 |
 | `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 21/21 |
+| `scripts/run_e2e_eval.py` | 端到端业务链路、工具序列和最终动作 | 12/12 |
 | `scripts/multi_turn_smoke_test.py` | 多轮槽位补全 | 通过 |
+| `scripts/context_smoke_test.py` | 多轮上下文继承 | 通过 |
+| `scripts/tool_failure_smoke_test.py` | 工具异常、链路短路和降级回复 | 通过 |
+| `scripts/retrieval_guardrail_smoke_test.py` | RAG 低置信、来源不匹配和召回不全兜底 | 通过 |
 | `scripts/api_smoke_test.py` | API 主链路 | 通过 |
 | `scripts/db_smoke_test.py` | SQLite 持久化 | 通过 |
 
@@ -316,7 +323,11 @@ chunk 总数: 31
 py -3.13 scripts\run_eval.py
 py -3.13 scripts\run_rag_eval.py
 py -3.13 scripts\run_answer_eval.py
+py -3.13 scripts\run_e2e_eval.py
 py -3.13 scripts\multi_turn_smoke_test.py
+py -3.13 scripts\context_smoke_test.py
+py -3.13 scripts\tool_failure_smoke_test.py
+py -3.13 scripts\retrieval_guardrail_smoke_test.py
 py -3.13 scripts\api_smoke_test.py
 py -3.13 scripts\db_smoke_test.py
 ```
@@ -339,13 +350,3 @@ DATABASE_PATH=/var/data/customer_support.db
 
 部署细节见 [docs/deployment.md](docs/deployment.md)。
 
-## 项目亮点
-
-- 使用 LangGraph 将 Agent 主流程拆成可观察、可扩展的状态图。
-- 将 Router、工具执行、RAG 证据上下文和持久化解耦。
-- 建立 Router、RAG、Answer 三层自动化评估闭环。
-- 对高风险售后动作做确定性兜底和人工审核控制。
-- 通过订单优先和工单资格判断避免模型对不存在订单或未满足条件的订单生成错误结果。
-- 在 RAG 中加入两阶段检索和业务 rerank，保留 `retrieval_score`、`rerank_score` 和 `rerank_reasons`，提升证据排序可解释性。
-- 为知识库更新增加 ingest manifest，通过文件 hash 追踪新增、修改、删除和未变化文档，并复用 embedding cache 降低重复向量化成本。
-- 通过 trace 和前端执行轨迹展示 Agent 每一步判断、工具结果和耗时。
