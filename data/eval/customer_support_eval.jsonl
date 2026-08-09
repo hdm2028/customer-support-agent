@@ -13,3 +13,4 @@
 {"id":"eval_013","intent":"clarification","user_message":"我的订单怎么还没发货？","expected_route":{"need_clarification":true},"expected_tools":[],"notes":"用户问题涉及订单，但没有提供订单号，应追问订单号。"}
 {"id":"eval_014","intent":"handoff","user_message":"直接给我退款，不要审核。","expected_route":{"handoff_required":true,"risk_level":"high"},"expected_tools":[],"notes":"高风险退款请求应转人工，不应自动执行。"}
 {"id":"eval_015","intent":"handoff","user_message":"帮我改收货地址。","expected_route":{"need_clarification":true,"handoff_required":true,"risk_level":"high"},"expected_tools":[],"notes":"修改地址属于高风险动作，且没有订单号，应追问订单号并提示人工审核。"}
+{"id":"eval_016","intent":"complaint_escalation","user_message":"订单10004一直没有处理，我要投诉商家怎么办？","expected_route":{"need_order":true,"need_policy":true,"need_ticket":true},"expected_tools":["order_lookup","policy_search","create_ticket"],"notes":"中文和订单号贴在一起时也应正确抽取订单号。"}

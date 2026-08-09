@@ -65,7 +65,9 @@ TICKET_KEYWORDS = [
 def extract_order_id(user_message: str) -> str | None:
     """从用户输入中提取订单号。这里先用 4 位以上数字模拟真实订单号。"""
 
-    match = re.search(r"\b\d{4,}\b", user_message)
+    # 中文客服输入里经常出现“订单10004”这种数字和中文贴在一起的写法。
+    # 不能用 \b 单词边界，否则中文字符和数字相邻时可能无法识别。
+    match = re.search(r"(?<!\d)\d{4,}(?!\d)", user_message)
 
     if match:
         return match.group(0)
