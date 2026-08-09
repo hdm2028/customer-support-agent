@@ -18,6 +18,11 @@ POLICY_KEYWORDS = [
     "保修",
     "维修",
     "检测",
+    "坏了",
+    "故障",
+    "质量问题",
+    "换新",
+    "售后",
     "物流",
     "发货",
     "签收",
@@ -47,6 +52,8 @@ TICKET_KEYWORDS = [
     "坏了",
     "故障",
     "质量问题",
+    "换新",
+    "售后",
     "检测",
     "维修",
     "物流异常",
@@ -127,7 +134,15 @@ def infer_issue_type(user_message: str) -> str:
     if "物流" in user_message:
         return "物流异常"
 
-    if "维修" in user_message or "检测" in user_message or "保修" in user_message:
+    if (
+        "维修" in user_message
+        or "检测" in user_message
+        or "保修" in user_message
+        or "坏了" in user_message
+        or "故障" in user_message
+        or "质量问题" in user_message
+        or "换新" in user_message
+    ):
         return "保修检测"
 
     return "售后咨询"

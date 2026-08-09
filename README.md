@@ -343,9 +343,9 @@ http://127.0.0.1:8012/docs
 
 | 脚本 | 评估内容 | 当前结果 |
 | --- | --- | --- |
-| `scripts/run_eval.py` | Router 路由和工具调用 | 17/17 |
+| `scripts/run_eval.py` | Router 路由和工具调用 | 18/18 |
 | `scripts/run_rag_eval.py` | RAG 来源命中和关键词命中 | 8/8 |
-| `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 17/17 |
+| `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 18/18 |
 | `scripts/multi_turn_smoke_test.py` | 多轮槽位补全 | 通过 |
 | `scripts/api_smoke_test.py` | API 主链路 | 通过 |
 | `scripts/db_smoke_test.py` | SQLite 数据持久化 | 通过 |
@@ -387,6 +387,7 @@ docs/optimization_log.md
 - 对缺少订单号或要求绕过审核的高风险请求强制走规则兜底，避免模型在无证据时生成承诺。
 - 接入智谱原生流式生成，把最终回复从“等待完整返回”优化为 token 级增量展示。
 - 将前端执行轨迹从原始 JSON 升级为业务可读摘要，展示路由依据、订单状态、RAG 证据和工单流转，同时保留 JSON 便于调试。
+- 收紧售后任务的订单优先策略，故障、保修、换新、退款、物流、发票、投诉等场景缺少订单号时先追问，不让模型在无订单上下文时判断结果。
 
 ## 数据说明
 
