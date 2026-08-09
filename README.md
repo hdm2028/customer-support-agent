@@ -2,11 +2,12 @@
 
 中文电商智能售后客服 Agent 是一个基于 FastAPI 的客服自动化服务，面向售后咨询、订单状态查询、退换货政策解释、物流异常处理、地址修改工单、投诉升级等场景。
 
-项目重点实现了 Agent 工程中的关键能力：工具调用、RAG 检索、多轮槽位补全、风险控制、流式输出、可观测性和自动化评估。
+项目重点实现了 Agent 工程中的关键能力：LangGraph 状态编排、工具调用、RAG 检索、多轮槽位补全、风险控制、流式输出、可观测性和自动化评估。
 
 ## 核心能力
 
 - 售后意图路由：识别是否需要查询订单、检索政策、创建工单或转人工。
+- LangGraph 编排：使用 `StateGraph` 将加载上下文、路由判断、工具执行、上下文构造、回复生成和结果持久化拆成节点，并通过共享 state 传递中间状态。
 - 订单工具调用：根据订单号读取订单状态、物流状态、签收日期、保修期等信息。
 - RAG 政策检索：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，并基于 embedding + 关键词混合检索召回政策依据。
 - 智谱模型接入：支持智谱 Chat Completions 和 `embedding-3`，API Key 通过 `.env` 管理。
@@ -25,11 +26,13 @@
 -> FastAPI 接口
 -> 输入安全检查
 -> Pending Task 多轮槽位补全
--> Router 路由决策
--> Tool Executor 执行订单查询 / RAG 检索 / 工单创建
--> Evidence Context 组装订单、政策、工单证据
--> LLM 或本地 fallback 生成回复
--> Tracing / SQLite / Feedback 记录
+-> LangGraph StateGraph 工作流
+   -> load_context 加载历史和 pending task
+   -> route 路由决策和槽位检查
+   -> execute_tools 执行订单查询 / RAG 检索 / 工单创建
+   -> build_model_context 组装订单、政策、工单证据
+   -> generate_reply 调用 LLM 或本地 fallback
+   -> persist_result 写入 Tracing / SQLite / Feedback
 -> Web UI 流式展示
 ```
 
@@ -87,7 +90,7 @@
 | 模块 | 作用 |
 | --- | --- |
 | `main.py` | FastAPI 入口，提供 Web 页面、聊天、流式输出、历史记录、反馈、知识库调试接口 |
-| `app/agent/agent_core.py` | Agent 主流程编排，串联 memory、pending task、router、tools、RAG context、LLM、tracing |
+| `app/agent/agent_core.py` | Agent 主流程编排，基于 LangGraph `StateGraph` 串联 memory、pending task、router、tools、RAG context、LLM、tracing |
 | `app/agent/router.py` | 路由决策，判断是否查订单、查政策、创建工单、提取订单号、推断工单类型 |
 | `app/agent/pending_task.py` | 多轮槽位补全，管理 `order_id`、`new_address` 等任务槽位 |
 | `app/agent/fallback_policy.py` | 信息不足追问和高风险转人工策略 |
@@ -98,6 +101,39 @@
 | `app/tools/support_tools.py` | 工具层，包含订单查询、政策检索、工单草稿创建 |
 | `app/storage/database.py` | SQLite 数据层，保存订单、工单、会话消息、pending task 和 feedback |
 | `app/observability/tracing.py` | 请求链路追踪，记录 route、tool_results、model_context、reply |
+
+## LangGraph 共享状态编排
+
+Agent 主链路使用 LangGraph `StateGraph` 进行编排。每个节点只负责一个明确步骤，并通过 `AgentWorkflowState` 共享中间状态。
+
+```text
+AgentWorkflowState
+├─ user_message / conversation_id
+├─ history / pending_task
+├─ effective_user_message / slots / missing_slots
+├─ route
+├─ tool_results
+├─ model_messages
+├─ reply
+└─ trace / result
+```
+
+工作流节点：
+
+```text
+load_context
+-> route
+-> execute_tools
+-> build_model_context
+-> generate_reply
+-> persist_result
+```
+
+这样做的目的：
+
+- 让 Agent 执行链路从“一个长函数”升级为可观察、可扩展的状态图。
+- Router、Tool Executor、Prompt 构造和持久化各自独立，后续更容易插入条件边、人工审核节点或异步任务节点。
+- 所有中间状态都集中在共享 state 中，便于 tracing、debug 和前端执行轨迹展示。
 
 ## RAG 设计
 

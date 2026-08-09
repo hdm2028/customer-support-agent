@@ -8,9 +8,9 @@
 
 | 评估脚本 | 评估内容 | 结果 |
 | --- | --- | --- |
-| `scripts/run_eval.py` | 路由决策和工具调用 | 15/15 |
+| `scripts/run_eval.py` | 路由决策和工具调用 | 16/16 |
 | `scripts/run_rag_eval.py` | RAG 来源命中和关键词命中 | 8/8 |
-| `scripts/run_answer_eval.py` | Citation 引用和风险控制 | 15/15 |
+| `scripts/run_answer_eval.py` | Citation 引用和风险控制 | 16/16 |
 | `scripts/multi_turn_smoke_test.py` | 多轮槽位补全 | 通过 |
 | `scripts/api_smoke_test.py` | API 主链路 | 通过 |
 
@@ -540,6 +540,75 @@ Agent eval: 15/15
 - 可以通过 `DATABASE_PATH` 适配本地数据库和云端持久化磁盘。
 - 可以避免 `.env`、数据库、缓存和日志进入镜像。
 
+## 10. LangGraph 状态图编排
+
+### 问题
+
+早期 Agent 主流程集中在一个较长的函数里，虽然能跑通业务，但存在几个工程问题：
+
+- 路由、工具执行、上下文构造、回复生成和持久化混在一起，后续插入新节点不够清晰。
+- 中间变量分散在函数局部变量里，不利于 tracing 和前端执行轨迹展示。
+- 如果后续要扩展 Planner / Executor、人工审核节点、失败重试节点或条件分支，线性函数会越来越难维护。
+
+### 优化
+
+引入 LangGraph，把 Agent 主链路改造成 `StateGraph`：
+
+```text
+load_context
+-> route
+-> execute_tools
+-> build_model_context
+-> generate_reply
+-> persist_result
+```
+
+新增 `AgentWorkflowState` 作为共享状态，统一承载：
+
+```text
+user_message
+conversation_id
+history
+pending_task
+slots / missing_slots
+route
+tool_results
+model_messages
+reply
+trace
+result
+```
+
+每个节点只负责一件事：
+
+- `load_context`：加载历史消息和 pending task，生成有效用户请求。
+- `route`：执行 Router，并结合槽位要求决定是否追问。
+- `execute_tools`：按 route 调用订单查询、RAG 检索和工单创建。
+- `build_model_context`：把工具结果整理成模型上下文。
+- `generate_reply`：调用真实 LLM 或 fallback 回复。
+- `persist_result`：保存会话、trace，并组装 API 返回结果。
+
+### 结果
+
+重构后业务行为保持一致，回归结果：
+
+```text
+compileall: 通过
+Agent eval: 16/16
+RAG eval: 8/8
+Answer eval: 16/16
+multi_turn_smoke_test: 通过
+api_smoke_test: 通过
+```
+
+### 价值
+
+这一步把 Agent 从“函数串联”升级成“状态图编排”：
+
+- 共享 state 让中间状态更集中，便于调试和展示。
+- 节点边界更清晰，方便后续插入条件边和人工审核节点。
+- 面试中可以讲清楚 LangGraph 的核心价值：不是替代业务逻辑，而是让复杂 Agent 流程更可维护、更可观测、更容易扩展。
+
 ## 面试表达摘要
 
 可以将项目概括为：
@@ -547,7 +616,7 @@ Agent eval: 15/15
 ```text
 我实现了一个中文电商智能售后客服 Agent，后端基于 FastAPI，支持流式输出、订单查询、RAG 政策检索、工单草稿、多轮槽位补全、提示词注入防护和高风险转人工。
 
-项目重点不是只做聊天回复，而是建立工程闭环。我把评估拆成三层：Router 工具调用评估、RAG 检索评估、最终回答质量评估。通过 eval 和 tracing 定位问题，再针对 Router、RAG query、evidence context 和 pending task 做优化。
+项目重点不是只做聊天回复，而是建立工程闭环。我使用 LangGraph StateGraph 编排 Agent 主链路，将加载上下文、路由判断、工具执行、上下文构造、回复生成和结果持久化拆成节点，并通过共享 state 传递 route、slots、tool_results、model_messages 等中间状态。我把评估拆成三层：Router 工具调用评估、RAG 检索评估、最终回答质量评估。通过 eval 和 tracing 定位问题，再针对 Router、RAG query、evidence context 和 pending task 做优化。
 
 在 RAG 上，我做了文档切分、metadata/citation 保留、智谱 embedding 接入、向量相似度和业务关键词混合检索、query enrichment，以及 citation 检查。
 

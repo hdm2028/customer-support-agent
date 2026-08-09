@@ -1,4 +1,7 @@
 from collections.abc import AsyncGenerator
+from typing import Any, TypedDict
+
+from langgraph.graph import END, START, StateGraph
 
 from app.agent.memory import ConversationMemory
 from app.agent.pending_task import (
@@ -14,6 +17,32 @@ from app.observability.tracing import add_trace_event, finish_trace, save_trace,
 from app.tools.support_tools import create_ticket, order_lookup, policy_search
 
 memory = ConversationMemory()
+
+
+class AgentWorkflowState(TypedDict, total=False):
+    """LangGraph 共享状态。
+
+    每个节点只负责读写自己关心的字段，避免把所有中间变量都塞在一个长函数里。
+    """
+
+    user_message: str
+    conversation_id: str | None
+    real_conversation_id: str
+    use_llm: bool
+    trace: dict[str, Any]
+    history: list[dict]
+    pending_task: dict | None
+    effective_user_message: str
+    used_pending_task: bool
+    slots: dict
+    required_slots: list[str]
+    missing_slots: list[str]
+    route: RouteDecision
+    tool_results: list[ToolResult]
+    model_messages: list[dict]
+    reply: str
+    reply_mode: str
+    result: dict
 
 
 def dump_model(model):
@@ -309,119 +338,228 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
     return "".join(parts)
 
 
+def load_context_node(state: AgentWorkflowState) -> dict:
+    """加载会话历史和 pending task，并把用户本轮输入合并成有效任务输入。"""
+
+    real_conversation_id = state["real_conversation_id"]
+    pending_task = memory.get_pending_task(real_conversation_id)
+    (
+        effective_user_message,
+        used_pending_task,
+        slots,
+        required_slots,
+    ) = prepare_pending_task_context(
+        user_message=state["user_message"],
+        pending_task=pending_task,
+    )
+
+    return {
+        "history": memory.load(real_conversation_id),
+        "pending_task": pending_task,
+        "effective_user_message": effective_user_message,
+        "used_pending_task": used_pending_task,
+        "slots": slots,
+        "required_slots": required_slots,
+    }
+
+
+def route_node(state: AgentWorkflowState) -> dict:
+    """执行 Router，并根据槽位要求决定是否追问用户补充信息。"""
+
+    real_conversation_id = state["real_conversation_id"]
+    pending_task = state.get("pending_task")
+    effective_user_message = state["effective_user_message"]
+    slots = state["slots"]
+    required_slots = state["required_slots"]
+
+    route = route_tools(effective_user_message)
+    route, missing_slots = apply_slot_requirements(
+        route=route,
+        required_slots=required_slots,
+        slots=slots,
+    )
+
+    if state["used_pending_task"] and not missing_slots:
+        memory.clear_pending_task(real_conversation_id)
+
+    if should_store_pending_task(route, missing_slots):
+        pending_user_request = (
+            pending_task.get("user_request")
+            if pending_task
+            else effective_user_message
+        )
+        memory.set_pending_task(
+            real_conversation_id,
+            build_pending_task(
+                user_message=pending_user_request,
+                route=route,
+                slots=slots,
+                required_slots=required_slots,
+                missing_slots=missing_slots,
+            ),
+        )
+
+    add_trace_event(state["trace"], event_type="route", data=dump_model(route))
+    add_trace_event(
+        state["trace"],
+        event_type="pending_task",
+        data={
+            "used_pending_task": state["used_pending_task"],
+            "has_pending_task": memory.get_pending_task(real_conversation_id) is not None,
+            "effective_user_message": effective_user_message,
+            "slots": slots,
+            "required_slots": required_slots,
+            "missing_slots": missing_slots,
+        },
+    )
+
+    return {
+        "route": route,
+        "missing_slots": missing_slots,
+    }
+
+
+def execute_tools_node(state: AgentWorkflowState) -> dict:
+    """根据 route 调用订单查询、RAG 检索和工单创建工具。"""
+
+    tool_results = execute_tools(
+        user_message=state["effective_user_message"],
+        route=state["route"],
+    )
+    add_trace_event(
+        state["trace"],
+        event_type="tool_results",
+        data={
+            "count": len(tool_results),
+            "items": [dump_model(item) for item in tool_results],
+        },
+    )
+
+    return {"tool_results": tool_results}
+
+
+def build_model_context_node(state: AgentWorkflowState) -> dict:
+    """把历史消息、工具结果和当前问题整理成大模型上下文。"""
+
+    model_messages = build_model_messages(
+        user_message=state["effective_user_message"],
+        history=state["history"],
+        tool_results=state["tool_results"],
+    )
+    add_trace_event(
+        state["trace"],
+        event_type="model_context",
+        data={
+            "message_count": len(model_messages),
+            "context_chars": sum(len(item["content"]) for item in model_messages),
+        },
+    )
+
+    return {"model_messages": model_messages}
+
+
+def generate_reply_node(state: AgentWorkflowState) -> dict:
+    """根据配置选择真实大模型回复或本地兜底回复。"""
+
+    if state["use_llm"]:
+        reply = call_zhipu_chat(state["model_messages"])
+        reply_mode = "llm"
+    else:
+        reply = fallback_answer(state["route"], state["tool_results"])
+        reply_mode = "fallback"
+
+    add_trace_event(
+        state["trace"],
+        event_type="reply",
+        data={
+            "reply_mode": reply_mode,
+            "reply_chars": len(reply),
+        },
+    )
+
+    return {
+        "reply": reply,
+        "reply_mode": reply_mode,
+    }
+
+
+def persist_result_node(state: AgentWorkflowState) -> dict:
+    """保存会话和 trace，并组装 API 层需要返回的最终结果。"""
+
+    real_conversation_id = state["real_conversation_id"]
+    reply = state["reply"]
+
+    memory.append(real_conversation_id, "user", state["user_message"])
+    memory.append(real_conversation_id, "assistant", reply)
+    finished_trace = finish_trace(state["trace"], reply, success=True)
+    save_trace(finished_trace)
+
+    return {
+        "result": {
+            "success": True,
+            "conversation_id": real_conversation_id,
+            "route": dump_model(state["route"]),
+            "tool_results": [dump_model(item) for item in state["tool_results"]],
+            "reply": reply,
+            "model_messages": state["model_messages"],
+            "used_pending_task": state["used_pending_task"],
+            "effective_user_message": state["effective_user_message"],
+            "slots": state["slots"],
+            "missing_slots": state["missing_slots"],
+            "workflow_engine": "langgraph",
+        }
+    }
+
+
+def build_agent_workflow():
+    """构建 LangGraph 状态图。
+
+    这里先使用线性工作流，后续可以在 route 之后加入条件边，
+    例如无须工具时跳过 execute_tools，或高风险任务直接转人工队列。
+    """
+
+    graph = StateGraph(AgentWorkflowState)
+    graph.add_node("load_context", load_context_node)
+    graph.add_node("route", route_node)
+    graph.add_node("execute_tools", execute_tools_node)
+    graph.add_node("build_model_context", build_model_context_node)
+    graph.add_node("generate_reply", generate_reply_node)
+    graph.add_node("persist_result", persist_result_node)
+
+    graph.add_edge(START, "load_context")
+    graph.add_edge("load_context", "route")
+    graph.add_edge("route", "execute_tools")
+    graph.add_edge("execute_tools", "build_model_context")
+    graph.add_edge("build_model_context", "generate_reply")
+    graph.add_edge("generate_reply", "persist_result")
+    graph.add_edge("persist_result", END)
+
+    return graph.compile()
+
+
+agent_workflow = build_agent_workflow()
+
+
 def run_customer_support_agent(
     user_message: str,
     conversation_id: str | None = None,
     use_llm: bool = False,
 ) -> dict:
-    """Agent 主入口：路由、执行工具、构造上下文、生成回复并写入记忆。"""
+    """Agent 主入口：用 LangGraph 共享状态编排完整客服处理链路。"""
 
     real_conversation_id = memory.ensure_id(conversation_id)
     trace = start_trace(user_message=user_message, conversation_id=real_conversation_id)
+    initial_state: AgentWorkflowState = {
+        "user_message": user_message,
+        "conversation_id": conversation_id,
+        "real_conversation_id": real_conversation_id,
+        "use_llm": use_llm,
+        "trace": trace,
+    }
+
     try:
-        history = memory.load(real_conversation_id)
-        pending_task = memory.get_pending_task(real_conversation_id)
-        (
-            effective_user_message,
-            used_pending_task,
-            slots,
-            required_slots,
-        ) = prepare_pending_task_context(
-            user_message=user_message,
-            pending_task=pending_task,
-        )
-
-        route = route_tools(effective_user_message)
-        route, missing_slots = apply_slot_requirements(
-            route=route,
-            required_slots=required_slots,
-            slots=slots,
-        )
-
-        if used_pending_task and not missing_slots:
-            memory.clear_pending_task(real_conversation_id)
-
-        if should_store_pending_task(route, missing_slots):
-            pending_user_request = (
-                pending_task.get("user_request")
-                if pending_task
-                else effective_user_message
-            )
-            memory.set_pending_task(
-                real_conversation_id,
-                build_pending_task(
-                    user_message=pending_user_request,
-                    route=route,
-                    slots=slots,
-                    required_slots=required_slots,
-                    missing_slots=missing_slots,
-                ),
-            )
-
-        add_trace_event(trace, event_type="route", data=dump_model(route))
-        add_trace_event(
-            trace,
-            event_type="pending_task",
-            data={
-                "used_pending_task": used_pending_task,
-                "has_pending_task": memory.get_pending_task(real_conversation_id) is not None,
-                "effective_user_message": effective_user_message,
-                "slots": slots,
-                "required_slots": required_slots,
-                "missing_slots": missing_slots,
-            },
-        )
-
-        tool_results = execute_tools(effective_user_message, route)
-        add_trace_event(
-            trace,
-            event_type="tool_results",
-            data={
-                "count": len(tool_results),
-                "items": [dump_model(item) for item in tool_results],
-            },
-        )
-        model_messages = build_model_messages(effective_user_message, history, tool_results)
-        add_trace_event(
-            trace,
-            event_type="model_context",
-            data={
-                "message_count": len(model_messages),
-                "context_chars": sum(len(item["content"]) for item in model_messages),
-            },
-        )
-
-        if use_llm:
-            reply = call_zhipu_chat(model_messages)
-            reply_mode = "llm"
-        else:
-            reply = fallback_answer(route, tool_results)
-            reply_mode = "fallback"
-        add_trace_event(
-            trace,
-            event_type="reply",
-            data={
-                "reply_mode": reply_mode,
-                "reply_chars": len(reply),
-            },
-        )
-        memory.append(real_conversation_id, "user", user_message)
-        memory.append(real_conversation_id, "assistant", reply)
-        finished_trace = finish_trace(trace, reply, success=True)
-        save_trace(finished_trace)
-
-        return {
-            "success": True,
-            "conversation_id": real_conversation_id,
-            "route": dump_model(route),
-            "tool_results": [dump_model(item) for item in tool_results],
-            "reply": reply,
-            "model_messages": model_messages,
-            "used_pending_task": used_pending_task,
-            "effective_user_message": effective_user_message,
-            "slots": slots,
-            "missing_slots": missing_slots,
-        }
+        final_state = agent_workflow.invoke(initial_state)
+        return final_state["result"]
     except Exception as error:
         add_trace_event(
             trace,
