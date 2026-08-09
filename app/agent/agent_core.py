@@ -12,7 +12,7 @@ from app.agent.pending_task import (
 )
 from app.agent.router import infer_issue_type, route_tools
 from app.core.schemas import RouteDecision, ToolResult
-from app.llm.llm_client import call_zhipu_chat
+from app.llm.llm_client import call_zhipu_chat, call_zhipu_chat_stream
 from app.observability.tracing import add_trace_event, finish_trace, save_trace, start_trace
 from app.tools.support_tools import create_ticket, order_lookup, policy_search
 
@@ -599,11 +599,10 @@ async def stream_customer_support_agent(
     use_llm: bool = False,
     stream_tokens: bool = True,
 ) -> AsyncGenerator[dict, None]:
-    """流式执行 Agent。
+    """流式执行 Agent，并在真实模型模式下转发 LLM 原生 token。
 
-    通过 LangGraph stream 按节点返回结果：
-    route 节点完成后立即返回路由，execute_tools 节点完成后返回工具结果，
-    最后再返回客服回复。这样真实 LLM 较慢时，前端也能先看到执行进度。
+    普通 API 使用完整 LangGraph invoke；网页流式接口为了拿到模型 token，
+    复用同一组节点函数逐步推进 state，然后在生成阶段调用智谱 stream。
     """
 
     real_conversation_id = memory.ensure_id(conversation_id)
@@ -617,44 +616,69 @@ async def stream_customer_support_agent(
     }
 
     try:
-        final_result = None
+        state = dict(initial_state)
 
-        for chunk in agent_workflow.stream(initial_state, stream_mode="updates"):
-            if "route" in chunk:
-                route = chunk["route"]["route"]
+        state.update(load_context_node(state))
+
+        state.update(route_node(state))
+        yield {
+            "type": "route",
+            "content": dump_model(state["route"]),
+            "conversation_id": real_conversation_id,
+        }
+
+        state.update(execute_tools_node(state))
+        for tool_result in state["tool_results"]:
+            yield {
+                "type": "tool_result",
+                "content": dump_model(tool_result),
+                "conversation_id": real_conversation_id,
+            }
+
+        state.update(build_model_context_node(state))
+
+        if state["use_llm"] and stream_tokens and not should_force_fallback(state["route"]):
+            reply_parts = []
+
+            yield {
+                "type": "status",
+                "content": "正在调用智谱大模型生成客服回复...",
+                "conversation_id": real_conversation_id,
+            }
+
+            for token in call_zhipu_chat_stream(state["model_messages"]):
+                reply_parts.append(token)
                 yield {
-                    "type": "route",
-                    "content": dump_model(route),
+                    "type": "token",
+                    "content": token,
                     "conversation_id": real_conversation_id,
                 }
 
-            if "execute_tools" in chunk:
-                tool_results = chunk["execute_tools"]["tool_results"]
-                for tool_result in tool_results:
-                    yield {
-                        "type": "tool_result",
-                        "content": dump_model(tool_result),
-                        "conversation_id": real_conversation_id,
-                    }
+            reply = "".join(reply_parts)
+            state.update(
+                {
+                    "reply": reply,
+                    "reply_mode": "llm_stream",
+                }
+            )
+            add_trace_event(
+                state["trace"],
+                event_type="reply",
+                data={
+                    "reply_mode": "llm_stream",
+                    "reply_chars": len(reply),
+                },
+            )
+        else:
+            state.update(generate_reply_node(state))
+            yield {
+                "type": "message",
+                "content": state["reply"],
+                "conversation_id": real_conversation_id,
+            }
 
-            if "generate_reply" in chunk:
-                reply = chunk["generate_reply"]["reply"]
-                if stream_tokens:
-                    for character in reply:
-                        yield {
-                            "type": "token",
-                            "content": character,
-                            "conversation_id": real_conversation_id,
-                        }
-                else:
-                    yield {
-                        "type": "message",
-                        "content": reply,
-                        "conversation_id": real_conversation_id,
-                    }
-
-            if "persist_result" in chunk:
-                final_result = chunk["persist_result"]["result"]
+        state.update(persist_result_node(state))
+        final_result = state["result"]
 
         yield {
             "type": "done",
@@ -663,7 +687,7 @@ async def stream_customer_support_agent(
         }
         yield {
             "type": "workflow",
-            "content": "langgraph_stream",
+            "content": "langgraph_nodes_with_llm_stream",
             "conversation_id": real_conversation_id,
         }
     except Exception as error:

@@ -711,6 +711,67 @@ api_smoke_test: 通过
 - 将“能不能调用 LLM”从前端开关，升级为后端根据业务风险统一决策。
 - 面试中可以表达为：我没有把安全完全交给 prompt，而是在工作流节点中做了确定性控制，保证高风险路径优先走规则兜底和人工审核。
 
+## 13. 真实 LLM Token 级流式输出
+
+### 问题
+
+早期 `/agent/stream` 只能做到节点级流式：页面可以先看到路由和工具结果，但最终回答仍然要等 `call_zhipu_chat()` 完整返回后，再把整段文本拆成字符推给前端。
+
+这会造成一个体验问题：当真实大模型响应较慢时，用户虽然看到了前面的执行轨迹，但最终回复区域仍会空等几秒到十几秒。
+
+### 优化
+
+新增 `call_zhipu_chat_stream()`：
+
+```text
+请求智谱 Chat Completions
+-> 设置 stream=true
+-> 读取 SSE data 行
+-> 解析 choices[].delta.content
+-> 逐段 yield 给 /agent/stream
+```
+
+同时调整 `/agent/stream`：
+
+```text
+load_context
+-> route，推送 route 事件
+-> execute_tools，推送 tool_result 事件
+-> build_model_context
+-> 如果可调用真实 LLM，则推送 status 事件，再转发智谱 token
+-> persist_result，保存会话和 trace
+-> 推送 done 事件
+```
+
+前端新增 `status` 事件处理：在模型首个 token 返回前显示“正在调用智谱大模型生成客服回复...”，首个 token 到达后自动替换成真实回复。
+
+### 结果
+
+本地验证真实模型流式返回：
+
+```text
+HTTP 200
+route event: 1
+token event: 66
+```
+
+完整回归：
+
+```text
+compileall: 通过
+Agent eval: 17/17
+RAG eval: 8/8
+Answer eval: 17/17
+multi_turn_smoke_test: 通过
+api_smoke_test: 通过
+```
+
+### 价值
+
+- 用户不必等待完整回复生成，可以更早看到模型输出。
+- 路由、工具、模型 token 都能在一个 SSE 通道里展示，演示效果更接近真实客服工作台。
+- 面试中可以说明：我区分了“节点级流式”和“模型原生 token 流式”，并把两者组合到同一个 Agent 执行链路中。
+
 ## 面试表达摘要
 
 可以将项目概括为：

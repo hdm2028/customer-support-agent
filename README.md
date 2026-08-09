@@ -135,7 +135,7 @@ load_context
 - Router、Tool Executor、Prompt 构造和持久化各自独立，后续更容易插入条件边、人工审核节点或异步任务节点。
 - 所有中间状态都集中在共享 state 中，便于 tracing、debug 和前端执行轨迹展示。
 
-`/agent/stream` 使用 LangGraph `stream(..., stream_mode="updates")` 监听节点更新。`route` 节点完成后立即推送路由判断，`execute_tools` 节点完成后立即推送工具结果，`generate_reply` 节点完成后再推送最终回复。这样即使真实大模型响应较慢，前端也能先展示 Agent 正在执行哪些步骤。
+`/agent/stream` 复用 LangGraph 的节点函数逐步推进共享 state。`route` 节点完成后立即推送路由判断，`execute_tools` 节点完成后立即推送工具结果。如果开启真实模型和流式输出，生成阶段会调用智谱原生 streaming API，把模型 token 持续转发给前端；如果触发高风险兜底，则直接返回规则回复。
 
 ## RAG 设计
 
@@ -347,6 +347,7 @@ docs/optimization_log.md
 - 接入 SQLite 持久化，保存订单、工单、会话消息、pending task 和 feedback。
 - 对退款、赔付、取消订单、修改地址等高风险动作强制人工审核。
 - 对缺少订单号或要求绕过审核的高风险请求强制走规则兜底，避免模型在无证据时生成承诺。
+- 接入智谱原生流式生成，把最终回复从“等待完整返回”优化为 token 级增量展示。
 
 ## 数据说明
 

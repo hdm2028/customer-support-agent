@@ -463,7 +463,18 @@
           return;
         }
 
+        if (event.type === "status") {
+          assistantEl.textContent = event.content;
+          assistantEl.dataset.statusOnly = "true";
+          return;
+        }
+
         if (event.type === "token") {
+          if (assistantEl.dataset.statusOnly === "true") {
+            assistantEl.textContent = "";
+            assistantEl.dataset.statusOnly = "false";
+          }
+
           assistantEl.textContent += event.content;
           messagesEl.scrollTop = messagesEl.scrollHeight;
           return;
