@@ -441,13 +441,13 @@
         if (route.blocked_by_guardrail) actions.push("安全拦截");
 
         return `
-          <div>Agent 已完成意图路由，判断本轮问题的处理方式如下：</div>
+          <div>Agent 已完成意图路由，给出本轮问题的初步工具计划：</div>
           <ul>
             <li>订单号：${escapeHtml(route.order_id || "未提供")}</li>
             <li>风险等级：${escapeHtml(route.risk_level || "low")}</li>
-            <li>需要订单查询：${yesNo(route.need_order)}</li>
-            <li>需要政策检索：${yesNo(route.need_policy)}</li>
-            <li>需要创建工单：${yesNo(route.need_ticket)}</li>
+            <li>计划订单查询：${yesNo(route.need_order)}</li>
+            <li>计划政策检索：${yesNo(route.need_policy)}</li>
+            <li>计划创建工单：${yesNo(route.need_ticket)}</li>
             <li>需要追问用户：${yesNo(route.need_clarification)}</li>
             <li>需要人工审核：${yesNo(route.handoff_required)}</li>
           </ul>
@@ -455,6 +455,17 @@
           ${route.clarification_question ? `<div>追问内容：${escapeHtml(route.clarification_question)}</div>` : ""}
           ${route.handoff_reason ? `<div>人工审核原因：${escapeHtml(route.handoff_reason)}</div>` : ""}
           ${route.guardrail_reason ? `<div>安全拦截原因：${escapeHtml(route.guardrail_reason)}</div>` : ""}
+        `;
+      }
+
+      function buildExecutionBlockedSummary(event) {
+        return `
+          <div>执行链已被业务规则拦截，后续工具不会继续调用。</div>
+          <ul>
+            <li>拦截原因：${escapeHtml(event.reason || "未知")}</li>
+            <li>订单号：${escapeHtml(event.order_id || "未提供")}</li>
+            <li>处理说明：${escapeHtml(event.message || "已停止后续业务动作")}</li>
+          </ul>
         `;
       }
 
@@ -678,7 +689,7 @@
         addFeedback();
       }
 
-      // 根据后端事件类型更新页面：route、tool_result、timing、token、done。
+      // 根据后端事件类型更新页面：route、tool_result、execution_blocked、timing、token、done。
       function handleStreamEvent(event, assistantEl) {
         if (event.conversation_id && event.conversation_id !== conversationId) {
           conversationId = event.conversation_id;
@@ -696,6 +707,15 @@
             `工具结果：${event.content.tool_name}`,
             event.content,
             buildToolSummary(event.content),
+          );
+          return;
+        }
+
+        if (event.type === "execution_blocked") {
+          addToolPanel(
+            "执行拦截",
+            event.content,
+            buildExecutionBlockedSummary(event.content),
           );
           return;
         }

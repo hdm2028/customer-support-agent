@@ -981,9 +981,9 @@ Agent：请您提供订单号，我才能继续查询订单状态并判断售后
 
 ```text
 compileall: 通过
-Agent eval: 18/18
+Agent eval: 19/19
 RAG eval: 8/8
-Answer eval: 18/18
+Answer eval: 19/19
 api_smoke_test: 通过
 ```
 
@@ -992,6 +992,80 @@ api_smoke_test: 通过
 - 避免 Agent 在缺少订单信息时判断保修期、退款资格、物流状态等强依赖订单的数据。
 - 把“先查订单，再谈政策和工单”固化为 Router 规则，而不是依赖 prompt 约束模型。
 - 面试中可以表达为：我发现模型会在无订单上下文时做售后判断，于是把售后任务的前置槽位统一收紧为订单号，确保所有业务动作先绑定订单再执行。
+
+## 17. 订单查询失败短路策略
+
+### 问题
+
+线上测试发现，用户输入不存在的订单号时：
+
+```text
+订单 10025 手表坏了，还在保修期内吗？
+```
+
+`order_lookup` 已经返回“未找到订单号”，但执行链仍继续调用 `policy_search` 和 `create_ticket`。最终模型看到了保修政策证据和工单结果，就生成了“已创建保修检测工单”的错误回复。
+
+根因是：Router 只负责判断“理论上需要哪些工具”，但 Executor 没有把订单查询成功作为后续业务动作的前置条件。
+
+### 优化
+
+新增订单校验闸门：
+
+```text
+route_tools 判断需要订单查询
+-> execute_tools 调用 order_lookup
+-> 如果订单不存在，立即停止 policy_search 和 create_ticket
+-> generate_reply 强制走规则兜底，不调用真实大模型
+```
+
+这次优化新增了两个辅助函数：
+
+```text
+get_order_lookup_result：从工具结果中取出订单查询结果
+has_failed_order_lookup：判断订单查询是否失败
+```
+
+同时在 `fallback_answer` 中增加失败订单回复：
+
+```text
+未找到订单号 10025，请核对订单号是否正确。请您核对订单号后重新提供，我再继续查询售后政策并判断是否需要创建工单。
+```
+
+### 结果
+
+新增评估样例：
+
+```text
+订单 10025 手表坏了，还在保修期内吗？
+```
+
+预期工具调用从原来的：
+
+```text
+order_lookup -> policy_search -> create_ticket
+```
+
+收敛为：
+
+```text
+order_lookup
+```
+
+当前回归结果：
+
+```text
+compileall: 通过
+Agent eval: 19/19
+RAG eval: 8/8
+Answer eval: 19/19
+api_smoke_test: 通过
+```
+
+### 价值
+
+- 避免对不存在订单生成保修、退款、物流或投诉工单。
+- 把“订单存在性校验”从 prompt 约束升级为代码层业务闸门。
+- 面试中可以表达为：我将 Agent 的工具执行链改成订单优先的短路流程，Router 只给计划，Executor 负责业务前置校验；如果订单查不到，后续 RAG 和工单节点不会执行，从而避免模型根据无效上下文生成虚假处理结果。
 
 ## 面试表达摘要
 

@@ -178,6 +178,20 @@ def build_rag_query(
     return "\n".join(part for part in query_parts if part)
 
 
+def get_order_lookup_result(tool_results: list[ToolResult]) -> ToolResult | None:
+    """从工具结果中取出订单查询结果，供后续节点判断订单是否真实存在。"""
+
+    return next((item for item in tool_results if item.tool_name == "order_lookup"), None)
+
+
+def has_failed_order_lookup(tool_results: list[ToolResult]) -> bool:
+    """判断订单查询是否失败；失败时后续政策检索和工单创建都必须停止。"""
+
+    order_result = get_order_lookup_result(tool_results)
+
+    return bool(order_result and not order_result.success)
+
+
 def execute_tools(
     user_message: str,
     route: RouteDecision,
@@ -207,6 +221,20 @@ def execute_tools(
             )
         else:
             tool_results.append(order_lookup(route.order_id))
+
+        if has_failed_order_lookup(tool_results):
+            if trace:
+                add_trace_event(
+                    trace,
+                    event_type="execution_blocked",
+                    data={
+                        "reason": "order_lookup_failed",
+                        "order_id": route.order_id,
+                        "message": "订单不存在，已停止政策检索和工单创建。",
+                    },
+                )
+
+            return tool_results
 
     if route.need_policy:
         rag_query = build_rag_query(user_message, route, tool_results)
@@ -405,7 +433,14 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
     if route.blocked_by_guardrail:
         return route.guardrail_reason or "当前请求存在安全风险，已拒绝执行。"
 
-    order_result = next((item for item in tool_results if item.tool_name == "order_lookup"), None)
+    order_result = get_order_lookup_result(tool_results)
+
+    if order_result and not order_result.success:
+        return (
+            f"{order_result.result} 请您核对订单号后重新提供，"
+            "我再继续查询售后政策并判断是否需要创建工单。"
+        )
+
     policy_result = next((item for item in tool_results if item.tool_name == "policy_search"), None)
     ticket_result = next((item for item in tool_results if item.tool_name == "create_ticket"), None)
 
@@ -435,13 +470,19 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
     return "".join(parts)
 
 
-def should_force_fallback(route: RouteDecision) -> bool:
+def should_force_fallback(
+    route: RouteDecision,
+    tool_results: list[ToolResult] | None = None,
+) -> bool:
     """判断当前请求是否必须走确定性兜底回复，而不是交给大模型自由生成。"""
+
+    tool_results = tool_results or []
 
     return (
         route.blocked_by_guardrail
         or route.need_clarification
         or (route.handoff_required and not route.order_id)
+        or has_failed_order_lookup(tool_results)
     )
 
 
@@ -582,7 +623,7 @@ def generate_reply_node(state: AgentWorkflowState) -> dict:
     """根据配置选择真实大模型回复或本地兜底回复。"""
 
     def work() -> dict:
-        if should_force_fallback(state["route"]):
+        if should_force_fallback(state["route"], state["tool_results"]):
             reply = fallback_answer(state["route"], state["tool_results"])
             reply_mode = "rule_fallback"
         elif state["use_llm"]:
@@ -784,6 +825,16 @@ async def stream_customer_support_agent(
             if timing_event:
                 yield timing_event
 
+        for trace_event in state["trace"].get("events", []):
+            if trace_event.get("event_type") != "execution_blocked":
+                continue
+
+            yield {
+                "type": "execution_blocked",
+                "content": trace_event.get("message", {}),
+                "conversation_id": real_conversation_id,
+            }
+
         timing_event = build_timing_event(state["trace"], "node.execute_tools", real_conversation_id)
         if timing_event:
             yield timing_event
@@ -793,7 +844,10 @@ async def stream_customer_support_agent(
         if timing_event:
             yield timing_event
 
-        if state["use_llm"] and stream_tokens and not should_force_fallback(state["route"]):
+        if state["use_llm"] and stream_tokens and not should_force_fallback(
+            state["route"],
+            state["tool_results"],
+        ):
             reply_parts = []
             llm_start = perf_counter()
 
