@@ -227,6 +227,33 @@
         color: var(--danger);
       }
 
+      .latency-summary {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfd;
+        font-size: 13px;
+      }
+
+      .latency-summary strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .latency-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      .latency-row span:last-child {
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
+
       @media (max-width: 820px) {
         .layout {
           grid-template-columns: 1fr;
@@ -248,6 +275,10 @@
         </p>
 
         <div class="status" id="serviceStatus">正在读取服务状态...</div>
+        <div class="latency-summary" id="latencySummary">
+          <strong>性能耗时</strong>
+          <div class="subtle">发送问题后显示每一步耗时。</div>
+        </div>
 
         <div class="field">
           <label for="conversationId">Conversation ID</label>
@@ -305,8 +336,11 @@
       const llmToggle = document.querySelector("#llmToggle");
       const traceToggle = document.querySelector("#traceToggle");
       const statusEl = document.querySelector("#serviceStatus");
+      const latencySummaryEl = document.querySelector("#latencySummary");
 
       let conversationId = localStorage.getItem("customer_support_conversation_id") || "";
+      let currentTimings = {};
+      let currentDurationMs = null;
       const savedTraceVisible = localStorage.getItem("customer_support_show_trace");
       traceToggle.checked = savedTraceVisible === null ? true : savedTraceVisible === "true";
 
@@ -363,6 +397,61 @@
       function addTimingPanel(timing) {
         const title = `耗时：${timing.step} ${timing.duration_ms}ms`;
         addToolPanel(title, timing);
+      }
+
+      // 把技术性的 step 名称翻译成页面上更容易读懂的中文。
+      function formatTimingStep(step) {
+        const names = {
+          "node.load_context": "加载上下文",
+          "node.route": "路由判断",
+          "node.execute_tools": "工具执行汇总",
+          "node.build_model_context": "构造模型上下文",
+          "node.generate_reply": "生成回复",
+          "node.persist_result": "保存结果",
+          "tool.order_lookup": "订单查询",
+          "tool.policy_search": "政策检索",
+          "tool.create_ticket": "创建工单",
+        };
+        return names[step] || step;
+      }
+
+      // 更新左侧性能摘要，让耗时不再只藏在折叠面板中。
+      function renderLatencySummary() {
+        const timings = Object.values(currentTimings);
+
+        if (!timings.length && currentDurationMs === null) {
+          latencySummaryEl.innerHTML = `
+            <strong>性能耗时</strong>
+            <div class="subtle">发送问题后显示每一步耗时。</div>
+          `;
+          return;
+        }
+
+        const rows = timings
+          .map((timing) => `
+            <div class="latency-row">
+              <span>${formatTimingStep(timing.step)}</span>
+              <span>${timing.duration_ms}ms</span>
+            </div>
+          `)
+          .join("");
+
+        latencySummaryEl.innerHTML = `
+          <strong>性能耗时</strong>
+          ${currentDurationMs === null ? "" : `
+            <div class="latency-row">
+              <span>总耗时</span>
+              <span>${currentDurationMs}ms</span>
+            </div>
+          `}
+          ${rows}
+        `;
+      }
+
+      function resetLatencySummary() {
+        currentTimings = {};
+        currentDurationMs = null;
+        renderLatencySummary();
       }
 
       // 切换执行轨迹显示状态。已生成的轨迹面板也会同步隐藏或展示。
@@ -470,6 +559,8 @@
         }
 
         if (event.type === "timing") {
+          currentTimings[event.content.step] = event.content;
+          renderLatencySummary();
           addTimingPanel(event.content);
           return;
         }
@@ -497,6 +588,9 @@
         }
 
         if (event.type === "done" && event.content && event.content.duration_ms) {
+          currentDurationMs = event.content.duration_ms;
+          currentTimings = event.content.timings || currentTimings;
+          renderLatencySummary();
           addToolPanel(`总耗时：${event.content.duration_ms}ms`, {
             duration_ms: event.content.duration_ms,
             timings: event.content.timings || {},
@@ -523,6 +617,7 @@
 
         sendBtn.disabled = true;
         inputEl.value = "";
+        resetLatencySummary();
         addMessage("user", message);
 
         try {
@@ -549,6 +644,7 @@
         localStorage.removeItem("customer_support_conversation_id");
         conversationIdEl.value = "";
         messagesEl.innerHTML = "";
+        resetLatencySummary();
         addMessage("assistant", "已开始新对话，请输入新的售后问题。");
       });
 
