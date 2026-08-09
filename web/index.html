@@ -265,6 +265,10 @@
             <input id="llmToggle" type="checkbox" />
             调用真实智谱模型
           </label>
+          <label class="toggle">
+            <input id="traceToggle" type="checkbox" checked />
+            展示执行轨迹
+          </label>
         </div>
 
         <div class="field">
@@ -299,9 +303,12 @@
       const conversationIdEl = document.querySelector("#conversationId");
       const streamToggle = document.querySelector("#streamToggle");
       const llmToggle = document.querySelector("#llmToggle");
+      const traceToggle = document.querySelector("#traceToggle");
       const statusEl = document.querySelector("#serviceStatus");
 
       let conversationId = localStorage.getItem("customer_support_conversation_id") || "";
+      const savedTraceVisible = localStorage.getItem("customer_support_show_trace");
+      traceToggle.checked = savedTraceVisible === null ? true : savedTraceVisible === "true";
 
       // 页面初始化：读取服务元数据，并恢复 conversation_id。
       async function initPage() {
@@ -337,10 +344,11 @@
         return item;
       }
 
-      // 展示工具调用结果，方便学习 Agent 每一步执行了什么。
+      // 展示 Agent 执行轨迹，包含路由判断、订单查询、RAG 检索和工单创建结果。
       function addToolPanel(title, data) {
         const wrapper = document.createElement("div");
         wrapper.className = "tool-panel";
+        wrapper.hidden = !traceToggle.checked;
         wrapper.innerHTML = `
           <details>
             <summary>${title}</summary>
@@ -349,6 +357,14 @@
         `;
         messagesEl.appendChild(wrapper);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      // 切换执行轨迹显示状态。已生成的轨迹面板也会同步隐藏或展示。
+      function syncTracePanels() {
+        localStorage.setItem("customer_support_show_trace", String(traceToggle.checked));
+        document.querySelectorAll(".tool-panel").forEach((panel) => {
+          panel.hidden = !traceToggle.checked;
+        });
       }
 
       // 给最近一次回复添加评分按钮，反馈会写入后端 data/feedback.jsonl。
@@ -477,6 +493,7 @@
       }
 
       sendBtn.addEventListener("click", handleSend);
+      traceToggle.addEventListener("change", syncTracePanels);
       inputEl.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
