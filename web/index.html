@@ -393,12 +393,6 @@
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
 
-      // 展示单个执行阶段的耗时，帮助定位慢请求发生在哪一步。
-      function addTimingPanel(timing) {
-        const title = `耗时：${timing.step} ${timing.duration_ms}ms`;
-        addToolPanel(title, timing);
-      }
-
       // 把技术性的 step 名称翻译成页面上更容易读懂的中文。
       function formatTimingStep(step) {
         const names = {
@@ -561,7 +555,6 @@
         if (event.type === "timing") {
           currentTimings[event.content.step] = event.content;
           renderLatencySummary();
-          addTimingPanel(event.content);
           return;
         }
 
@@ -591,10 +584,6 @@
           currentDurationMs = event.content.duration_ms;
           currentTimings = event.content.timings || currentTimings;
           renderLatencySummary();
-          addToolPanel(`总耗时：${event.content.duration_ms}ms`, {
-            duration_ms: event.content.duration_ms,
-            timings: event.content.timings || {},
-          });
           return;
         }
 
