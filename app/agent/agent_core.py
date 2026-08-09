@@ -338,6 +338,16 @@ def fallback_answer(route: RouteDecision, tool_results: list[ToolResult]) -> str
     return "".join(parts)
 
 
+def should_force_fallback(route: RouteDecision) -> bool:
+    """判断当前请求是否必须走确定性兜底回复，而不是交给大模型自由生成。"""
+
+    return (
+        route.blocked_by_guardrail
+        or route.need_clarification
+        or (route.handoff_required and not route.order_id)
+    )
+
+
 def load_context_node(state: AgentWorkflowState) -> dict:
     """加载会话历史和 pending task，并把用户本轮输入合并成有效任务输入。"""
 
@@ -461,7 +471,10 @@ def build_model_context_node(state: AgentWorkflowState) -> dict:
 def generate_reply_node(state: AgentWorkflowState) -> dict:
     """根据配置选择真实大模型回复或本地兜底回复。"""
 
-    if state["use_llm"]:
+    if should_force_fallback(state["route"]):
+        reply = fallback_answer(state["route"], state["tool_results"])
+        reply_mode = "rule_fallback"
+    elif state["use_llm"]:
         reply = call_zhipu_chat(state["model_messages"])
         reply_mode = "llm"
     else:
@@ -664,4 +677,8 @@ async def stream_customer_support_agent(
         )
         finished_trace = finish_trace(trace, reply="", success=False)
         save_trace(finished_trace)
-        raise
+        yield {
+            "type": "error",
+            "content": f"{type(error).__name__}: {error}",
+            "conversation_id": real_conversation_id,
+        }

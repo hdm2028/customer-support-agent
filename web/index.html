@@ -410,6 +410,15 @@
           }),
         });
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+        }
+
+        if (!response.body) {
+          throw new Error("浏览器没有收到流式响应体");
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
@@ -463,6 +472,10 @@
         if (event.type === "message") {
           assistantEl.textContent = event.content;
           return;
+        }
+
+        if (event.type === "error") {
+          assistantEl.textContent = `请求失败：${event.content}`;
         }
       }
 

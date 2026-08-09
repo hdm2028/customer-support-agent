@@ -305,9 +305,9 @@ http://127.0.0.1:8012/docs
 
 | 脚本 | 评估内容 | 当前结果 |
 | --- | --- | --- |
-| `scripts/run_eval.py` | Router 路由和工具调用 | 15/15 |
+| `scripts/run_eval.py` | Router 路由和工具调用 | 17/17 |
 | `scripts/run_rag_eval.py` | RAG 来源命中和关键词命中 | 8/8 |
-| `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 15/15 |
+| `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 17/17 |
 | `scripts/multi_turn_smoke_test.py` | 多轮槽位补全 | 通过 |
 | `scripts/api_smoke_test.py` | API 主链路 | 通过 |
 | `scripts/db_smoke_test.py` | SQLite 数据持久化 | 通过 |
@@ -346,6 +346,7 @@ docs/optimization_log.md
 - 将 pending task 升级为多槽位补全，避免信息不完整时过早创建工单。
 - 接入 SQLite 持久化，保存订单、工单、会话消息、pending task 和 feedback。
 - 对退款、赔付、取消订单、修改地址等高风险动作强制人工审核。
+- 对缺少订单号或要求绕过审核的高风险请求强制走规则兜底，避免模型在无证据时生成承诺。
 
 ## 数据说明
 
