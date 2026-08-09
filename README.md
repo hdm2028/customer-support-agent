@@ -21,6 +21,7 @@ https://customer-support-agent-dnhl.onrender.com
 - **工具调用**：封装订单查询、RAG 政策检索、工单草稿创建等工具。
 - **RAG 政策检索**：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，保留 `source`、`section`、`page`、`citation` 元数据。
 - **两阶段检索与 Rerank**：先用 embedding + 关键词混合检索召回候选 chunk，再基于业务意图、章节标题、政策短语和订单状态做二次排序。
+- **知识库增量 Ingest**：通过文档 hash 生成 manifest，识别新增、修改、未变化和删除文档，并结合 embedding cache 复用已有向量。
 - **多轮槽位补全**：支持用户分多轮补充订单号、新收货地址等信息，信息不完整时不会提前创建工单。
 - **业务风险控制**：退款、赔付、取消订单、修改地址等高风险动作只生成待人工审核工单，不直接执行业务变更。
 - **工单资格判断**：创建工单前结合订单状态、签收状态、物流更新时间和保修期做二次校验。
@@ -259,15 +260,42 @@ http://127.0.0.1:8012/
 http://127.0.0.1:8012/docs
 ```
 
-## 文档更新
+## 文档更新与 Ingest
 
-如果 `data/knowledge/` 下的政策文档更新，需要重新构建 RAG 索引：
+如果 `data/knowledge/` 下的政策文档更新，运行：
 
 ```powershell
 py -3.13 scripts\ingest_knowledge.py
 ```
 
-然后重启服务或重新部署。
+脚本会完成：
+
+```text
+扫描知识库文档
+-> 计算每个文件的 sha256 hash
+-> 对比上一次 manifest
+-> 识别新增 / 修改 / 未变化 / 删除文档
+-> 重新切分 chunk
+-> 构建内存向量索引并预热 embedding cache
+-> 输出 Knowledge Ingest Report
+-> 写入 data/cache/knowledge_manifest.json
+```
+
+示例输出：
+
+```text
+Knowledge Ingest Report
+文档总数: 8
+chunk 总数: 31
+新增文档: 0
+修改文档: 0
+未变化文档: 8
+删除文档: 0
+预计复用 embedding: 31
+预计新增 embedding: 0
+```
+
+`data/cache/` 属于运行时缓存，已加入 `.gitignore`，不会提交到 GitHub。文档更新后需要重启服务或重新部署，让线上服务重新加载最新知识库。
 
 ## 自动化评估
 
@@ -319,4 +347,5 @@ DATABASE_PATH=/var/data/customer_support.db
 - 对高风险售后动作做确定性兜底和人工审核控制。
 - 通过订单优先和工单资格判断避免模型对不存在订单或未满足条件的订单生成错误结果。
 - 在 RAG 中加入两阶段检索和业务 rerank，保留 `retrieval_score`、`rerank_score` 和 `rerank_reasons`，提升证据排序可解释性。
+- 为知识库更新增加 ingest manifest，通过文件 hash 追踪新增、修改、删除和未变化文档，并复用 embedding cache 降低重复向量化成本。
 - 通过 trace 和前端执行轨迹展示 Agent 每一步判断、工具结果和耗时。

@@ -360,6 +360,97 @@ done
 
 > 我为 Agent 增加了基础可观测性。每次请求都会记录路由、工具结果、模型上下文、回复模式和节点耗时，前端通过 SSE 展示路由、工具结果、工单判断和最终回复。这样项目不只是能回答，还能解释自己每一步为什么这样做。
 
+## 7. 知识库增量 Ingest 与 Embedding Cache
+
+### 问题
+
+售后政策文档会持续变化，例如新增活动期退换货规则、修改物流异常处理时效、补充发票政策。如果每次文档变化都全量重建知识库，会带来几个问题：
+
+```text
+重复解析所有文档
+重复切分未变化文档
+重复请求 embedding API
+知识库更新成本随文档数量增长
+无法清楚知道本次到底改了哪些文档
+```
+
+项目早期只有 `knowledge_signature()`，能在服务运行时发现知识库目录变化并重建内存索引，但缺少一个面向维护和部署的 ingest 报告。
+
+### 优化方案
+
+重写 `scripts/ingest_knowledge.py`，新增 manifest 和增量检测能力。
+
+每次运行脚本会执行：
+
+```text
+扫描 data/knowledge
+-> 过滤支持的 Markdown / TXT / PDF / 图片文件
+-> 计算每个文件的 sha256 hash
+-> 读取上一次 data/cache/knowledge_manifest.json
+-> 对比新增、修改、未变化、删除文档
+-> 重新切分当前知识库 chunk
+-> 构建 InMemoryVectorIndex 预热 embedding cache
+-> 写入新的 knowledge_manifest.json
+-> 输出 Knowledge Ingest Report
+```
+
+Manifest 示例：
+
+```json
+{
+  "summary": {
+    "added_count": 0,
+    "modified_count": 0,
+    "unchanged_count": 8,
+    "deleted_count": 0,
+    "document_count": 8,
+    "chunk_count": 31
+  },
+  "embedding_cache": {
+    "provider": "zhipu",
+    "model": "embedding-3",
+    "total_unique_texts": 31,
+    "reused": 31,
+    "created": 0
+  }
+}
+```
+
+当前项目使用内存向量索引，所以索引本身不落盘；但智谱 embedding 会缓存到 `data/cache/embedding_cache.json`。因此这一步的重点是：
+
+- 用 manifest 追踪文档级变化。
+- 用 embedding cache 复用未变化 chunk 的向量。
+- 用 ingest report 让维护者知道本次更新成本。
+
+### 效果
+
+第一次生成 manifest：
+
+```text
+文档总数: 8
+chunk 总数: 31
+新增文档: 8
+预计复用 embedding: 31
+预计新增 embedding: 0
+```
+
+第二次无文档变化时：
+
+```text
+文档总数: 8
+chunk 总数: 31
+新增文档: 0
+修改文档: 0
+未变化文档: 8
+删除文档: 0
+预计复用 embedding: 31
+预计新增 embedding: 0
+```
+
+### 面试表达
+
+> 我为 RAG 知识库增加了 ingest manifest。脚本会对每个政策文档计算 sha256 hash，对比上一次 manifest，识别新增、修改、未变化和删除文档，并结合 embedding cache 复用未变化 chunk 的向量。这样文档更新后可以清楚看到本次更新影响范围和预计新增 embedding 数量，为后续接入持久化向量库或增量更新打基础。
+
 ## 项目总结
 
 这个项目的核心价值不在于“接了一个大模型 API”，而在于把中文电商售后客服拆成了可控的工程流程：
@@ -378,5 +469,5 @@ done
 可以放入简历的浓缩表述：
 
 ```text
-中文电商智能售后客服 Agent：基于 FastAPI、LangGraph、RAG、SQLite 和智谱大模型构建，支持订单查询、售后政策检索、工单草稿、多轮槽位补全、流式输出和自动化评估。使用 LangGraph StateGraph 编排 Agent 主链路，通过 Router、Tool Executor、Evidence Context 和 Ticket Policy 解耦复杂售后流程；构建 Router/RAG/Answer 三层评估，当前路由工具评估 21/21、RAG 评估 8/8、回答质量评估 21/21；针对退款、赔付、修改地址等高风险动作实现人工审核兜底，并通过订单查询失败短路和工单资格判断避免生成虚假业务结果。
+中文电商智能售后客服 Agent：基于 FastAPI、LangGraph、RAG、SQLite 和智谱大模型构建，支持订单查询、售后政策检索、工单草稿、多轮槽位补全、流式输出和自动化评估。使用 LangGraph StateGraph 编排 Agent 主链路，通过 Router、Tool Executor、Evidence Context 和 Ticket Policy 解耦复杂售后流程；构建 Router/RAG/Answer 三层评估，当前路由工具评估 21/21、RAG 评估 8/8、回答质量评估 21/21；针对退款、赔付、修改地址等高风险动作实现人工审核兜底，并通过订单查询失败短路、工单资格判断和知识库 ingest manifest 提升业务可靠性和维护效率。
 ```
