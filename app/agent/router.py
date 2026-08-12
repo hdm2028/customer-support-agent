@@ -71,6 +71,55 @@ TICKET_KEYWORDS = [
 ]
 
 
+INTENT_RULES = [
+    {
+        "intent": "address_change",
+        "label": "修改收货地址",
+        "keywords": ["改收货地址", "修改地址", "改地址", "收货地址"],
+    },
+    {
+        "intent": "cancel_order",
+        "label": "取消订单",
+        "keywords": ["取消订单", "取消", "不想买"],
+    },
+    {
+        "intent": "return_refund",
+        "label": "退货退款",
+        "keywords": ["退货", "退款", "七天无理由", "不想要", "不要了"],
+    },
+    {
+        "intent": "shipping_exception",
+        "label": "物流异常",
+        "keywords": ["物流", "快递", "发货", "没更新", "不更新", "延迟", "丢件"],
+    },
+    {
+        "intent": "warranty_repair",
+        "label": "保修维修",
+        "keywords": ["保修", "维修", "检测", "坏了", "故障", "质量问题", "换新"],
+    },
+    {
+        "intent": "payment_invoice",
+        "label": "支付与发票",
+        "keywords": ["支付", "扣款", "银行卡", "发票", "税号", "抬头"],
+    },
+    {
+        "intent": "stock_restock",
+        "label": "库存补发",
+        "keywords": ["缺货", "补发", "补货", "预售"],
+    },
+    {
+        "intent": "complaint",
+        "label": "投诉升级",
+        "keywords": ["投诉", "没人处理", "人工", "客服"],
+    },
+    {
+        "intent": "membership",
+        "label": "会员权益",
+        "keywords": ["会员", "黑金", "权益"],
+    },
+]
+
+
 def extract_order_id(user_message: str) -> str | None:
     """从用户输入中提取订单号。这里先用 4 位以上数字模拟真实订单号。"""
 
@@ -84,17 +133,72 @@ def extract_order_id(user_message: str) -> str | None:
     return None
 
 
+def infer_route_intent(user_message: str, order_id: str | None) -> tuple[str, float, str]:
+    """规则优先识别售后意图，并返回可解释的置信度。"""
+
+    best_rule = None
+    best_hits = []
+
+    for rule in INTENT_RULES:
+        hits = [
+            keyword for keyword in rule["keywords"]
+            if keyword in user_message
+        ]
+
+        if len(hits) > len(best_hits):
+            best_rule = rule
+            best_hits = hits
+
+    if best_rule:
+        confidence = min(0.95, 0.55 + len(best_hits) * 0.12 + (0.08 if order_id else 0))
+        reason = f"命中{best_rule['label']}意图关键词：{', '.join(best_hits)}。"
+        return best_rule["intent"], round(confidence, 2), reason
+
+    if order_id:
+        return "order_lookup", 0.62, "识别到订单号，按订单查询意图处理。"
+
+    return "general_support", 0.35, "未命中明确售后意图，按通用客服咨询处理。"
+
+
+def build_tool_plan(route: RouteDecision) -> list[str]:
+    """把路由决策转换成可展示的受控工具计划。"""
+
+    if route.blocked_by_guardrail or route.need_clarification:
+        return []
+
+    if route.handoff_required and not route.order_id:
+        return []
+
+    plan = []
+
+    if route.need_order and route.order_id:
+        plan.append("order_lookup")
+
+    if route.need_policy:
+        plan.append("policy_search")
+
+    if route.need_ticket:
+        plan.append("create_ticket")
+
+    return plan
+
+
 def route_tools(user_message: str) -> RouteDecision:
     """根据用户问题判断本轮需要调用哪些工具。"""
 
     passed, reason = check_user_input(user_message)
     if not passed:
         return RouteDecision(
+            intent="unsafe_request",
+            confidence=1.0,
+            routing_reason=reason,
+            tool_plan=[],
             blocked_by_guardrail=True,
             guardrail_reason=reason,
         )
 
     order_id = extract_order_id(user_message)
+    intent, confidence, routing_reason = infer_route_intent(user_message, order_id)
     need_clarification = should_ask_order_id(user_message, order_id)
     handoff_required, handoff_reason = should_handoff_to_human(user_message)
 
@@ -106,7 +210,10 @@ def route_tools(user_message: str) -> RouteDecision:
     # 高风险动作即使没有订单号，也要进入人工审核链路或被安全策略拦截。
     need_ticket = (need_order and has_ticket_intent) or contains_risky_action(user_message)
 
-    return RouteDecision(
+    route = RouteDecision(
+        intent=intent,
+        confidence=confidence,
+        routing_reason=routing_reason,
         order_id=order_id,
         need_order=need_order,
         need_policy=need_policy,
@@ -119,6 +226,9 @@ def route_tools(user_message: str) -> RouteDecision:
         handoff_reason=handoff_reason,
         risk_level="high" if handoff_required else "low",
     )
+    route.tool_plan = build_tool_plan(route)
+
+    return route
 
 
 def infer_issue_type(user_message: str) -> str:

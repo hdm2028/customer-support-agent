@@ -7,6 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import app.agent.agent_core as agent_core
+import app.agent.tool_registry as tool_registry
 from app.core.schemas import ToolResult
 
 
@@ -22,7 +23,7 @@ def tool_names(result: dict) -> list[str]:
 def run_source_mismatch_case() -> dict:
     """模拟 RAG 召回了错误业务文档，验证不会继续自动建单。"""
 
-    original_policy_search = agent_core.policy_search
+    original_policy_search = tool_registry.TOOL_HANDLERS["policy_search"]
 
     def mismatched_policy_search(*args, **kwargs):
         return ToolResult(
@@ -39,7 +40,7 @@ def run_source_mismatch_case() -> dict:
             ],
         )
 
-    agent_core.policy_search = mismatched_policy_search
+    tool_registry.TOOL_HANDLERS["policy_search"] = mismatched_policy_search
 
     try:
         return agent_core.run_customer_support_agent(
@@ -48,13 +49,13 @@ def run_source_mismatch_case() -> dict:
             use_llm=False,
         )
     finally:
-        agent_core.policy_search = original_policy_search
+        tool_registry.TOOL_HANDLERS["policy_search"] = original_policy_search
 
 
 def run_low_confidence_case() -> dict:
     """模拟 RAG 只召回了低分证据，验证系统会进入证据不足兜底。"""
 
-    original_policy_search = agent_core.policy_search
+    original_policy_search = tool_registry.TOOL_HANDLERS["policy_search"]
 
     def low_confidence_policy_search(*args, **kwargs):
         return ToolResult(
@@ -71,7 +72,7 @@ def run_low_confidence_case() -> dict:
             ],
         )
 
-    agent_core.policy_search = low_confidence_policy_search
+    tool_registry.TOOL_HANDLERS["policy_search"] = low_confidence_policy_search
 
     try:
         return agent_core.run_customer_support_agent(
@@ -80,7 +81,7 @@ def run_low_confidence_case() -> dict:
             use_llm=False,
         )
     finally:
-        agent_core.policy_search = original_policy_search
+        tool_registry.TOOL_HANDLERS["policy_search"] = original_policy_search
 
 
 def main() -> None:

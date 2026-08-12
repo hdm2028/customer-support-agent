@@ -7,6 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import app.agent.agent_core as agent_core
+import app.agent.tool_registry as tool_registry
 
 
 def tool_names(result: dict) -> list[str]:
@@ -21,12 +22,12 @@ def tool_names(result: dict) -> list[str]:
 def run_policy_failure_case() -> dict:
     """模拟 RAG 政策检索工具故障，验证链路会停止自动建单。"""
 
-    original_policy_search = agent_core.policy_search
+    original_policy_search = tool_registry.TOOL_HANDLERS["policy_search"]
 
     def broken_policy_search(*args, **kwargs):
         raise RuntimeError("mock policy search timeout")
 
-    agent_core.policy_search = broken_policy_search
+    tool_registry.TOOL_HANDLERS["policy_search"] = broken_policy_search
 
     try:
         return agent_core.run_customer_support_agent(
@@ -35,18 +36,18 @@ def run_policy_failure_case() -> dict:
             use_llm=False,
         )
     finally:
-        agent_core.policy_search = original_policy_search
+        tool_registry.TOOL_HANDLERS["policy_search"] = original_policy_search
 
 
 def run_ticket_failure_case() -> dict:
     """模拟工单创建工具故障，验证回复不会谎称工单已创建。"""
 
-    original_create_ticket = agent_core.create_ticket
+    original_create_ticket = tool_registry.TOOL_HANDLERS["create_ticket"]
 
     def broken_create_ticket(*args, **kwargs):
         raise RuntimeError("mock ticket database unavailable")
 
-    agent_core.create_ticket = broken_create_ticket
+    tool_registry.TOOL_HANDLERS["create_ticket"] = broken_create_ticket
 
     try:
         return agent_core.run_customer_support_agent(
@@ -55,7 +56,7 @@ def run_ticket_failure_case() -> dict:
             use_llm=False,
         )
     finally:
-        agent_core.create_ticket = original_create_ticket
+        tool_registry.TOOL_HANDLERS["create_ticket"] = original_create_ticket
 
 
 def main() -> None:

@@ -1,4 +1,4 @@
-from app.agent.router import extract_order_id
+from app.agent.router import build_tool_plan, extract_order_id
 from app.core.schemas import RouteDecision
 
 
@@ -184,6 +184,7 @@ def apply_slot_requirements(
     if missing_slots:
         route.need_clarification = True
         route.clarification_question = build_clarification_question(missing_slots, slots)
+        route.tool_plan = build_tool_plan(route)
 
     return route, missing_slots
 

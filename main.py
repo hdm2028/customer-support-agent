@@ -8,6 +8,7 @@ from app.agent.agent_core import (
     run_customer_support_agent,
     stream_customer_support_agent,
 )
+from app.agent.tool_registry import get_function_tool_specs
 from app.core.config import BASE_DIR, get_settings
 from app.core.schemas import (
     AgentInfo,
@@ -164,6 +165,19 @@ def search_knowledge(query: str, top_k: int = 2) -> dict:
     return {
         "success": result.success,
         "data": result.result,
+    }
+
+
+@app.get("/tools")
+def list_function_tools() -> dict:
+    """查看当前受控 Function Calling 工具 schema。"""
+
+    tools = get_function_tool_specs()
+
+    return {
+        "success": True,
+        "count": len(tools),
+        "data": tools,
     }
 
 

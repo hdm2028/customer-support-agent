@@ -42,6 +42,55 @@ def add_trace_timing(trace: dict, step_name: str, duration_ms: float, data: dict
     trace.setdefault("timings", {})[step_name] = timing
     add_trace_event(trace, event_type="timing", data=timing)
 
+
+def timed_step(trace: dict, step_name: str, callback, data: dict | None = None):
+    """执行一个步骤并记录耗时。"""
+
+    start = perf_counter()
+
+    try:
+        result = callback()
+    except Exception as error:
+        add_trace_timing(
+            trace,
+            step_name,
+            (perf_counter() - start) * 1000,
+            {
+                "success": False,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                **(data or {}),
+            },
+        )
+        raise
+
+    add_trace_timing(
+        trace,
+        step_name,
+        (perf_counter() - start) * 1000,
+        {
+            "success": True,
+            **(data or {}),
+        },
+    )
+
+    return result
+
+
+def build_timing_event(trace: dict, step_name: str, conversation_id: str) -> dict | None:
+    """把 trace 中某个步骤的耗时包装成前端可以展示的 SSE 事件。"""
+
+    timing = trace.get("timings", {}).get(step_name)
+
+    if not timing:
+        return None
+
+    return {
+        "type": "timing",
+        "content": timing,
+        "conversation_id": conversation_id,
+    }
+
 # 标记结束时间，计算总耗时
 def finish_trace(trace: dict, reply:str,success: bool) -> dict:
     """结束trace，记录总耗时和最终回复"""

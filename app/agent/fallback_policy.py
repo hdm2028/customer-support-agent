@@ -1,3 +1,10 @@
+from app.agent.tool_results import (
+    get_tool_result,
+    is_low_confidence_evidence,
+    is_system_tool_failure,
+)
+
+
 ORDER_RELATED_KEYWORDS = [
     "订单",
     "不想要",
@@ -129,3 +136,102 @@ def should_handoff_to_human(message: str) -> tuple[bool, str | None]:
         return True, "该请求涉及退款、赔付、取消订单、修改地址等高风险操作，需要人工客服审核。"
 
     return False, None
+
+
+def build_fallback_answer(route, tool_results: list) -> str:
+    """不调用大模型时的确定性回复，保证 demo 离线也能稳定运行。"""
+
+    if route.need_clarification:
+        reply = route.clarification_question or "请您补充订单号后，我再帮您继续处理。"
+
+        if route.handoff_required and route.handoff_reason:
+            reply += route.handoff_reason
+
+        return reply
+
+    if route.handoff_required and not route.order_id:
+        return route.handoff_reason or "该问题需要人工客服进一步处理。"
+
+    if route.blocked_by_guardrail:
+        return route.guardrail_reason or "当前请求存在安全风险，已拒绝执行。"
+
+    order_result = get_tool_result(tool_results, "order_lookup")
+
+    if order_result and not order_result.success:
+        return (
+            f"{order_result.result} 请您核对订单号后重新提供，"
+            "我再继续查询售后政策并判断是否需要创建工单。"
+        )
+
+    policy_result = get_tool_result(tool_results, "policy_search")
+    ticket_decision_result = get_tool_result(tool_results, "ticket_decision")
+    ticket_result = get_tool_result(tool_results, "create_ticket")
+    plan_validation_result = get_tool_result(tool_results, "tool_plan_validation")
+    chain_validation_result = get_tool_result(tool_results, "tool_chain_validation")
+
+    parts = []
+
+    if plan_validation_result and not plan_validation_result.success:
+        return (
+            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
+            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
+        )
+
+    if order_result and order_result.success:
+        order = order_result.result
+        parts.append(
+            f"已查询到订单 {order.get('order_id')}，商品是 {order.get('product_name')}，"
+            f"当前订单状态为{order.get('order_status')}。"
+        )
+
+    if policy_result and not policy_result.success:
+        if is_low_confidence_evidence(policy_result):
+            parts.append(
+                "但本轮没有检索到足够匹配的售后政策证据，我不能强行判断或创建工单。"
+                "建议补充问题细节，或转人工客服核对政策后继续处理。"
+            )
+        elif is_system_tool_failure(policy_result):
+            parts.append(
+                "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。"
+                "建议转人工客服核对政策后继续处理。"
+            )
+        else:
+            parts.append(
+                "但本轮没有检索到足够匹配的售后政策，我不能编造不存在的政策结论。"
+                "建议补充问题细节或转人工客服确认。"
+            )
+
+    if policy_result and policy_result.success:
+        first_policy = policy_result.result[0]
+        citation = first_policy.get("citation") or first_policy.get("source")
+        parts.append(f"根据知识库来源《{citation}》，本问题需要结合售后政策进一步判断。")
+
+    if ticket_result and not ticket_result.success:
+        if is_system_tool_failure(ticket_result):
+            parts.append(
+                "工单创建工具本轮调用失败，暂时没有生成工单。"
+                "建议稍后重试，或由人工客服继续接入处理。"
+            )
+        else:
+            parts.append(f"工单暂未创建成功：{ticket_result.result}")
+
+    if ticket_result and ticket_result.success:
+        ticket = ticket_result.result
+        parts.append(
+            f"我已生成{ticket['issue_type']}工单草稿，后续需要人工客服核对订单和凭证后处理。"
+        )
+
+    if chain_validation_result and not chain_validation_result.success:
+        parts.append(
+            "另外，本轮工具执行链路没有通过一致性校验，我不会继续扩大自动处理范围。"
+            "建议转人工客服复核。"
+        )
+
+    if ticket_decision_result and not ticket_decision_result.success:
+        reason = ticket_decision_result.result.get("reason", "当前订单状态暂不满足创建工单条件。")
+        parts.append(f"根据订单状态，当前暂不创建工单：{reason}")
+
+    if not parts:
+        return "您好，我暂时没有找到足够信息。请补充订单号和具体售后问题，我再帮您判断。"
+
+    return "".join(parts)

@@ -35,6 +35,10 @@ class ToolResult(BaseModel):
 
 
 class RouteDecision(BaseModel):
+    intent: str = "general_support"
+    confidence: float = 0.0
+    routing_reason: str | None = None
+    tool_plan: list[str] = Field(default_factory=list)
     order_id: str | None = None
     need_order: bool = False
     need_policy: bool = False

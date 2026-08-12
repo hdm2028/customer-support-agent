@@ -17,8 +17,8 @@ https://customer-support-agent-dnhl.onrender.com
 ## 核心能力
 
 - **Agent 工作流编排**：使用 LangGraph `StateGraph` 拆分加载上下文、路由、工具执行、上下文构造、回复生成和持久化节点。
-- **售后意图路由**：识别订单查询、政策检索、工单创建、信息追问、人工审核和安全拦截。
-- **工具调用**：封装订单查询、RAG 政策检索、工单草稿创建等工具。
+- **可解释售后意图路由**：识别订单查询、政策检索、工单创建、信息追问、人工审核和安全拦截，并返回 `intent`、`confidence`、`routing_reason` 和 `tool_plan`。
+- **受控 Function Calling**：用工具注册表声明订单查询、RAG 政策检索、工单草稿创建的 schema，执行前校验工具名和必要参数。
 - **RAG 政策检索**：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，保留 `source`、`section`、`page`、`citation` 元数据。
 - **两阶段检索与 Rerank**：先用 embedding + 关键词混合检索召回候选 chunk，再基于业务意图、章节标题、政策短语和订单状态做二次排序。
 - **RAG 证据兜底**：对检索结果做分数阈值、来源文档和关键政策词校验，召回不全时停止自动动作。
@@ -39,11 +39,13 @@ https://customer-support-agent-dnhl.onrender.com
 | Agent 编排 | LangGraph |
 | 大模型 | 智谱 GLM |
 | Embedding | 智谱 `embedding-3` |
-| RAG | 文档切分、metadata、citation、混合检索 |
+| RAG | 文档切分、metadata、citation、混合检索、业务 reranker |
 | 数据库 | SQLite |
 | 前端 | 原生 HTML/CSS/JavaScript, SSE |
 | 部署 | Docker, Render |
-| 评估 | 自定义 eval 脚本、trace 分析 |
+| 评估 | 自定义 eval 脚本、聚合指标报告、trace 分析 |
+
+> 为了保持本地 demo 简单可跑，本项目默认使用 SQLite + 内存向量索引 + 业务规则 reranker；生产增强时可把 `app/rag/vector_index.py` 替换为 PostgreSQL + pgvector，把 `app/rag/reranker.py` 替换为 BGE reranker，Agent 主链路不需要大改。
 
 ## 项目架构
 
@@ -55,6 +57,7 @@ https://customer-support-agent-dnhl.onrender.com
 -> LangGraph Agent Workflow
    -> load_context
    -> route
+      -> intent / confidence / tool_plan
    -> execute_tools
       -> order_lookup
       -> policy_search
@@ -220,6 +223,7 @@ data/customer_support.db
 | `/tickets` | GET | 查看工单草稿 |
 | `/knowledge/search` | GET | 知识库检索调试 |
 | `/knowledge/chunks` | GET | 查看知识库 chunk |
+| `/tools` | GET | 查看 Function Calling 工具 schema |
 
 ## 环境变量
 
@@ -304,6 +308,17 @@ chunk 总数: 31
 
 当前回归结果：
 
+| 核心指标 | 当前结果 | 说明 |
+| --- | ---: | --- |
+| 评估断言规模 | 62 条 | Router、RAG、回答质量和端到端评测合计 |
+| 意图路由准确率 | 100% | `scripts/run_eval.py` route 维度 21/21 |
+| 工具计划准确率 | 100% | `scripts/run_eval.py` tools 维度 21/21 |
+| 工具结果符合预期率 | 100% | `scripts/run_e2e_eval.py` 工具 success 与标注一致 |
+| RAG 准确率 | 100% | `scripts/run_rag_eval.py` 来源、关键词和证据校验 8/8 |
+| RAG Top1 来源命中率 | 100% | top1 命中期望政策来源 |
+| 回答质量通过率 | 100% | citation 引用和高风险回复控制 21/21 |
+| 端到端任务完成率 | 100% | `scripts/run_e2e_eval.py` 业务动作与回复约束 12/12 |
+
 | 脚本 | 评估内容 | 当前结果 |
 | --- | --- | --- |
 | `scripts/run_eval.py` | Router 路由和工具调用 | 21/21 |
@@ -324,6 +339,7 @@ py -3.13 scripts\run_eval.py
 py -3.13 scripts\run_rag_eval.py
 py -3.13 scripts\run_answer_eval.py
 py -3.13 scripts\run_e2e_eval.py
+py -3.13 scripts\run_metrics.py
 py -3.13 scripts\multi_turn_smoke_test.py
 py -3.13 scripts\context_smoke_test.py
 py -3.13 scripts\tool_failure_smoke_test.py
@@ -349,4 +365,3 @@ DATABASE_PATH=/var/data/customer_support.db
 ```
 
 部署细节见 [docs/deployment.md](docs/deployment.md)。
-
