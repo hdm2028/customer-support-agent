@@ -431,27 +431,47 @@
       }
 
       function buildRouteSummary(route) {
-        const actions = [];
+        const toolNames = {
+          order_lookup: "订单查询",
+          policy_search: "政策检索",
+          get_shop_products: "商品查询",
+          send_goods_link: "商品卡片",
+          get_quick_reply: "快捷回复",
+          transfer_to_human: "转人工",
+          create_ticket: "创建工单",
+        };
+        const toolPlan = Array.isArray(route.tool_plan) ? route.tool_plan : [];
+        const currentActions = [];
+        const followUpIntents = [];
 
-        if (route.need_order) actions.push("订单查询");
-        if (route.need_policy) actions.push("政策检索");
-        if (route.need_ticket) actions.push("创建工单");
-        if (route.need_clarification) actions.push("追问信息");
-        if (route.handoff_required) actions.push("人工审核");
-        if (route.blocked_by_guardrail) actions.push("安全拦截");
+        if (route.blocked_by_guardrail) {
+          currentActions.push("安全拦截");
+        } else if (route.need_clarification) {
+          currentActions.push("追问信息");
+        } else {
+          toolPlan.forEach((toolName) => {
+            currentActions.push(toolNames[toolName] || toolName);
+          });
+        }
+
+        if (route.need_policy && !toolPlan.includes("policy_search")) followUpIntents.push("政策判断");
+        if (route.need_ticket && !toolPlan.includes("create_ticket")) followUpIntents.push("工单处理");
+        if ((route.handoff_required || route.need_handoff) && !toolPlan.includes("transfer_to_human")) {
+          followUpIntents.push("人工复核");
+        }
+        if (route.need_product_search && !toolPlan.includes("get_shop_products")) followUpIntents.push("商品查询");
 
         return `
-          <div>Agent 已完成意图路由，给出本轮问题的初步工具计划：</div>
+          <div>Agent 已完成意图路由，给出本轮实际执行计划：</div>
           <ul>
             <li>订单号：${escapeHtml(route.order_id || "未提供")}</li>
             <li>风险等级：${escapeHtml(route.risk_level || "low")}</li>
-            <li>计划订单查询：${yesNo(route.need_order)}</li>
-            <li>计划政策检索：${yesNo(route.need_policy)}</li>
-            <li>计划创建工单：${yesNo(route.need_ticket)}</li>
+            <li>本轮工具调用：${toolPlan.length ? escapeHtml(toolPlan.map((name) => toolNames[name] || name).join("、")) : "无"}</li>
             <li>需要追问用户：${yesNo(route.need_clarification)}</li>
-            <li>需要人工审核：${yesNo(route.handoff_required)}</li>
+            <li>后续人工复核：${yesNo(route.handoff_required || route.need_handoff)}</li>
           </ul>
-          <div>${actions.length ? actions.map(badge).join("") : badge("普通回复")}</div>
+          <div>${currentActions.length ? currentActions.map(badge).join("") : badge("普通回复")}</div>
+          ${followUpIntents.length ? `<div>补齐信息后可能继续：${followUpIntents.map(badge).join("")}</div>` : ""}
           ${route.clarification_question ? `<div>追问内容：${escapeHtml(route.clarification_question)}</div>` : ""}
           ${route.handoff_reason ? `<div>人工审核原因：${escapeHtml(route.handoff_reason)}</div>` : ""}
           ${route.guardrail_reason ? `<div>安全拦截原因：${escapeHtml(route.guardrail_reason)}</div>` : ""}
