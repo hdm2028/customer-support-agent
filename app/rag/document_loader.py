@@ -1,10 +1,26 @@
 from dataclasses import asdict, dataclass
 from pathlib import Path
+import re
 
 
 SUPPORTED_TEXT_SUFFIXES = {".md", ".txt"}
 SUPPORTED_PDF_SUFFIXES = {".pdf"}
 SUPPORTED_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+
+TOP_HEADING_RE = re.compile(r"^[一二三四五六七八九十]+、\S+")
+NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)+\s+[^：:。]+)(?:[：:].*)?$")
+MINOR_HEADING_SUFFIXES = (
+    "政策",
+    "范围",
+    "要求",
+    "流程",
+    "场景",
+    "规则",
+    "控制",
+    "话术",
+    "模板",
+    "示例",
+)
 
 
 @dataclass
@@ -66,7 +82,7 @@ def load_text_file(file_path: Path) -> list[RawDocument]:
 
 
 def load_pdf_file(file_path: Path) -> list[RawDocument]:
-    """读取 PDF 文件。安装 pymupdf 后，会按页提取文本并保留页码。"""
+    """读取 PDF 文件，按页抽取文本，并尽量识别章节标题用于 citation。"""
 
     try:
         import fitz
@@ -88,19 +104,134 @@ def load_pdf_file(file_path: Path) -> list[RawDocument]:
 
     documents = []
     pdf = fitz.open(file_path)
+    current_top_heading = ""
+    current_numbered_heading = ""
+    current_section = "正文"
 
-    for page_index, page in enumerate(pdf, start=1):
-        text = page.get_text("text").strip()
+    def clean_text(text: str) -> str:
+        text = re.sub(r"\s+", " ", text).strip()
+        text = re.sub(r"(?<=\d)\s+(?=\d)", "", text)
+        return text.replace("R A G", "RAG")
+
+    def read_page_lines(page) -> list[tuple[str, float]]:
+        lines = []
+
+        for block in page.get_text("dict").get("blocks", []):
+            if block.get("type") != 0:
+                continue
+
+            for line in block.get("lines", []):
+                spans = line.get("spans", [])
+                text = clean_text("".join(span.get("text", "") for span in spans))
+
+                if not text:
+                    continue
+
+                max_size = max((span.get("size", 0) for span in spans), default=0)
+                lines.append((text, max_size))
+
+        return lines
+
+    def is_document_title(text: str, font_size: float) -> bool:
+        return font_size >= 20 and len(text) <= 30
+
+    def is_top_heading(text: str, font_size: float) -> bool:
+        if TOP_HEADING_RE.match(text):
+            return True
+
+        return (
+            font_size >= 14
+            and len(text) <= 32
+            and any(text.endswith(suffix) for suffix in MINOR_HEADING_SUFFIXES)
+        )
+
+    def parse_numbered_heading(text: str) -> str | None:
+        match = NUMBERED_HEADING_RE.match(text)
+
+        if not match:
+            return None
+
+        heading = match.group(1).strip()
+
+        if "：" in heading:
+            heading = heading.split("：", 1)[0].strip()
+
+        if ":" in heading:
+            heading = heading.split(":", 1)[0].strip()
+
+        return heading
+
+    def is_minor_heading(text: str) -> bool:
+        if len(text) > 24:
+            return False
+
+        stripped = text.rstrip("：:")
+        return any(stripped.endswith(suffix) for suffix in MINOR_HEADING_SUFFIXES)
+
+    def build_section(*parts: str) -> str:
+        return " / ".join(part for part in parts if part) or "正文"
+
+    def append_document(page_number: int, section: str, lines: list[str]) -> None:
+        text = "\n".join(lines).strip()
+        section_tail = section.split(" / ")[-1]
+
+        if len(text) < 10 or text.rstrip("：:") == section_tail.rstrip("：:"):
+            return
+
         documents.append(
             RawDocument(
                 source=file_path.name,
                 text=text,
                 file_type="pdf",
-                page=page_index,
-                section=None,
-                metadata={"loader": "pymupdf"},
+                page=page_number,
+                section=section,
+                metadata={"loader": "pymupdf", "section_source": "pdf_heading"},
             )
         )
+
+    for page_index, page in enumerate(pdf, start=1):
+        page_lines = []
+
+        for line_text, font_size in read_page_lines(page):
+            if page_index == 1 and is_document_title(line_text, font_size):
+                continue
+
+            numbered_heading = parse_numbered_heading(line_text)
+
+            if is_top_heading(line_text, font_size):
+                append_document(page_index, current_section, page_lines)
+                page_lines = []
+                current_top_heading = line_text.rstrip("：:")
+                current_numbered_heading = ""
+                current_section = build_section(current_top_heading)
+                page_lines.append(line_text)
+                continue
+
+            if numbered_heading:
+                append_document(page_index, current_section, page_lines)
+                page_lines = []
+                current_numbered_heading = numbered_heading.rstrip("：:")
+                current_section = build_section(
+                    current_top_heading,
+                    current_numbered_heading,
+                )
+                page_lines.append(line_text)
+                continue
+
+            if is_minor_heading(line_text):
+                append_document(page_index, current_section, page_lines)
+                page_lines = []
+                current_section = build_section(
+                    current_top_heading,
+                    current_numbered_heading,
+                    line_text.rstrip("：:"),
+                )
+                page_lines.append(line_text)
+                continue
+
+            page_lines.append(line_text)
+
+        append_document(page_index, current_section, page_lines)
 
     return documents
 
