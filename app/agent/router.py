@@ -40,6 +40,43 @@ POLICY_KEYWORDS = [
     "七天无理由",
 ]
 
+PRODUCT_KEYWORDS = [
+    "推荐",
+    "商品",
+    "买",
+    "下单",
+    "链接",
+    "商品卡片",
+    "店里",
+    "同款",
+    "类似商品",
+    "价格",
+]
+
+GOODS_LINK_KEYWORDS = [
+    "发链接",
+    "商品卡片",
+    "链接",
+    "发我",
+    "推荐",
+]
+
+QUICK_REPLY_INTENT_KEYWORDS = {
+    "payment_invoice": ["怎么开", "如何开", "抬头", "税号", "邮箱"],
+    "missing_order_id": ["订单号"],
+    "handoff": ["人工", "真人", "转人工", "客服"],
+    "product_recommendation": ["推荐", "商品卡片", "发链接"],
+}
+
+HUMAN_HANDOFF_KEYWORDS = [
+    "转人工",
+    "人工客服",
+    "真人客服",
+    "不要机器人",
+    "升级处理",
+    "客服主管",
+]
+
 TICKET_KEYWORDS = [
     "取消订单",
     "修改地址",
@@ -117,6 +154,11 @@ INTENT_RULES = [
         "label": "会员权益",
         "keywords": ["会员", "黑金", "权益"],
     },
+    {
+        "intent": "product_recommendation",
+        "label": "商品推荐",
+        "keywords": ["推荐", "商品", "店里", "买", "类似商品", "商品卡片"],
+    },
 ]
 
 
@@ -177,10 +219,38 @@ def build_tool_plan(route: RouteDecision) -> list[str]:
     if route.need_policy:
         plan.append("policy_search")
 
+    if route.need_product_search:
+        plan.append("get_shop_products")
+
+    if route.need_goods_link:
+        plan.append("send_goods_link")
+
+    if route.need_quick_reply:
+        plan.append("get_quick_reply")
+
+    if route.need_handoff:
+        plan.append("transfer_to_human")
+
     if route.need_ticket:
         plan.append("create_ticket")
 
     return plan
+
+
+def detect_quick_reply_intent(user_message: str) -> str | None:
+    """判断是否适合使用客服工作台快捷回复。"""
+
+    if any(keyword in user_message for keyword in HUMAN_HANDOFF_KEYWORDS):
+        return None
+
+    for intent, keywords in QUICK_REPLY_INTENT_KEYWORDS.items():
+        if intent in {"handoff", "product_recommendation"}:
+            continue
+
+        if any(keyword in user_message for keyword in keywords):
+            return intent
+
+    return None
 
 
 def route_tools(user_message: str) -> RouteDecision:
@@ -204,6 +274,15 @@ def route_tools(user_message: str) -> RouteDecision:
 
     need_order = order_id is not None
     need_policy = any(keyword in user_message for keyword in POLICY_KEYWORDS)
+    need_product_search = any(keyword in user_message for keyword in PRODUCT_KEYWORDS)
+    need_goods_link = need_product_search and any(keyword in user_message for keyword in GOODS_LINK_KEYWORDS)
+    quick_reply_intent = detect_quick_reply_intent(user_message)
+    need_quick_reply = quick_reply_intent is not None and not need_clarification
+    need_handoff = (
+        any(keyword in user_message for keyword in HUMAN_HANDOFF_KEYWORDS)
+        or handoff_required
+        or ("缺货" in user_message and not order_id)
+    )
     has_ticket_intent = any(keyword in user_message for keyword in TICKET_KEYWORDS)
 
     # 工单通常需要订单号承载，避免“会员权益解释”等纯咨询被误建工单。
@@ -218,6 +297,12 @@ def route_tools(user_message: str) -> RouteDecision:
         need_order=need_order,
         need_policy=need_policy,
         need_ticket=need_ticket,
+        need_product_search=need_product_search,
+        need_goods_link=need_goods_link,
+        need_quick_reply=need_quick_reply,
+        need_handoff=need_handoff,
+        quick_reply_intent=quick_reply_intent,
+        product_query=user_message if need_product_search else None,
         need_clarification=need_clarification,
         clarification_question="请您提供订单号，我才能继续查询订单状态并判断售后方案。"
         if need_clarification

@@ -3,6 +3,7 @@ from app.agent.router import infer_issue_type
 from app.agent.ticket_policy import evaluate_ticket_creation
 from app.agent.tool_registry import execute_registered_tool
 from app.agent.tool_results import (
+    get_tool_result,
     get_order_lookup_result,
     has_failed_order_lookup,
     has_failed_policy_search,
@@ -124,7 +125,7 @@ def should_skip_tools(route: RouteDecision) -> bool:
     return (
         route.blocked_by_guardrail
         or route.need_clarification
-        or (route.handoff_required and not route.order_id)
+        or (route.handoff_required and not route.order_id and not route.need_handoff)
     )
 
 
@@ -176,6 +177,75 @@ def run_policy_search(
         )
 
     return policy_result
+
+
+def run_product_search(
+    user_message: str,
+    route: RouteDecision,
+    trace: dict | None,
+) -> ToolResult:
+    """执行商品搜索工具。"""
+
+    return call_tool(
+        trace=trace,
+        step_name="tool.get_shop_products",
+        tool_name="get_shop_products",
+        arguments={
+            "query": route.product_query or user_message,
+            "limit": 5,
+        },
+        fallback_action="ask_user_or_handoff_to_human",
+    )
+
+
+def run_goods_link(route: RouteDecision, tool_results: list[ToolResult], trace: dict | None) -> ToolResult:
+    """基于商品搜索结果生成商品卡片。"""
+
+    product_result = get_tool_result(tool_results, "get_shop_products")
+    product_id = None
+
+    if product_result and product_result.success and product_result.result:
+        product_id = product_result.result[0].get("product_id")
+
+    return call_tool(
+        trace=trace,
+        step_name="tool.send_goods_link",
+        tool_name="send_goods_link",
+        arguments={
+            "product_id": product_id,
+        },
+        fallback_action="ask_user_or_handoff_to_human",
+    )
+
+
+def run_quick_reply(route: RouteDecision, trace: dict | None) -> ToolResult:
+    """执行快捷回复模板查询。"""
+
+    return call_tool(
+        trace=trace,
+        step_name="tool.get_quick_reply",
+        tool_name="get_quick_reply",
+        arguments={
+            "intent": route.quick_reply_intent,
+        },
+        fallback_action="fallback_to_generated_reply",
+    )
+
+
+def run_handoff(user_message: str, route: RouteDecision, trace: dict | None) -> ToolResult:
+    """执行转人工交接工具。"""
+
+    return call_tool(
+        trace=trace,
+        step_name="tool.transfer_to_human",
+        tool_name="transfer_to_human",
+        arguments={
+            "reason": route.handoff_reason or "用户要求人工客服或该场景需要人工接管。",
+            "user_request": user_message,
+            "priority": "high" if route.risk_level == "high" else "normal",
+        },
+        fallback_action="manual_queue",
+    )
 
 
 def run_ticket_creation(
@@ -328,8 +398,24 @@ def execute_tools(
 
             return tool_results
 
+    if route.need_product_search:
+        tool_results.append(run_product_search(user_message, route, trace))
+        add_tool_failure_trace(trace, tool_results[-1])
+
+    if route.need_goods_link:
+        tool_results.append(run_goods_link(route, tool_results, trace))
+        add_tool_failure_trace(trace, tool_results[-1])
+
+    if route.need_quick_reply:
+        tool_results.append(run_quick_reply(route, trace))
+        add_tool_failure_trace(trace, tool_results[-1])
+
     if route.need_ticket:
         tool_results.extend(run_ticket_creation(user_message, route, tool_results, trace))
+
+    if route.need_handoff:
+        tool_results.append(run_handoff(user_message, route, trace))
+        add_tool_failure_trace(trace, tool_results[-1])
 
     append_chain_validation_result(route, tool_results, trace)
 

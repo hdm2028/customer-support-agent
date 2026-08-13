@@ -97,6 +97,21 @@ def run_e2e_eval() -> tuple[dict, Path, float]:
     return report, report_path, round(tool_result_match_rate, 4)
 
 
+def run_workbench_eval() -> tuple[dict, Path]:
+    """执行客服工作台场景评测。"""
+
+    workbench_eval = importlib.import_module("scripts.run_workbench_eval")
+    cases = workbench_eval.load_eval_cases()
+    results = [
+        workbench_eval.run_single_case(case)
+        for case in cases
+    ]
+    report = workbench_eval.build_report(results)
+    report_path = workbench_eval.save_report(report)
+
+    return report, report_path
+
+
 def build_metrics_report() -> dict:
     """聚合各评测脚本的核心指标，形成 README 可展示的指标表。"""
 
@@ -104,6 +119,7 @@ def build_metrics_report() -> dict:
     rag_report, rag_report_path = run_rag_eval()
     answer_report, answer_report_path = run_answer_eval()
     e2e_report, e2e_report_path, tool_result_match_rate = run_e2e_eval()
+    workbench_report, workbench_report_path = run_workbench_eval()
 
     return {
         "created_at": datetime.now().isoformat(timespec="seconds"),
@@ -112,11 +128,13 @@ def build_metrics_report() -> dict:
             "rag_cases": rag_report["total"],
             "answer_cases": answer_report["total"],
             "e2e_cases": e2e_report["total"],
+            "workbench_cases": workbench_report["total"],
             "total_eval_checks": (
                 router_report["total"]
                 + rag_report["total"]
                 + answer_report["total"]
                 + e2e_report["total"]
+                + workbench_report["total"]
             ),
         },
         "metrics": {
@@ -129,12 +147,14 @@ def build_metrics_report() -> dict:
             "answer_quality_pass_rate": answer_report["overall_pass_rate"],
             "risk_control_pass_rate": answer_report["risk_control_pass_rate"],
             "e2e_task_completion_rate": e2e_report["overall_pass_rate"],
+            "workbench_task_completion_rate": workbench_report["overall_pass_rate"],
         },
         "source_reports": {
             "router": str(router_report_path),
             "rag": str(rag_report_path),
             "answer": str(answer_report_path),
             "e2e": str(e2e_report_path),
+            "workbench": str(workbench_report_path),
         },
     }
 
@@ -171,6 +191,7 @@ def print_metrics_report(report: dict, report_path: Path) -> None:
     print(f"回答质量通过率: {percent(metrics['answer_quality_pass_rate'])}")
     print(f"风险控制通过率: {percent(metrics['risk_control_pass_rate'])}")
     print(f"端到端任务完成率: {percent(metrics['e2e_task_completion_rate'])}")
+    print(f"工作台任务完成率: {percent(metrics['workbench_task_completion_rate'])}")
     print(f"聚合报告文件: {report_path}")
     print("=" * 60)
 

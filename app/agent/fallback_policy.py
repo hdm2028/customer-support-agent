@@ -65,6 +65,16 @@ ORDER_ID_REQUIRED_KEYWORDS = [
     "修改地址",
 ]
 
+WORKBENCH_NO_ORDER_KEYWORDS = [
+    "推荐",
+    "商品",
+    "店里",
+    "类似商品",
+    "商品卡片",
+    "发链接",
+    "补货提醒",
+]
+
 RISKY_OPERATION_KEYWORDS = [
     "直接退款",
     "马上退款",
@@ -107,6 +117,9 @@ def is_order_related(message: str) -> bool:
 
 def requires_order_id(message: str) -> bool:
     """判断当前问题是否必须依赖具体订单号才能继续处理。"""
+
+    if any(keyword in message for keyword in WORKBENCH_NO_ORDER_KEYWORDS):
+        return False
 
     return any(keyword in message for keyword in ORDER_ID_REQUIRED_KEYWORDS)
 
@@ -166,6 +179,10 @@ def build_fallback_answer(route, tool_results: list) -> str:
     policy_result = get_tool_result(tool_results, "policy_search")
     ticket_decision_result = get_tool_result(tool_results, "ticket_decision")
     ticket_result = get_tool_result(tool_results, "create_ticket")
+    product_result = get_tool_result(tool_results, "get_shop_products")
+    goods_link_result = get_tool_result(tool_results, "send_goods_link")
+    quick_reply_result = get_tool_result(tool_results, "get_quick_reply")
+    handoff_result = get_tool_result(tool_results, "transfer_to_human")
     plan_validation_result = get_tool_result(tool_results, "tool_plan_validation")
     chain_validation_result = get_tool_result(tool_results, "tool_chain_validation")
 
@@ -219,6 +236,30 @@ def build_fallback_answer(route, tool_results: list) -> str:
         ticket = ticket_result.result
         parts.append(
             f"我已生成{ticket['issue_type']}工单草稿，后续需要人工客服核对订单和凭证后处理。"
+        )
+
+    if product_result and product_result.success:
+        first_product = product_result.result[0]
+        parts.append(
+            f"我帮您筛选到商品：{first_product.get('title')}，"
+            f"价格 {first_product.get('price')} 元，当前库存 {first_product.get('stock')}。"
+        )
+
+    if goods_link_result and goods_link_result.success:
+        goods_card = goods_link_result.result
+        parts.append(
+            f"已为您生成商品卡片：{goods_card.get('title')}，您可以在工作台发送给用户确认。"
+        )
+
+    if quick_reply_result and quick_reply_result.success:
+        quick_reply = quick_reply_result.result
+        parts.append(f"快捷回复建议：{quick_reply.get('content')}")
+
+    if handoff_result and handoff_result.success:
+        handoff = handoff_result.result
+        parts.append(
+            f"已生成转人工交接：{handoff.get('handoff_summary')} "
+            "后续请人工客服继续处理。"
         )
 
     if chain_validation_result and not chain_validation_result.success:

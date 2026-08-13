@@ -15,6 +15,9 @@ def validate_tool_plan(route: RouteDecision) -> tuple[bool, list[str]]:
     if route.need_ticket and not route.need_order:
         errors.append("创建工单前必须先执行订单查询。")
 
+    if route.need_goods_link and not route.need_product_search:
+        errors.append("发送商品卡片前必须先查询商品。")
+
     return len(errors) == 0, errors
 
 
@@ -43,6 +46,13 @@ def validate_tool_chain(route: RouteDecision, tool_results: list[ToolResult]) ->
 
         if "ticket_decision" in tool_names:
             errors.append("ticket_decision 拒绝后不应继续 create_ticket。")
+
+    if "send_goods_link" in tool_names:
+        if "get_shop_products" not in tool_names:
+            errors.append("send_goods_link 前缺少 get_shop_products。")
+
+        if tool_names.index("send_goods_link") < tool_names.index("get_shop_products"):
+            errors.append("send_goods_link 不能早于 get_shop_products 执行。")
 
     order_result = next((item for item in tool_results if item.tool_name == "order_lookup"), None)
     if order_result and not order_result.success:

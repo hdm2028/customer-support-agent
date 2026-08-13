@@ -1,0 +1,30 @@
+[
+  {
+    "reply_id": "qr_order_id",
+    "title": "索要订单号",
+    "intent": "missing_order_id",
+    "platforms": ["pinduoduo", "taobao", "jd", "douyin", "xiaohongshu"],
+    "content": "麻烦您提供一下订单号，我先帮您核对订单状态，再继续处理售后问题。"
+  },
+  {
+    "reply_id": "qr_invoice",
+    "title": "发票资料",
+    "intent": "payment_invoice",
+    "platforms": ["taobao", "jd"],
+    "content": "电子发票需要订单完成后申请，请提供发票抬头、税号和接收邮箱。"
+  },
+  {
+    "reply_id": "qr_transfer",
+    "title": "转人工说明",
+    "intent": "handoff",
+    "platforms": ["pinduoduo", "taobao", "jd", "douyin", "xiaohongshu"],
+    "content": "这个问题我会为您转人工客服继续处理，人工会结合订单、凭证和平台规则进一步核实。"
+  },
+  {
+    "reply_id": "qr_product_card",
+    "title": "商品推荐说明",
+    "intent": "product_recommendation",
+    "platforms": ["pinduoduo", "taobao", "jd", "douyin"],
+    "content": "我先帮您筛选店铺里符合需求的商品，再把商品卡片发给您确认。"
+  }
+]

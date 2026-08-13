@@ -2,7 +2,15 @@ from copy import deepcopy
 from typing import Any
 
 from app.core.schemas import ToolResult
-from app.tools.support_tools import create_ticket, order_lookup, policy_search
+from app.tools.support_tools import (
+    create_ticket,
+    get_quick_reply,
+    get_shop_products,
+    order_lookup,
+    policy_search,
+    send_goods_link,
+    transfer_to_human,
+)
 
 
 FUNCTION_TOOL_SPECS = [
@@ -75,6 +83,105 @@ FUNCTION_TOOL_SPECS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_shop_products",
+            "description": "查询店铺商品列表，用于商品推荐、缺货替代推荐和客服主动推荐。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "用户描述的商品需求或商品关键词。",
+                    },
+                    "platform": {
+                        "type": "string",
+                        "description": "电商平台，如 pinduoduo、taobao、jd、douyin。",
+                    },
+                    "in_stock_only": {
+                        "type": "boolean",
+                        "description": "是否只返回有库存商品。",
+                        "default": False,
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "最多返回商品数量。",
+                        "default": 5,
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "send_goods_link",
+            "description": "生成商品卡片发送结果；演示环境不会真实发送平台消息。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "要发送商品卡片的商品 ID。",
+                    },
+                    "platform": {
+                        "type": "string",
+                        "description": "目标电商平台。",
+                    },
+                },
+                "required": ["product_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_quick_reply",
+            "description": "按业务意图获取客服工作台快捷回复模板。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "intent": {
+                        "type": "string",
+                        "description": "快捷回复意图，如 payment_invoice、handoff、missing_order_id。",
+                    },
+                    "platform": {
+                        "type": "string",
+                        "description": "目标电商平台。",
+                    },
+                },
+                "required": ["intent"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "transfer_to_human",
+            "description": "生成转人工交接单，用于用户明确要求人工或高风险/缺货等需要人工接管的场景。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "description": "转人工原因。",
+                    },
+                    "user_request": {
+                        "type": "string",
+                        "description": "用户原始诉求。",
+                    },
+                    "priority": {
+                        "type": "string",
+                        "description": "交接优先级。",
+                        "default": "normal",
+                    },
+                },
+                "required": ["reason", "user_request"],
+            },
+        },
+    },
 ]
 
 
@@ -82,6 +189,10 @@ TOOL_HANDLERS = {
     "order_lookup": order_lookup,
     "policy_search": policy_search,
     "create_ticket": create_ticket,
+    "get_shop_products": get_shop_products,
+    "send_goods_link": send_goods_link,
+    "get_quick_reply": get_quick_reply,
+    "transfer_to_human": transfer_to_human,
 }
 
 

@@ -43,6 +43,12 @@ class RouteDecision(BaseModel):
     need_order: bool = False
     need_policy: bool = False
     need_ticket: bool = False
+    need_product_search: bool = False
+    need_goods_link: bool = False
+    need_quick_reply: bool = False
+    need_handoff: bool = False
+    quick_reply_intent: str | None = None
+    product_query: str | None = None
     blocked_by_guardrail: bool = False
     guardrail_reason: str | None = None
     need_clarification: bool = False

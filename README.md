@@ -1,6 +1,6 @@
 # 中文电商智能售后客服 Agent
 
-一个面向中文电商售后场景的智能客服 Agent。项目基于 FastAPI、LangGraph、RAG、SQLite 和智谱大模型构建，支持订单查询、售后政策检索、工单草稿、多轮槽位补全、风险控制、流式输出、执行轨迹展示和自动化评估。
+一个面向中文电商售后和客服工作台场景的智能客服 Agent。项目基于 FastAPI、LangGraph、RAG、SQLite 和智谱大模型构建，支持订单查询、售后政策检索、商品推荐、商品卡片、快捷回复、转人工交接、多轮槽位补全、风险控制、流式输出、执行轨迹展示和自动化评估。
 
 项目不是简单聊天机器人，而是围绕真实售后流程设计的 Agent 服务：用户输入售后问题后，系统会先进行路由判断，再按需查询订单、检索政策、判断工单资格、创建待审核工单，最后基于订单信息和政策证据生成客服回复。
 
@@ -19,6 +19,8 @@ https://customer-support-agent-dnhl.onrender.com
 - **Agent 工作流编排**：使用 LangGraph `StateGraph` 拆分加载上下文、路由、工具执行、上下文构造、回复生成和持久化节点。
 - **可解释售后意图路由**：识别订单查询、政策检索、工单创建、信息追问、人工审核和安全拦截，并返回 `intent`、`confidence`、`routing_reason` 和 `tool_plan`。
 - **受控 Function Calling**：用工具注册表声明订单查询、RAG 政策检索、工单草稿创建的 schema，执行前校验工具名和必要参数。
+- **客服工作台场景**：模拟拼多多、淘宝、京东、小红书等多平台会话，支持商品目录、快捷回复、转人工交接和工作台概览。
+- **商品推荐工具链**：支持按用户需求检索店铺商品、生成商品卡片，覆盖缺货替代推荐和主动推荐场景。
 - **RAG 政策检索**：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，保留 `source`、`section`、`page`、`citation` 元数据。
 - **两阶段检索与 Rerank**：先用 embedding + 关键词混合检索召回候选 chunk，再基于业务意图、章节标题、政策短语和订单状态做二次排序。
 - **RAG 证据兜底**：对检索结果做分数阈值、来源文档和关键政策词校验，召回不全时停止自动动作。
@@ -28,7 +30,7 @@ https://customer-support-agent-dnhl.onrender.com
 - **业务风险控制**：退款、赔付、取消订单、修改地址等高风险动作只生成待人工审核工单，不直接执行业务变更。
 - **工单资格判断**：创建工单前结合订单状态、签收状态、物流更新时间和保修期做二次校验。
 - **可观测性**：记录 route、tool results、model context、reply、timings，并在 Web 页面展示执行轨迹。
-- **自动化评估**：覆盖 Router 工具调用、RAG 召回、最终回答质量、API 主链路和多轮槽位补全。
+- **自动化评估**：覆盖 Router 工具调用、RAG 召回、最终回答质量、API 主链路、多轮槽位补全和客服工作台场景。
 - **端到端业务评估**：从用户输入开始检查路由、槽位、工具序列、工具参数、最终业务动作和回复约束。
 
 ## 技术栈
@@ -41,6 +43,7 @@ https://customer-support-agent-dnhl.onrender.com
 | Embedding | 智谱 `embedding-3` |
 | RAG | 文档切分、metadata、citation、混合检索、业务 reranker |
 | 数据库 | SQLite |
+| 工作台数据 | JSON 商品目录、快捷回复、多平台会话样例 |
 | 前端 | 原生 HTML/CSS/JavaScript, SSE |
 | 部署 | Docker, Render |
 | 评估 | 自定义 eval 脚本、聚合指标报告、trace 分析 |
@@ -61,6 +64,10 @@ https://customer-support-agent-dnhl.onrender.com
    -> execute_tools
       -> order_lookup
       -> policy_search
+      -> get_shop_products
+      -> send_goods_link
+      -> get_quick_reply
+      -> transfer_to_human
       -> ticket_decision
       -> create_ticket
    -> build_model_context
@@ -224,6 +231,10 @@ data/customer_support.db
 | `/knowledge/search` | GET | 知识库检索调试 |
 | `/knowledge/chunks` | GET | 查看知识库 chunk |
 | `/tools` | GET | 查看 Function Calling 工具 schema |
+| `/workbench/overview` | GET | 查看客服工作台概览 |
+| `/workbench/conversations` | GET | 查看多平台会话样例 |
+| `/workbench/products` | GET | 查询商品目录 |
+| `/workbench/quick-replies` | GET | 查看快捷回复模板 |
 
 ## 环境变量
 
@@ -310,7 +321,7 @@ chunk 总数: 31
 
 | 核心指标 | 当前结果 | 说明 |
 | --- | ---: | --- |
-| 评估断言规模 | 62 条 | Router、RAG、回答质量和端到端评测合计 |
+| 评估断言规模 | 66 条 | Router、RAG、回答质量、端到端和工作台评测合计 |
 | 意图路由准确率 | 100% | `scripts/run_eval.py` route 维度 21/21 |
 | 工具计划准确率 | 100% | `scripts/run_eval.py` tools 维度 21/21 |
 | 工具结果符合预期率 | 100% | `scripts/run_e2e_eval.py` 工具 success 与标注一致 |
@@ -318,6 +329,7 @@ chunk 总数: 31
 | RAG Top1 来源命中率 | 100% | top1 命中期望政策来源 |
 | 回答质量通过率 | 100% | citation 引用和高风险回复控制 21/21 |
 | 端到端任务完成率 | 100% | `scripts/run_e2e_eval.py` 业务动作与回复约束 12/12 |
+| 工作台任务完成率 | 100% | `scripts/run_workbench_eval.py` 商品推荐、快捷回复、转人工 4/4 |
 
 | 脚本 | 评估内容 | 当前结果 |
 | --- | --- | --- |
@@ -325,6 +337,7 @@ chunk 总数: 31
 | `scripts/run_rag_eval.py` | RAG 来源命中和关键词命中 | 8/8 |
 | `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 21/21 |
 | `scripts/run_e2e_eval.py` | 端到端业务链路、工具序列和最终动作 | 12/12 |
+| `scripts/run_workbench_eval.py` | 商品推荐、快捷回复、转人工等客服工作台场景 | 4/4 |
 | `scripts/multi_turn_smoke_test.py` | 多轮槽位补全 | 通过 |
 | `scripts/context_smoke_test.py` | 多轮上下文继承 | 通过 |
 | `scripts/tool_failure_smoke_test.py` | 工具异常、链路短路和降级回复 | 通过 |
@@ -339,6 +352,7 @@ py -3.13 scripts\run_eval.py
 py -3.13 scripts\run_rag_eval.py
 py -3.13 scripts\run_answer_eval.py
 py -3.13 scripts\run_e2e_eval.py
+py -3.13 scripts\run_workbench_eval.py
 py -3.13 scripts\run_metrics.py
 py -3.13 scripts\multi_turn_smoke_test.py
 py -3.13 scripts\context_smoke_test.py

@@ -26,6 +26,13 @@ from app.storage.database import init_database, list_tickets_from_db
 from app.storage.feedback_store import save_feedback
 from app.storage.store import get_order_by_id
 from app.tools.support_tools import policy_search
+from app.workbench.service import (
+    build_workbench_overview,
+    list_channel_conversations,
+    list_products,
+    list_quick_replies,
+    search_products,
+)
 
 
 settings = get_settings()
@@ -178,6 +185,60 @@ def list_function_tools() -> dict:
         "success": True,
         "count": len(tools),
         "data": tools,
+    }
+
+
+@app.get("/workbench/overview")
+def workbench_overview() -> dict:
+    """客服工作台概览：渠道、会话、商品和缺货统计。"""
+
+    return {
+        "success": True,
+        "data": build_workbench_overview(),
+    }
+
+
+@app.get("/workbench/conversations")
+def workbench_conversations() -> dict:
+    """查看多平台客服会话样例。"""
+
+    conversations = list_channel_conversations()
+
+    return {
+        "success": True,
+        "count": len(conversations),
+        "data": conversations,
+    }
+
+
+@app.get("/workbench/products")
+def workbench_products(query: str = "", platform: str | None = None, in_stock_only: bool = False) -> dict:
+    """查询客服工作台商品库。"""
+
+    products = search_products(
+        query=query,
+        platform=platform,
+        in_stock_only=in_stock_only,
+        limit=20,
+    ) if query or platform or in_stock_only else list_products()
+
+    return {
+        "success": True,
+        "count": len(products),
+        "data": products,
+    }
+
+
+@app.get("/workbench/quick-replies")
+def workbench_quick_replies() -> dict:
+    """查看客服快捷回复模板。"""
+
+    replies = list_quick_replies()
+
+    return {
+        "success": True,
+        "count": len(replies),
+        "data": replies,
     }
 
 
