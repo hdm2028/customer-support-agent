@@ -47,12 +47,7 @@ class RouteDecision(BaseModel):
     need_refund_request: bool = False
     need_risk_check: bool = False
     manual_review_required: bool = False
-    need_product_search: bool = False
-    need_goods_link: bool = False
-    need_quick_reply: bool = False
     need_handoff: bool = False
-    quick_reply_intent: str | None = None
-    product_query: str | None = None
     blocked_by_guardrail: bool = False
     guardrail_reason: str | None = None
     need_clarification: bool = False

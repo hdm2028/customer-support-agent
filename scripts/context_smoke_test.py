@@ -63,7 +63,14 @@ def main() -> None:
     assert third_result["conversation_context"]["order_id"] == "10001"
     assert third_result["effective_user_message"] == "订单 10001 退款"
     assert third_result["route"]["order_id"] == "10001"
-    assert tool_names(third_result) == ["order_lookup", "policy_search", "create_ticket"]
+    assert third_result["route"]["need_refund_request"] is True
+    assert tool_names(third_result) == [
+        "order_lookup",
+        "policy_search",
+        "risk_check",
+        "refund_apply",
+        "create_manual_review",
+    ]
 
 
 if __name__ == "__main__":

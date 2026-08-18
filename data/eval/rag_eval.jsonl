@@ -5,4 +5,4 @@
 {"id":"rag_005","query":"订单完成后可以开电子发票吗？","expected_sources":["支付与发票政策.md"],"expected_keywords":["电子发票","发票抬头","税号","邮箱"],"notes":"发票问题应召回支付与发票政策。"}
 {"id":"rag_006","query":"黑金会员能不能跳过售后检测直接换新？","expected_sources":["会员权益政策.md"],"expected_keywords":["不能","绕过","质量检测"],"notes":"会员权益限制应召回会员权益政策。"}
 {"id":"rag_007","query":"订单还没发货，我想修改收货地址。","expected_sources":["订单取消与修改政策.md"],"expected_keywords":["修改收货地址","出库前","地址修改工单"],"notes":"待发货改地址应召回订单取消与修改政策。"}
-{"id":"rag_008","query":"商品缺货了，我还能等补发吗？","expected_sources":["库存与补货政策.md"],"expected_keywords":["缺货","补发","继续等待"],"notes":"缺货补发问题应召回库存与补货政策。"}
+{"id":"rag_008","query":"退款申请进入 MQ 后会怎么处理？","expected_sources":["退款政策.md"],"expected_keywords":["MQ","异步处理","更新退款申请状态"],"notes":"退款异步处理问题应召回退款政策。"}

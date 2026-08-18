@@ -51,11 +51,6 @@
       "typical_tools": ["order_lookup", "policy_search"]
     },
     {
-      "intent": "stock_restock",
-      "description": "库存不足、缺货、补货提醒、预售发货",
-      "typical_tools": ["order_lookup", "policy_search", "create_ticket"]
-    },
-    {
       "intent": "membership",
       "description": "会员权益、优惠券、售后加急权益",
       "typical_tools": ["policy_search"]

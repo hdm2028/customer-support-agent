@@ -3,50 +3,43 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>电商智能售后客服工作台</title>
+    <title>智能售后 Agent 控制台</title>
     <style>
       :root {
         color-scheme: light;
-        --bg: #eef2f6;
-        --surface: #ffffff;
-        --surface-muted: #f8fafc;
-        --surface-strong: #f1f5f9;
-        --line: #d7dee8;
-        --line-soft: #e8edf3;
-        --text: #111827;
-        --muted: #667085;
-        --muted-strong: #475467;
-        --primary: #1f6f63;
-        --primary-strong: #19594f;
-        --primary-soft: #e6f4f1;
-        --blue: #2457c5;
-        --blue-soft: #e8eefc;
-        --amber: #b45309;
-        --amber-soft: #fff4dc;
+        --bg: #f5f7fa;
+        --panel: #ffffff;
+        --panel-soft: #f8fafc;
+        --line: #d8e1ea;
+        --line-strong: #b7c6d6;
+        --text: #0f172a;
+        --muted: #64748b;
+        --teal: #257366;
+        --teal-soft: #e3f3ef;
+        --amber: #b7791f;
+        --amber-soft: #fff7e6;
         --red: #b42318;
-        --red-soft: #fee4e2;
-        --green: #067647;
-        --green-soft: #e7f7ee;
-        --shadow: 0 10px 32px rgba(15, 23, 42, 0.08);
+        --red-soft: #fff1f0;
+        --blue: #2563a9;
+        --blue-soft: #eaf2ff;
+        --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        font-family:
+          "Microsoft YaHei",
+          "PingFang SC",
+          "Hiragino Sans GB",
+          Arial,
+          sans-serif;
       }
 
       * {
         box-sizing: border-box;
       }
 
-      html,
-      body {
-        height: 100%;
-      }
-
       body {
         margin: 0;
-        overflow: hidden;
+        min-height: 100vh;
         background: var(--bg);
         color: var(--text);
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei",
-          sans-serif;
       }
 
       button,
@@ -56,1927 +49,759 @@
       }
 
       button {
-        border: 0;
         cursor: pointer;
       }
 
-      button:disabled {
+      .app {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        height: 100vh;
+        min-height: 720px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 14px 18px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .title-wrap h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .title-wrap p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-soft);
+        color: var(--text);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .toggle input {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--teal);
+      }
+
+      .btn {
+        min-height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+      }
+
+      .btn.primary {
+        border-color: var(--teal);
+        background: var(--teal);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .btn:disabled {
         cursor: not-allowed;
         opacity: 0.58;
       }
 
-      .app-shell {
+      .layout {
         display: grid;
-        grid-template-rows: 76px minmax(0, 1fr);
-        height: 100vh;
+        grid-template-columns: 280px minmax(420px, 1fr) 330px;
+        min-height: 0;
       }
 
-      .workspace-header {
-        display: grid;
-        grid-template-columns: minmax(280px, 1fr) minmax(520px, 760px);
-        align-items: center;
-        gap: 20px;
-        border-bottom: 1px solid var(--line);
-        background: var(--surface);
-        padding: 12px 18px;
+      .sidebar,
+      .inspector {
+        min-height: 0;
+        overflow: auto;
+        background: #f9fbfd;
+        border-right: 1px solid var(--line);
+        padding: 14px;
       }
 
-      .brand-label {
-        color: var(--primary);
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0;
+      .inspector {
+        border-right: 0;
+        border-left: 1px solid var(--line);
       }
 
-      .workspace-header h1 {
-        margin: 3px 0 0;
-        font-size: 22px;
-        line-height: 1.2;
-      }
-
-      .health-strip {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .health-item {
-        min-width: 0;
-        border: 1px solid var(--line-soft);
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
         border-radius: 8px;
-        background: var(--surface-muted);
-        padding: 9px 10px;
+        box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+        margin-bottom: 12px;
+        overflow: hidden;
       }
 
-      .health-item span {
-        display: block;
+      .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .panel-body {
+        padding: 12px;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .status-item,
+      .metric-row,
+      .data-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 30px;
         color: var(--muted);
         font-size: 12px;
       }
 
-      .health-item strong {
-        display: block;
-        margin-top: 3px;
-        overflow: hidden;
+      .status-item strong,
+      .metric-row strong,
+      .data-row strong {
         color: var(--text);
-        font-size: 13px;
-        text-overflow: ellipsis;
+        font-weight: 800;
+        text-align: right;
+        max-width: 150px;
+        overflow-wrap: anywhere;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--muted);
         white-space: nowrap;
+      }
+
+      .pill.ok {
+        border-color: #b7dfd2;
+        background: var(--teal-soft);
+        color: var(--teal);
+      }
+
+      .pill.warn {
+        border-color: #f2d49b;
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .pill.danger {
+        border-color: #f4b4ae;
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .architecture {
+        display: grid;
+        gap: 8px;
+      }
+
+      .arch-node {
+        display: grid;
+        grid-template-columns: 8px 1fr;
+        gap: 8px;
+        align-items: center;
+        min-height: 32px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-soft);
+      }
+
+      .arch-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--line-strong);
+      }
+
+      .arch-node.active .arch-dot {
+        background: var(--teal);
+      }
+
+      .arch-name {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .arch-sub {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .preset-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .preset {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        text-align: left;
+        line-height: 1.35;
+      }
+
+      .preset:hover {
+        border-color: var(--teal);
+        background: var(--teal-soft);
       }
 
       .workspace {
         display: grid;
-        grid-template-columns: 314px minmax(520px, 1fr) 376px;
-        gap: 14px;
+        grid-template-rows: auto 1fr;
+        min-width: 0;
         min-height: 0;
-        padding: 14px;
       }
 
-      .panel,
-      .chat-panel {
-        min-height: 0;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--surface);
-        box-shadow: var(--shadow);
-      }
-
-      .queue-panel,
-      .insight-panel {
-        display: flex;
-        min-height: 0;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .queue-panel {
-        padding: 14px;
-      }
-
-      .panel-head,
-      .side-head,
-      .chat-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .panel-title,
-      .side-title,
-      .chat-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 750;
-      }
-
-      .panel-subtitle {
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .count-pill,
-      .status-pill,
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        min-height: 22px;
-        border-radius: 999px;
-        padding: 2px 8px;
-        font-size: 12px;
-        font-weight: 650;
-        white-space: nowrap;
-      }
-
-      .count-pill {
-        background: var(--primary-soft);
-        color: var(--primary);
-      }
-
-      .status-pill {
-        background: var(--surface-strong);
-        color: var(--muted-strong);
-      }
-
-      .status-pill.success {
-        background: var(--green-soft);
-        color: var(--green);
-      }
-
-      .status-pill.warn {
-        background: var(--amber-soft);
-        color: var(--amber);
-      }
-
-      .status-pill.danger {
-        background: var(--red-soft);
-        color: var(--red);
-      }
-
-      .status-pill.info {
-        background: var(--blue-soft);
-        color: var(--blue);
-      }
-
-      .channel-tabs {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 7px;
-      }
-
-      .segment-btn,
-      .ghost-btn,
-      .primary-btn,
-      .quick-card,
-      .conversation-card,
-      .reply-card {
-        border-radius: 8px;
-        transition:
-          background 0.16s ease,
-          border-color 0.16s ease,
-          color 0.16s ease,
-          transform 0.16s ease;
-      }
-
-      .segment-btn {
-        border: 1px solid var(--line);
-        background: var(--surface);
-        color: var(--muted-strong);
-        padding: 7px 8px;
-        text-align: center;
-      }
-
-      .segment-btn.active {
-        border-color: rgba(31, 111, 99, 0.3);
-        background: var(--primary-soft);
-        color: var(--primary);
-        font-weight: 700;
-      }
-
-      .conversation-list,
-      .quick-list {
-        display: flex;
-        min-height: 0;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .conversation-list {
-        flex: 1;
-        overflow-y: auto;
-        padding-right: 2px;
-      }
-
-      .conversation-card {
-        width: 100%;
-        border: 1px solid var(--line-soft);
-        background: var(--surface-muted);
-        color: var(--text);
-        padding: 10px;
-        text-align: left;
-      }
-
-      .conversation-card:hover,
-      .quick-card:hover,
-      .reply-card:hover {
-        transform: translateY(-1px);
-      }
-
-      .conversation-card.active {
-        border-color: rgba(31, 111, 99, 0.46);
-        background: #f0fbf8;
-      }
-
-      .row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      .conversation-name,
-      .product-title,
-      .reply-title {
-        overflow: hidden;
-        font-size: 14px;
-        font-weight: 750;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .conversation-message {
-        display: -webkit-box;
-        margin-top: 6px;
-        overflow: hidden;
-        color: var(--muted-strong);
-        font-size: 13px;
-        line-height: 1.45;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-      }
-
-      .tag-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 7px;
-      }
-
-      .tag {
-        background: var(--surface);
-        color: var(--muted-strong);
-      }
-
-      .tag.warn {
-        background: var(--amber-soft);
-        color: var(--amber);
-      }
-
-      .tag.danger {
-        background: var(--red-soft);
-        color: var(--red);
-      }
-
-      .quick-card,
-      .reply-card {
-        width: 100%;
-        border: 1px solid var(--line-soft);
-        background: var(--surface);
-        color: var(--text);
-        padding: 9px 10px;
-        text-align: left;
-      }
-
-      .quick-card {
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      .chat-panel {
-        display: grid;
-        grid-template-rows: auto auto minmax(0, 1fr) auto;
-        overflow: hidden;
-      }
-
-      .chat-head {
-        border-bottom: 1px solid var(--line-soft);
-        padding: 14px 16px 12px;
-      }
-
-      .case-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-      }
-
-      .control-row {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-
-      .switch-row {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        border: 1px solid var(--line-soft);
-        border-radius: 999px;
-        background: var(--surface-muted);
-        color: var(--muted-strong);
-        padding: 6px 9px;
-        font-size: 12px;
-        font-weight: 650;
-      }
-
-      .switch-row input {
-        width: 14px;
-        height: 14px;
-        margin: 0;
-        accent-color: var(--primary);
-      }
-
-      .flow-board {
+      .agent-strip {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-        border-bottom: 1px solid var(--line-soft);
-        background: var(--surface-muted);
-        padding: 10px 16px;
+        gap: 10px;
+        padding: 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
       }
 
-      .flow-step {
-        min-width: 0;
-        border: 1px solid var(--line-soft);
+      .agent-card {
+        min-height: 70px;
+        padding: 10px;
+        border: 1px solid var(--line);
         border-radius: 8px;
-        background: var(--surface);
-        padding: 9px 10px;
+        background: #fff;
       }
 
-      .flow-step small {
-        display: block;
-        overflow: hidden;
+      .agent-card.active {
+        border-color: var(--teal);
+        background: var(--teal-soft);
+      }
+
+      .agent-role {
         color: var(--muted);
-        font-size: 11px;
+        font-size: 12px;
+      }
+
+      .agent-name {
+        margin-top: 4px;
+        font-size: 15px;
+        font-weight: 900;
+      }
+
+      .agent-tools {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .flow-step strong {
-        display: block;
-        margin-top: 2px;
-        font-size: 13px;
-      }
-
-      .flow-step.active {
-        border-color: rgba(36, 87, 197, 0.35);
-        background: var(--blue-soft);
-      }
-
-      .flow-step.done {
-        border-color: rgba(6, 118, 71, 0.25);
-        background: var(--green-soft);
-      }
-
-      .flow-step.warn {
-        border-color: rgba(180, 35, 24, 0.25);
-        background: var(--red-soft);
+      .chat-panel {
+        display: grid;
+        grid-template-rows: 1fr;
+        min-height: 0;
+        background: var(--bg);
       }
 
       .messages {
-        display: flex;
         min-height: 0;
-        flex-direction: column;
-        gap: 14px;
-        overflow-y: auto;
-        background: #f7f9fc;
-        padding: 18px;
+        overflow: auto;
+        padding: 18px 24px 24px;
+      }
+
+      .empty-state {
+        max-width: 680px;
+        margin: 90px auto 0;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .empty-state h2 {
+        margin: 0 0 10px;
+        font-size: 20px;
+      }
+
+      .empty-state p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
       }
 
       .message {
-        display: flex;
-        flex-direction: column;
-        max-width: 82%;
+        display: grid;
+        gap: 6px;
+        margin-bottom: 16px;
       }
 
       .message.user {
-        align-self: flex-end;
-        align-items: flex-end;
+        justify-items: end;
       }
 
-      .message.assistant {
-        align-self: flex-start;
-        align-items: flex-start;
+      .message.agent {
+        justify-items: start;
       }
 
-      .message-meta {
-        margin-bottom: 5px;
+      .speaker {
         color: var(--muted);
         font-size: 12px;
-        font-weight: 650;
+        font-weight: 700;
       }
 
-      .message-bubble {
+      .bubble {
+        max-width: min(780px, 92%);
+        padding: 14px 16px;
+        border-radius: 8px;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        border: 1px solid var(--line);
+      }
+
+      .user .bubble {
+        border-color: var(--teal);
+        background: var(--teal);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .agent .bubble {
+        background: #fff;
+      }
+
+      .rating {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .rating button {
+        width: 30px;
+        height: 28px;
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: var(--surface);
-        padding: 12px 14px;
-        line-height: 1.72;
-        white-space: pre-wrap;
+        background: #fff;
+        color: var(--teal);
+        font-weight: 800;
       }
 
-      .message.user .message-bubble {
-        border-color: var(--primary);
-        background: var(--primary);
-        color: #ffffff;
+      .rating button:hover {
+        background: var(--teal-soft);
       }
 
-      .composer {
-        border-top: 1px solid var(--line);
-        background: var(--surface);
-        padding: 12px 14px;
-      }
-
-      .composer-row {
+      .tool-list,
+      .timing-list,
+      .object-list {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 84px;
+        gap: 8px;
+      }
+
+      .tool-item {
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-soft);
+      }
+
+      .tool-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .tool-name {
+        font-weight: 900;
+        font-size: 13px;
+      }
+
+      .tool-summary {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+      }
+
+      .trace {
+        display: grid;
+        gap: 6px;
+      }
+
+      .trace-item {
+        display: grid;
+        grid-template-columns: 86px 1fr;
+        gap: 8px;
+        align-items: center;
+        min-height: 28px;
+        font-size: 12px;
+      }
+
+      .trace-step {
+        color: var(--muted);
+      }
+
+      .trace-value {
+        height: 8px;
+        border-radius: 999px;
+        background: var(--blue-soft);
+        overflow: hidden;
+      }
+
+      .trace-bar {
+        height: 100%;
+        min-width: 3px;
+        background: var(--blue);
+      }
+
+      .input-bar {
+        display: grid;
+        grid-template-columns: 1fr 84px;
         gap: 10px;
+        align-items: end;
+        padding: 12px 18px;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
       }
 
       textarea {
         width: 100%;
-        min-height: 50px;
-        max-height: 132px;
+        min-height: 54px;
+        max-height: 160px;
         resize: vertical;
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-strong);
         border-radius: 8px;
-        padding: 12px;
+        padding: 13px 14px;
+        background: #fff;
         color: var(--text);
         outline: none;
       }
 
-      textarea:focus,
-      input:focus {
-        border-color: rgba(31, 111, 99, 0.45);
-        box-shadow: 0 0 0 3px rgba(31, 111, 99, 0.12);
+      textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(37, 115, 102, 0.12);
       }
 
-      .primary-btn {
-        background: var(--primary);
-        color: #ffffff;
-        font-weight: 750;
+      .send-btn {
+        height: 54px;
       }
 
-      .primary-btn:hover {
-        background: var(--primary-strong);
-      }
-
-      .ghost-btn {
-        border: 1px solid var(--line);
-        background: var(--surface);
-        color: var(--text);
-        padding: 8px 10px;
-      }
-
-      .composer-tools {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-top: 9px;
-      }
-
-      .conversation-id {
-        overflow: hidden;
-        color: var(--muted);
-        font-size: 12px;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .insight-panel {
-        overflow-y: auto;
-        padding-right: 2px;
-      }
-
-      .side-card {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--surface);
-        padding: 13px;
-      }
-
-      .side-card.compact {
-        padding: 11px;
-      }
-
-      .status-grid,
-      .metric-grid,
-      .latency-list,
-      .product-list,
-      .reply-list {
-        display: grid;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .status-row,
-      .latency-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 10px;
-        color: var(--muted-strong);
-        font-size: 13px;
-      }
-
-      .status-row strong,
-      .latency-row strong {
-        min-width: 0;
-        overflow: hidden;
-        color: var(--text);
-        font-variant-numeric: tabular-nums;
-        text-align: right;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .metric-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .metric-card {
-        border: 1px solid var(--line-soft);
-        border-radius: 8px;
-        background: var(--surface-muted);
-        padding: 10px;
-      }
-
-      .metric-card span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .metric-card strong {
-        display: block;
-        margin-top: 4px;
-        font-size: 20px;
-        line-height: 1;
-      }
-
-      .order-snapshot {
-        display: grid;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .order-placeholder,
-      .trace-placeholder,
       .soft-note {
         color: var(--muted);
-        font-size: 13px;
-        line-height: 1.55;
+        font-size: 12px;
+        line-height: 1.6;
       }
 
-      .trace-list {
-        display: flex;
-        max-height: 320px;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 10px;
-        overflow-y: auto;
+      .mono {
+        font-family: Consolas, "Courier New", monospace;
       }
 
-      .trace-card {
-        border: 1px solid var(--line-soft);
-        border-left: 4px solid var(--blue);
-        border-radius: 8px;
-        background: var(--surface-muted);
-      }
-
-      .trace-card.success {
-        border-left-color: var(--green);
-      }
-
-      .trace-card.warn {
-        border-left-color: var(--amber);
-      }
-
-      .trace-card.danger {
-        border-left-color: var(--red);
-      }
-
-      .trace-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        padding: 10px 10px 0;
-        font-size: 13px;
-        font-weight: 750;
-      }
-
-      .trace-card details {
-        margin-top: 8px;
-        padding: 0 10px 10px;
-      }
-
-      .trace-card summary {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 8px;
-        cursor: pointer;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 650;
-        list-style: none;
-      }
-
-      summary::-webkit-details-marker {
+      .hidden {
         display: none;
       }
 
-      .trace-summary {
-        margin: 9px 10px 0;
-        color: var(--muted-strong);
-        font-size: 13px;
-        line-height: 1.55;
-      }
+      @media (max-width: 1180px) {
+        .layout {
+          grid-template-columns: 250px minmax(360px, 1fr);
+        }
 
-      .trace-summary ul {
-        margin: 6px 0 0;
-        padding-left: 18px;
-      }
-
-      .trace-summary li {
-        margin-top: 4px;
-      }
-
-      .trace-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 8px;
-      }
-
-      pre {
-        overflow-x: auto;
-        margin: 8px 0 0;
-        max-height: 220px;
-        border-radius: 8px;
-        background: #111827;
-        color: #e5f7ef;
-        padding: 10px;
-        font-size: 12px;
-        line-height: 1.5;
-        white-space: pre-wrap;
-      }
-
-      .product-card {
-        border: 1px solid var(--line-soft);
-        border-radius: 8px;
-        background: var(--surface-muted);
-        padding: 10px;
-      }
-
-      .product-meta,
-      .reply-meta {
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .feedback-row {
-        display: flex;
-        align-items: center;
-        align-self: flex-start;
-        gap: 6px;
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .feedback-row button {
-        min-width: 30px;
-        border: 1px solid var(--line-soft);
-        border-radius: 8px;
-        background: var(--surface);
-        color: var(--primary);
-        padding: 5px 7px;
-        font-weight: 750;
-      }
-
-      .error {
-        color: var(--red);
-      }
-
-      @media (max-width: 1280px) {
-        .workspace {
-          grid-template-columns: 286px minmax(460px, 1fr) 332px;
+        .inspector {
+          display: none;
         }
       }
 
-      @media (max-width: 1060px) {
-        body {
-          overflow: auto;
-        }
-
-        .app-shell {
-          height: auto;
+      @media (max-width: 820px) {
+        .app {
           min-height: 100vh;
         }
 
-        .workspace-header {
+        .topbar,
+        .layout,
+        .agent-strip,
+        .input-bar {
           grid-template-columns: 1fr;
         }
 
-        .health-strip {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+        .sidebar {
+          display: none;
         }
 
-        .workspace {
-          grid-template-columns: 1fr;
+        .messages {
+          padding: 14px;
         }
 
-        .chat-panel {
-          min-height: 720px;
-        }
-
-        .insight-panel {
-          overflow: visible;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .workspace {
-          padding: 10px;
-        }
-
-        .workspace-header {
-          padding: 12px;
-        }
-
-        .health-strip,
-        .flow-board,
-        .metric-grid,
-        .composer-row {
-          grid-template-columns: 1fr;
-        }
-
-        .message {
+        .bubble {
           max-width: 100%;
+        }
+
+        .send-btn {
+          width: 100%;
         }
       }
     </style>
   </head>
   <body>
-    <div class="app-shell">
-      <header class="workspace-header">
-        <div>
-          <div class="brand-label">MULTI-AGENT AFTER-SALES DESK</div>
-          <h1>电商智能售后客服工作台</h1>
+    <div class="app">
+      <header class="topbar">
+        <div class="title-wrap">
+          <h1>智能售后 Agent 控制台</h1>
+          <p id="subtitle">Agent Orchestrator · Hybrid RAG · MySQL · Redis · MQ</p>
         </div>
-        <div class="health-strip">
-          <div class="health-item">
-            <span>Agent</span>
-            <strong id="agentBadge">读取中</strong>
-          </div>
-          <div class="health-item">
-            <span>模型</span>
-            <strong id="modelBadge">读取中</strong>
-          </div>
-          <div class="health-item">
-            <span>业务库</span>
-            <strong id="databaseBadge">读取中</strong>
-          </div>
-          <div class="health-item">
-            <span>缓存</span>
-            <strong id="cacheBadge">读取中</strong>
-          </div>
+        <div class="top-actions">
+          <label class="toggle"><input id="streamToggle" type="checkbox" checked />流式</label>
+          <label class="toggle"><input id="traceToggle" type="checkbox" checked />轨迹</label>
+          <label class="toggle"><input id="llmToggle" type="checkbox" />LLM</label>
+          <button class="btn" id="newChatBtn" type="button">新建</button>
         </div>
       </header>
 
-      <main class="workspace">
-        <aside class="panel queue-panel">
-          <div class="panel-head">
-            <div>
-              <h2 class="panel-title">会话队列</h2>
-              <div class="panel-subtitle">按平台和优先级处理售后咨询</div>
+      <main class="layout">
+        <aside class="sidebar">
+          <section class="panel">
+            <div class="panel-title">
+              <span>组件状态</span>
+              <span class="pill" id="serviceStatus">检测中</span>
             </div>
-            <span class="count-pill" id="conversationCount">0</span>
-          </div>
-
-          <div class="channel-tabs" id="channelTabs"></div>
-
-          <div class="conversation-list" id="conversationList">
-            <div class="soft-note">正在读取会话...</div>
-          </div>
-
-          <div>
-            <div class="panel-head">
-              <h2 class="panel-title">推荐问题</h2>
+            <div class="panel-body">
+              <div class="status-grid">
+                <div class="status-item"><span>模型</span><strong id="modelName">-</strong></div>
+                <div class="status-item"><span>RAG</span><strong id="ragMode">-</strong></div>
+                <div class="status-item"><span>数据库</span><strong id="databaseBackend">-</strong></div>
+                <div class="status-item"><span>Redis</span><strong id="cacheBackend">-</strong></div>
+                <div class="status-item"><span>MQ</span><strong id="mqBackend">-</strong></div>
+                <div class="status-item"><span>LLM Key</span><strong id="llmKeyState">-</strong></div>
+              </div>
             </div>
-            <div class="quick-list">
-              <button class="quick-card quick">我的订单 10001 耳机坏了，还在保修期内吗？</button>
-              <button class="quick-card quick">订单 10002 物流一直不更新怎么办？</button>
-              <button class="quick-card quick">订单 10003 我想申请退款</button>
-              <button class="quick-card quick">我想直接退款并绕过审核</button>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">架构链路</div>
+            <div class="panel-body architecture" id="architectureList"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">测试请求</div>
+            <div class="panel-body preset-list">
+              <button class="preset" type="button">订单 10002 物流一直不更新怎么办？</button>
+              <button class="preset" type="button">订单 10009 我要退款。</button>
+              <button class="preset" type="button">订单 10004 直接退款不要审核。</button>
+              <button class="preset" type="button">订单 10008 可以开电子发票吗？</button>
+              <button class="preset" type="button">我的手表坏了。</button>
             </div>
-          </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">会话</div>
+            <div class="panel-body">
+              <div class="data-row"><span>ID</span><strong class="mono" id="conversationId">-</strong></div>
+            </div>
+          </section>
         </aside>
 
-        <section class="chat-panel">
-          <header class="chat-head">
-            <div>
-              <h2 class="chat-title" id="activeCaseTitle">新对话</h2>
-              <div class="case-meta" id="activeCaseMeta">
-                <span class="status-pill">未选择平台</span>
+        <section class="workspace">
+          <div class="agent-strip" id="agentStrip"></div>
+          <div class="chat-panel">
+            <div class="messages" id="messages">
+              <div class="empty-state" id="emptyState">
+                <h2>多 Agent 售后链路就绪</h2>
+                <p>当前控制台只覆盖客服问答、售后处理、风控审核、Hybrid RAG、Redis 状态、MQ 退款任务和可观测评测链路。</p>
               </div>
-            </div>
-
-            <div class="control-row">
-              <label class="switch-row">
-                <input id="streamToggle" type="checkbox" checked />
-                流式
-              </label>
-              <label class="switch-row">
-                <input id="llmToggle" type="checkbox" />
-                智谱
-              </label>
-              <label class="switch-row">
-                <input id="traceToggle" type="checkbox" checked />
-                轨迹
-              </label>
-              <button class="ghost-btn" id="newChatBtn">新建</button>
-            </div>
-          </header>
-
-          <div class="flow-board" id="agentFlow">
-            <div class="flow-step" data-step="router">
-              <small>路由</small>
-              <strong>Orchestrator</strong>
-            </div>
-            <div class="flow-step" data-step="customer">
-              <small>问答</small>
-              <strong>客服 Agent</strong>
-            </div>
-            <div class="flow-step" data-step="afterSales">
-              <small>业务</small>
-              <strong>售后 Agent</strong>
-            </div>
-            <div class="flow-step" data-step="risk">
-              <small>审核</small>
-              <strong>风控 Agent</strong>
             </div>
           </div>
-
-          <section class="messages" id="messages"></section>
-
-          <footer class="composer">
-            <div class="composer-row">
-              <textarea
-                id="messageInput"
-                placeholder="输入用户售后问题，例如：订单 10002 物流一直不更新怎么办？"
-              ></textarea>
-              <button class="primary-btn" id="sendBtn">发送</button>
-            </div>
-            <div class="composer-tools">
-              <div class="conversation-id" id="conversationIdText">Conversation ID：未生成</div>
-              <button class="ghost-btn" id="clearTraceBtn">清空轨迹</button>
-            </div>
-          </footer>
         </section>
 
-        <aside class="insight-panel">
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">系统状态</h2>
-              <span class="status-pill" id="apiKeyBadge">API Key</span>
+        <aside class="inspector">
+          <section class="panel">
+            <div class="panel-title">
+              <span>路由判断</span>
+              <span class="pill" id="routeIntent">未开始</span>
             </div>
-            <div class="status-grid" id="serviceStatus">
-              <div class="soft-note">正在读取服务状态...</div>
-            </div>
-          </section>
-
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">业务概览</h2>
-              <span class="status-pill info" id="channelCount">0 个渠道</span>
-            </div>
-            <div class="metric-grid">
-              <div class="metric-card">
-                <span>待 AI</span>
-                <strong id="waitingAiCount">0</strong>
-              </div>
-              <div class="metric-card">
-                <span>待人工</span>
-                <strong id="needHumanCount">0</strong>
-              </div>
-              <div class="metric-card">
-                <span>商品数</span>
-                <strong id="productCount">0</strong>
-              </div>
-              <div class="metric-card">
-                <span>缺货</span>
-                <strong id="outOfStockCount">0</strong>
+            <div class="panel-body">
+              <div class="object-list" id="routeSummary">
+                <div class="soft-note">等待请求。</div>
               </div>
             </div>
           </section>
 
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">当前订单</h2>
-              <span class="status-pill" id="orderStatusBadge">未查询</span>
+          <section class="panel">
+            <div class="panel-title">
+              <span>Tool Calling</span>
+              <span class="pill" id="toolCount">0</span>
             </div>
-            <div class="order-snapshot" id="orderSnapshot">
-              <div class="order-placeholder">选择会话或完成订单查询后展示订单状态、物流、退款资格。</div>
-            </div>
-          </section>
-
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">执行轨迹</h2>
-              <span class="status-pill info" id="traceCount">0 条</span>
-            </div>
-            <div class="trace-list" id="traceList">
-              <div class="trace-placeholder">发送问题后展示路由、工具调用、风控和业务动作。</div>
+            <div class="panel-body">
+              <div class="tool-list" id="toolList">
+                <div class="soft-note">暂无工具调用。</div>
+              </div>
             </div>
           </section>
 
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">性能耗时</h2>
-              <span class="status-pill" id="durationBadge">待运行</span>
-            </div>
-            <div class="latency-list" id="latencySummary">
-              <div class="soft-note">发送问题后显示每一步耗时。</div>
-            </div>
-          </section>
-
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">商品关注</h2>
-            </div>
-            <div class="product-list" id="productList">
-              <div class="soft-note">正在读取商品...</div>
+          <section class="panel">
+            <div class="panel-title">业务对象</div>
+            <div class="panel-body">
+              <div class="object-list" id="businessObjects">
+                <div class="soft-note">暂无业务对象。</div>
+              </div>
             </div>
           </section>
 
-          <section class="side-card compact">
-            <div class="side-head">
-              <h2 class="side-title">快捷回复</h2>
+          <section class="panel" id="tracePanel">
+            <div class="panel-title">响应耗时</div>
+            <div class="panel-body">
+              <div class="trace" id="timingList">
+                <div class="soft-note">暂无耗时数据。</div>
+              </div>
             </div>
-            <div class="reply-list" id="replyList">
-              <div class="soft-note">正在读取模板...</div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">Token 与数据</div>
+            <div class="panel-body">
+              <div class="object-list" id="metricsList">
+                <div class="soft-note">暂无指标。</div>
+              </div>
             </div>
           </section>
         </aside>
       </main>
+
+      <form class="input-bar" id="chatForm">
+        <textarea id="messageInput" placeholder="输入用户售后问题，例如：订单 10002 物流一直不更新怎么办？"></textarea>
+        <button class="btn primary send-btn" id="sendBtn" type="submit">发送</button>
+      </form>
     </div>
 
     <script>
-      const messagesEl = document.querySelector("#messages");
-      const inputEl = document.querySelector("#messageInput");
-      const sendBtn = document.querySelector("#sendBtn");
-      const streamToggle = document.querySelector("#streamToggle");
-      const llmToggle = document.querySelector("#llmToggle");
-      const traceToggle = document.querySelector("#traceToggle");
-      const serviceStatusEl = document.querySelector("#serviceStatus");
-      const latencySummaryEl = document.querySelector("#latencySummary");
-      const durationBadgeEl = document.querySelector("#durationBadge");
-      const conversationIdTextEl = document.querySelector("#conversationIdText");
-      const conversationCountEl = document.querySelector("#conversationCount");
-      const conversationListEl = document.querySelector("#conversationList");
-      const channelTabsEl = document.querySelector("#channelTabs");
-      const activeCaseTitleEl = document.querySelector("#activeCaseTitle");
-      const activeCaseMetaEl = document.querySelector("#activeCaseMeta");
-      const agentBadgeEl = document.querySelector("#agentBadge");
-      const modelBadgeEl = document.querySelector("#modelBadge");
-      const databaseBadgeEl = document.querySelector("#databaseBadge");
-      const cacheBadgeEl = document.querySelector("#cacheBadge");
-      const apiKeyBadgeEl = document.querySelector("#apiKeyBadge");
-      const channelCountEl = document.querySelector("#channelCount");
-      const waitingAiCountEl = document.querySelector("#waitingAiCount");
-      const needHumanCountEl = document.querySelector("#needHumanCount");
-      const productCountEl = document.querySelector("#productCount");
-      const outOfStockCountEl = document.querySelector("#outOfStockCount");
-      const orderSnapshotEl = document.querySelector("#orderSnapshot");
-      const orderStatusBadgeEl = document.querySelector("#orderStatusBadge");
-      const traceListEl = document.querySelector("#traceList");
-      const traceCountEl = document.querySelector("#traceCount");
-
-      const platformNames = {
-        all: "全部",
-        pinduoduo: "拼多多",
-        taobao: "淘宝",
-        jd: "京东",
-        douyin: "抖音",
-        xiaohongshu: "小红书",
+      const state = {
+        conversationId: localStorage.getItem("agent_conversation_id") || "",
+        route: null,
+        tools: [],
+        timings: {},
+        tokenUsage: null,
+        dashboard: {
+          refunds: [],
+          tickets: [],
+          reviews: [],
+          mq: [],
+          metrics: [],
+        },
       };
 
-      const statusNames = {
-        waiting_ai: "待 AI",
-        need_human: "待人工",
-        closed: "已结束",
+      const els = {
+        serviceStatus: document.querySelector("#serviceStatus"),
+        modelName: document.querySelector("#modelName"),
+        ragMode: document.querySelector("#ragMode"),
+        databaseBackend: document.querySelector("#databaseBackend"),
+        cacheBackend: document.querySelector("#cacheBackend"),
+        mqBackend: document.querySelector("#mqBackend"),
+        llmKeyState: document.querySelector("#llmKeyState"),
+        architectureList: document.querySelector("#architectureList"),
+        agentStrip: document.querySelector("#agentStrip"),
+        messages: document.querySelector("#messages"),
+        emptyState: document.querySelector("#emptyState"),
+        conversationId: document.querySelector("#conversationId"),
+        routeIntent: document.querySelector("#routeIntent"),
+        routeSummary: document.querySelector("#routeSummary"),
+        toolCount: document.querySelector("#toolCount"),
+        toolList: document.querySelector("#toolList"),
+        businessObjects: document.querySelector("#businessObjects"),
+        timingList: document.querySelector("#timingList"),
+        metricsList: document.querySelector("#metricsList"),
+        tracePanel: document.querySelector("#tracePanel"),
+        chatForm: document.querySelector("#chatForm"),
+        messageInput: document.querySelector("#messageInput"),
+        sendBtn: document.querySelector("#sendBtn"),
+        streamToggle: document.querySelector("#streamToggle"),
+        traceToggle: document.querySelector("#traceToggle"),
+        llmToggle: document.querySelector("#llmToggle"),
+        newChatBtn: document.querySelector("#newChatBtn"),
       };
 
-      const intentNames = {
-        warranty_repair: "保修维修",
-        logistics_issue: "物流异常",
-        return_refund: "退货退款",
-        payment_invoice: "发票咨询",
-        product_recommendation: "商品推荐",
-        general_support: "普通咨询",
-      };
+      const AGENTS = [
+        { name: "Orchestrator", role: "路由", tools: "状态管理 / 汇总" },
+        { name: "客服 Agent", role: "问答", tools: "Hybrid RAG" },
+        { name: "售后 Agent", role: "业务", tools: "订单 / 退款 / 工单" },
+        { name: "风控 Agent", role: "审核", tools: "风险规则 / 人工审核" },
+      ];
 
-      const toolNames = {
+      const ARCHITECTURE = [
+        ["FastAPI", "统一 API 与 SSE 流式响应"],
+        ["Agent Orchestrator", "请求路由、状态管理、结果汇总"],
+        ["客服 Agent", "意图识别、知识库检索、回复生成"],
+        ["售后 Agent", "订单查询、退款申请、工单创建"],
+        ["风控 Agent", "高频退款、异常账号、投诉升级"],
+        ["Hybrid RAG", "向量召回 + BM25/关键词召回 + 业务重排"],
+        ["MySQL / SQLite", "订单、退款、工单、会话、执行记录"],
+        ["Redis", "会话、Embedding、Agent 状态、退款幂等"],
+        ["MQ", "退款任务异步处理"],
+      ];
+
+      const TOOL_LABELS = {
         order_lookup: "订单查询",
         policy_search: "知识检索",
         risk_check: "风控检测",
         refund_apply: "退款申请",
         create_manual_review: "人工审核",
-        create_ticket: "创建工单",
-        ticket_decision: "工单判断",
-        get_shop_products: "商品查询",
-        send_goods_link: "商品卡片",
-        get_quick_reply: "快捷回复",
+        create_ticket: "工单创建",
         transfer_to_human: "转人工",
+        ticket_decision: "工单判断",
         tool_plan_validation: "计划校验",
         tool_chain_validation: "链路校验",
       };
-
-      let conversationId = localStorage.getItem("customer_support_conversation_id") || "";
-      let currentTimings = {};
-      let currentDurationMs = null;
-      let workbenchConversations = [];
-      let activePlatform = "all";
-      let activeConversation = null;
-      let traceCounter = 0;
-
-      const savedTraceVisible = localStorage.getItem("customer_support_show_trace");
-      traceToggle.checked = savedTraceVisible === null ? true : savedTraceVisible === "true";
-
-      async function initPage() {
-        renderConversationId();
-        resetAgentFlow();
-        await Promise.all([loadServiceInfo(), loadWorkbenchData()]);
-        addMessage(
-          "assistant",
-          "您好，我是智能售后客服助手。请从左侧选择会话，或直接输入订单号和售后问题。",
-        );
-      }
-
-      async function loadServiceInfo() {
-        try {
-          const [infoResponse, healthResponse] = await Promise.all([
-            fetch("/info"),
-            fetch("/health"),
-          ]);
-          const info = await infoResponse.json();
-          const health = await healthResponse.json();
-
-          const db = health.database || {};
-          const cache = health.cache || {};
-          const dbReady = Boolean(db.reachable);
-          const cacheReady = Boolean(cache.reachable);
-
-          agentBadgeEl.textContent = info.default_agent || "agent_orchestrator";
-          modelBadgeEl.textContent = info.default_model || "local";
-          databaseBadgeEl.textContent = `${health.database_backend || db.backend || "local"} / ${
-            dbReady ? "可用" : "不可用"
-          }`;
-          cacheBadgeEl.textContent = `${cache.backend || "memory"} / ${cacheReady ? "可用" : "降级"}`;
-          apiKeyBadgeEl.textContent = info.has_llm_key ? "API Key 已读取" : "API Key 未读取";
-          apiKeyBadgeEl.className = `status-pill ${info.has_llm_key ? "success" : "warn"}`;
-
-          serviceStatusEl.innerHTML = `
-            ${statusRow("默认 Agent", info.default_agent || "agent_orchestrator")}
-            ${statusRow("RAG", health.rag_retrieval_mode || info.rag_embedding_provider)}
-            ${statusRow("MySQL", dbReady ? "已连接" : "未连接")}
-            ${statusRow("Redis", cacheReady ? "已连接" : "内存降级")}
-            ${statusRow("MQ", health.mq_backend || "database")}
-          `;
-        } catch (error) {
-          agentBadgeEl.textContent = "读取失败";
-          modelBadgeEl.textContent = "读取失败";
-          databaseBadgeEl.textContent = "未知";
-          cacheBadgeEl.textContent = "未知";
-          serviceStatusEl.innerHTML = `<div class="error">服务状态读取失败：${escapeHtml(error)}</div>`;
-        }
-      }
-
-      async function loadWorkbenchData() {
-        try {
-          const [overviewResponse, conversationsResponse, productsResponse, repliesResponse] =
-            await Promise.all([
-              fetch("/workbench/overview"),
-              fetch("/workbench/conversations"),
-              fetch("/workbench/products"),
-              fetch("/workbench/quick-replies"),
-            ]);
-
-          const overview = await overviewResponse.json();
-          const conversations = await conversationsResponse.json();
-          const products = await productsResponse.json();
-          const replies = await repliesResponse.json();
-
-          workbenchConversations = conversations.data || [];
-          renderOverview(overview.data || {});
-          renderChannelTabs(overview.data?.channels || []);
-          renderConversationList();
-          renderProducts(products.data || []);
-          renderQuickReplies(replies.data || []);
-        } catch (error) {
-          conversationListEl.innerHTML = `<div class="error">工作台数据读取失败：${escapeHtml(error)}</div>`;
-          document.querySelector("#productList").innerHTML = `<div class="error">商品读取失败</div>`;
-          document.querySelector("#replyList").innerHTML = `<div class="error">模板读取失败</div>`;
-        }
-      }
-
-      function renderOverview(data) {
-        const channelCount = Array.isArray(data.channels) ? data.channels.length : 0;
-        channelCountEl.textContent = `${channelCount} 个渠道`;
-        conversationCountEl.textContent = String(data.conversation_count || 0);
-        waitingAiCountEl.textContent = String(data.waiting_ai_count || 0);
-        needHumanCountEl.textContent = String(data.need_human_count || 0);
-        productCountEl.textContent = String(data.product_count || 0);
-        outOfStockCountEl.textContent = String(data.out_of_stock_count || 0);
-      }
-
-      function renderChannelTabs(channels) {
-        const values = ["all", ...channels];
-        channelTabsEl.innerHTML = values
-          .map(
-            (platform) => `
-              <button class="segment-btn ${platform === activePlatform ? "active" : ""}" data-platform="${escapeHtml(
-                platform,
-              )}">
-                ${escapeHtml(platformNames[platform] || platform)}
-              </button>
-            `,
-          )
-          .join("");
-
-        channelTabsEl.querySelectorAll("button").forEach((button) => {
-          button.addEventListener("click", () => {
-            activePlatform = button.dataset.platform;
-            renderChannelTabs(channels);
-            renderConversationList();
-          });
-        });
-      }
-
-      function renderConversationList() {
-        const list =
-          activePlatform === "all"
-            ? workbenchConversations
-            : workbenchConversations.filter((item) => item.platform === activePlatform);
-
-        if (!list.length) {
-          conversationListEl.innerHTML = `<div class="soft-note">当前筛选下暂无会话。</div>`;
-          return;
-        }
-
-        conversationListEl.innerHTML = list
-          .map((item) => {
-            const highRisk = item.tags?.some((tag) => tag.includes("风险"));
-            const priorityClass = highRisk ? "danger" : item.priority === "high" ? "warn" : "";
-            const selected = activeConversation?.conversation_id === item.conversation_id;
-
-            return `
-              <button class="conversation-card ${selected ? "active" : ""}" data-id="${escapeHtml(
-                item.conversation_id,
-              )}">
-                <div class="row">
-                  <span class="conversation-name">${escapeHtml(item.customer_name)}</span>
-                  <span class="tag ${priorityClass}">${escapeHtml(statusNames[item.status] || item.status)}</span>
-                </div>
-                <div class="conversation-message">${escapeHtml(item.last_message)}</div>
-                <div class="tag-row">
-                  <span class="tag">${escapeHtml(platformNames[item.platform] || item.platform)}</span>
-                  ${item.order_id ? `<span class="tag">订单 ${escapeHtml(item.order_id)}</span>` : ""}
-                  ${(item.tags || [])
-                    .slice(0, 2)
-                    .map((tag) => `<span class="tag ${tag.includes("风险") ? "danger" : ""}">${escapeHtml(tag)}</span>`)
-                    .join("")}
-                </div>
-              </button>
-            `;
-          })
-          .join("");
-
-        conversationListEl.querySelectorAll(".conversation-card").forEach((button) => {
-          button.addEventListener("click", () => {
-            const item = workbenchConversations.find(
-              (conversation) => conversation.conversation_id === button.dataset.id,
-            );
-            selectConversation(item);
-          });
-        });
-      }
-
-      function renderProducts(products) {
-        const productListEl = document.querySelector("#productList");
-        const sorted = [...products].sort((a, b) => Number(b.monthly_sales || 0) - Number(a.monthly_sales || 0));
-
-        if (!sorted.length) {
-          productListEl.innerHTML = `<div class="soft-note">暂无商品数据。</div>`;
-          return;
-        }
-
-        productListEl.innerHTML = sorted
-          .slice(0, 4)
-          .map(
-            (item) => `
-              <div class="product-card">
-                <div class="row">
-                  <span class="product-title">${escapeHtml(item.title)}</span>
-                  <span class="status-pill ${Number(item.stock || 0) > 0 ? "success" : "warn"}">${
-                    Number(item.stock || 0) > 0 ? "有货" : "缺货"
-                  }</span>
-                </div>
-                <div class="product-meta">
-                  ${escapeHtml(item.category)} · 库存 ${escapeHtml(item.stock)} · 月销 ${escapeHtml(
-                    item.monthly_sales,
-                  )}
-                </div>
-              </div>
-            `,
-          )
-          .join("");
-      }
-
-      function renderQuickReplies(replies) {
-        const replyListEl = document.querySelector("#replyList");
-
-        if (!replies.length) {
-          replyListEl.innerHTML = `<div class="soft-note">暂无快捷回复。</div>`;
-          return;
-        }
-
-        replyListEl.innerHTML = replies
-          .map(
-            (reply) => `
-              <button class="reply-card" data-reply-id="${escapeHtml(reply.reply_id)}">
-                <div class="reply-title">${escapeHtml(reply.title)}</div>
-                <div class="reply-meta">${escapeHtml(reply.content)}</div>
-              </button>
-            `,
-          )
-          .join("");
-
-        replyListEl.querySelectorAll(".reply-card").forEach((button) => {
-          button.addEventListener("click", () => {
-            const reply = replies.find((item) => item.reply_id === button.dataset.replyId);
-            if (!reply) return;
-
-            inputEl.value = reply.content;
-            inputEl.focus();
-          });
-        });
-      }
-
-      function selectConversation(item) {
-        if (!item) return;
-
-        activeConversation = item;
-        conversationId = item.conversation_id;
-        localStorage.setItem("customer_support_conversation_id", conversationId);
-        renderConversationId();
-        renderConversationList();
-
-        activeCaseTitleEl.textContent = item.customer_name;
-        activeCaseMetaEl.innerHTML = `
-          <span class="status-pill info">${escapeHtml(platformNames[item.platform] || item.platform)}</span>
-          <span class="status-pill ${item.priority === "high" ? "warn" : ""}">${escapeHtml(
-            item.priority === "high" ? "高优先级" : "普通优先级",
-          )}</span>
-          ${item.order_id ? `<span class="status-pill">订单 ${escapeHtml(item.order_id)}</span>` : ""}
-        `;
-
-        inputEl.value = item.last_message || "";
-        inputEl.focus();
-      }
-
-      function addMessage(role, content) {
-        const item = document.createElement("article");
-        item.className = `message ${role === "user" ? "user" : "assistant"}`;
-
-        const meta = document.createElement("div");
-        meta.className = "message-meta";
-        meta.textContent = role === "user" ? "用户" : "Agent";
-
-        const bubble = document.createElement("div");
-        bubble.className = "message-bubble";
-        bubble.textContent = content;
-
-        item.appendChild(meta);
-        item.appendChild(bubble);
-        messagesEl.appendChild(item);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        return bubble;
-      }
-
-      function addTracePanel(title, data, summaryHtml = "", state = "success") {
-        if (!traceToggle.checked) return;
-
-        const placeholder = traceListEl.querySelector(".trace-placeholder");
-        if (placeholder) placeholder.remove();
-
-        traceCounter += 1;
-        traceCountEl.textContent = `${traceCounter} 条`;
-
-        const wrapper = document.createElement("section");
-        wrapper.className = `trace-card ${state}`;
-        wrapper.innerHTML = `
-          <div class="trace-title">
-            <span>${escapeHtml(title)}</span>
-            <span class="status-pill ${state === "danger" ? "danger" : state === "warn" ? "warn" : "success"}">${
-              state === "danger" ? "失败" : state === "warn" ? "注意" : "完成"
-            }</span>
-          </div>
-          ${summaryHtml ? `<div class="trace-summary">${summaryHtml}</div>` : ""}
-          <details>
-            <summary>原始 JSON</summary>
-            <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
-          </details>
-        `;
-        traceListEl.appendChild(wrapper);
-        traceListEl.scrollTop = traceListEl.scrollHeight;
-      }
-
-      function statusRow(label, value) {
-        return `
-          <div class="status-row">
-            <span>${escapeHtml(label)}</span>
-            <strong>${escapeHtml(value)}</strong>
-          </div>
-        `;
-      }
-
-      function valueRow(label, value) {
-        return `
-          <div class="status-row">
-            <span>${escapeHtml(label)}</span>
-            <strong>${escapeHtml(value || "未知")}</strong>
-          </div>
-        `;
-      }
-
-      function yesNo(value) {
-        return value ? "是" : "否";
-      }
-
-      function badge(text, type = "") {
-        return `<span class="tag ${type}">${escapeHtml(text)}</span>`;
-      }
-
-      function buildRouteSummary(route) {
-        updateAgentFlow(route);
-
-        const toolPlan = Array.isArray(route.tool_plan) ? route.tool_plan : [];
-        const agents = Array.isArray(route.agent_plan) ? route.agent_plan : [];
-        const riskState = route.risk_level === "high" ? "danger" : route.risk_level === "medium" ? "warn" : "";
-
-        return `
-          <div>${escapeHtml(route.routing_reason || "Agent Orchestrator 已完成意图路由。")}</div>
-          <ul>
-            <li>意图：${escapeHtml(intentNames[route.intent] || route.intent || "general_support")}</li>
-            <li>订单号：${escapeHtml(route.order_id || "未提供")}</li>
-            <li>风险等级：${escapeHtml(route.risk_level || "low")}</li>
-            <li>需要追问：${yesNo(route.need_clarification)}</li>
-            <li>人工审核：${yesNo(route.manual_review_required || route.handoff_required || route.need_handoff)}</li>
-          </ul>
-          <div class="trace-badges">
-            ${agents.map((name) => badge(formatAgentName(name))).join("")}
-            ${toolPlan.map((name) => badge(toolNames[name] || name, riskState && name.includes("risk") ? riskState : "")).join("")}
-          </div>
-          ${route.clarification_question ? `<div>追问：${escapeHtml(route.clarification_question)}</div>` : ""}
-          ${route.handoff_reason ? `<div>转人工原因：${escapeHtml(route.handoff_reason)}</div>` : ""}
-          ${route.guardrail_reason ? `<div>拦截原因：${escapeHtml(route.guardrail_reason)}</div>` : ""}
-        `;
-      }
-
-      function buildExecutionBlockedSummary(event) {
-        setFlowState("risk", "warn");
-        return `
-          <div>执行链已被业务规则拦截。</div>
-          <ul>
-            <li>拦截原因：${escapeHtml(event.reason || "未知")}</li>
-            <li>订单号：${escapeHtml(event.order_id || "未提供")}</li>
-            <li>处理说明：${escapeHtml(event.message || "已停止后续业务动作")}</li>
-          </ul>
-        `;
-      }
-
-      function buildOrderSummary(result) {
-        if (!result.success) {
-          updateOrderSnapshot(null, "查询失败");
-          return `<div>订单查询失败：${escapeHtml(result.result)}</div>`;
-        }
-
-        const order = result.result || {};
-        updateOrderSnapshot(order);
-        return `
-          <div>已查询到订单信息。</div>
-          <ul>
-            <li>订单号：${escapeHtml(order.order_id)}</li>
-            <li>商品：${escapeHtml(order.product_name)}</li>
-            <li>订单状态：${escapeHtml(order.order_status)}</li>
-            <li>物流状态：${escapeHtml(order.shipping_status)}</li>
-            <li>签收日期：${escapeHtml(order.signed_date || "未签收")}</li>
-            <li>可直接退款：${yesNo(order.can_refund_directly)}</li>
-          </ul>
-        `;
-      }
-
-      function buildPolicySummary(result) {
-        if (!result.success) {
-          return `<div>知识检索失败：${escapeHtml(result.result)}</div>`;
-        }
-
-        const policies = Array.isArray(result.result) ? result.result : [];
-        const rows = policies
-          .slice(0, 3)
-          .map((item, index) => {
-            const score = item.rerank_score ?? item.retrieval_score;
-            return `
-              <li>
-                证据 ${index + 1}：${escapeHtml(item.citation || item.source || "未知来源")}
-                ${score === undefined ? "" : `，分数 ${escapeHtml(score)}`}
-              </li>
-            `;
-          })
-          .join("");
-
-        return `
-          <div>Hybrid RAG 命中 ${policies.length} 条政策证据。</div>
-          <ul>${rows || "<li>没有可展示的政策证据。</li>"}</ul>
-        `;
-      }
-
-      function buildRiskSummary(result) {
-        if (!result.success) {
-          setFlowState("risk", "warn");
-          return `<div>风控检测失败：${escapeHtml(result.result)}</div>`;
-        }
-
-        const risk = result.result || {};
-        setFlowState("risk", risk.risk_level === "high" ? "warn" : "done");
-        return `
-          <div>风控 Agent 已完成异常检测。</div>
-          <ul>
-            <li>风险等级：${escapeHtml(risk.risk_level || "low")}</li>
-            <li>需要人工审核：${yesNo(risk.review_required)}</li>
-            <li>风险原因：${escapeHtml((risk.risk_flags || []).join("、") || "无")}</li>
-          </ul>
-        `;
-      }
-
-      function buildRefundSummary(result) {
-        if (!result.success) {
-          return `
-            <div>退款申请未进入自动处理。</div>
-            <ul>
-              <li>原因：${escapeHtml(result.result?.reason || result.result)}</li>
-              <li>后续动作：${escapeHtml(result.result?.fallback_action || "人工解释政策或复核")}</li>
-            </ul>
-          `;
-        }
-
-        const refund = result.result || {};
-        return `
-          <div>售后 Agent 已创建退款申请，并写入 MQ 等待业务服务消费。</div>
-          <ul>
-            <li>退款单：${escapeHtml(refund.refund_id || "未返回")}</li>
-            <li>订单号：${escapeHtml(refund.order_id || "未知")}</li>
-            <li>状态：${escapeHtml(refund.status || "queued")}</li>
-            <li>金额：${escapeHtml(refund.amount || 0)}</li>
-            <li>并发控制：${escapeHtml(refund.concurrency_control?.status || "未返回")}</li>
-          </ul>
-        `;
-      }
-
-      function buildManualReviewSummary(result) {
-        if (!result.success) {
-          return `<div>人工审核单创建失败：${escapeHtml(result.result)}</div>`;
-        }
-
-        const review = result.result || {};
-        return `
-          <div>高风险售后已进入人工审核队列。</div>
-          <ul>
-            <li>审核单：${escapeHtml(review.review_id || "未返回")}</li>
-            <li>订单号：${escapeHtml(review.order_id || "未知")}</li>
-            <li>类型：${escapeHtml(review.review_type || "risk_control")}</li>
-            <li>风险等级：${escapeHtml(review.risk_level || "unknown")}</li>
-          </ul>
-        `;
-      }
-
-      function buildTicketSummary(result) {
-        if (!result.success) {
-          return `<div>工单创建失败：${escapeHtml(result.result?.reason || result.result)}</div>`;
-        }
-
-        const ticket = result.result || {};
-        return `
-          <div>系统已生成待人工审核的售后工单。</div>
-          <ul>
-            <li>工单号：${escapeHtml(ticket.ticket_id || "未返回")}</li>
-            <li>状态：${escapeHtml(ticket.status || "未知")}</li>
-            <li>关联订单：${escapeHtml(ticket.order_id || "未知")}</li>
-            <li>问题类型：${escapeHtml(ticket.issue_type || "未知")}</li>
-            <li>下一步：${escapeHtml(ticket.next_step || "等待人工处理")}</li>
-          </ul>
-        `;
-      }
-
-      function buildProductSearchSummary(result) {
-        if (!result.success) {
-          return `<div>商品查询失败：${escapeHtml(result.result?.message || result.result)}</div>`;
-        }
-
-        const products = Array.isArray(result.result) ? result.result : [];
-        return `
-          <div>已匹配 ${products.length} 个商品。</div>
-          <ul>
-            ${products
-              .slice(0, 3)
-              .map((item) => `<li>${escapeHtml(item.title)}，库存 ${escapeHtml(item.stock)}</li>`)
-              .join("")}
-          </ul>
-        `;
-      }
-
-      function buildQuickReplySummary(result) {
-        if (!result.success) {
-          return `<div>快捷回复匹配失败：${escapeHtml(result.result?.message || result.result)}</div>`;
-        }
-
-        const reply = result.result || {};
-        return `
-          <div>已找到客服快捷回复。</div>
-          <ul>
-            <li>标题：${escapeHtml(reply.title || "未命名")}</li>
-            <li>意图：${escapeHtml(reply.intent || "未知")}</li>
-          </ul>
-        `;
-      }
-
-      function buildHandoffSummary(result) {
-        if (!result.success) {
-          return `<div>转人工失败：${escapeHtml(result.result)}</div>`;
-        }
-
-        const handoff = result.result || {};
-        return `
-          <div>已生成转人工交接单。</div>
-          <ul>
-            <li>状态：${escapeHtml(handoff.status || "pending_human_takeover")}</li>
-            <li>优先级：${escapeHtml(handoff.priority || "normal")}</li>
-            <li>原因：${escapeHtml(handoff.reason || "需要人工接管")}</li>
-          </ul>
-        `;
-      }
-
-      function buildToolSummary(toolResult) {
-        const builders = {
-          order_lookup: buildOrderSummary,
-          policy_search: buildPolicySummary,
-          risk_check: buildRiskSummary,
-          refund_apply: buildRefundSummary,
-          create_manual_review: buildManualReviewSummary,
-          create_ticket: buildTicketSummary,
-          get_shop_products: buildProductSearchSummary,
-          get_quick_reply: buildQuickReplySummary,
-          transfer_to_human: buildHandoffSummary,
-        };
-
-        const builder = builders[toolResult.tool_name];
-        return builder ? builder(toolResult) : "<div>工具执行完成，详细结果见下方 JSON。</div>";
-      }
-
-      function updateOrderSnapshot(order, fallbackStatus = "未查询") {
-        if (!order) {
-          orderStatusBadgeEl.textContent = fallbackStatus;
-          orderStatusBadgeEl.className = fallbackStatus === "查询失败" ? "status-pill danger" : "status-pill";
-          orderSnapshotEl.innerHTML = `<div class="order-placeholder">暂无可展示的订单信息。</div>`;
-          return;
-        }
-
-        const canRefund = Boolean(order.can_refund_directly);
-        orderStatusBadgeEl.textContent = canRefund ? "可退款" : "需审核";
-        orderStatusBadgeEl.className = `status-pill ${canRefund ? "success" : "warn"}`;
-        orderSnapshotEl.innerHTML = `
-          ${valueRow("订单号", order.order_id)}
-          ${valueRow("商品", order.product_name)}
-          ${valueRow("订单状态", order.order_status)}
-          ${valueRow("物流状态", order.shipping_status)}
-          ${valueRow("签收日期", order.signed_date || "未签收")}
-          ${valueRow("退款资格", canRefund ? "可直接退款" : "按政策/风控判断")}
-        `;
-      }
-
-      function formatTimingStep(step) {
-        const names = {
-          "node.load_context": "加载上下文",
-          "node.route": "意图路由",
-          "node.execute_tools": "工具执行",
-          "node.build_model_context": "构造上下文",
-          "node.generate_reply": "生成回复",
-          "node.persist_result": "保存结果",
-          "tool.order_lookup": "订单查询",
-          "tool.policy_search": "知识检索",
-          "tool.risk_check": "风控检测",
-          "tool.refund_apply": "退款申请",
-          "tool.create_manual_review": "人工审核",
-          "tool.create_ticket": "创建工单",
-          "tool.get_shop_products": "商品查询",
-          "tool.send_goods_link": "商品卡片",
-          "tool.get_quick_reply": "快捷回复",
-          "tool.transfer_to_human": "转人工",
-        };
-        return names[step] || step;
-      }
-
-      function renderLatencySummary() {
-        const timings = Object.values(currentTimings);
-
-        if (!timings.length && currentDurationMs === null) {
-          durationBadgeEl.textContent = "待运行";
-          durationBadgeEl.className = "status-pill";
-          latencySummaryEl.innerHTML = `<div class="soft-note">发送问题后显示每一步耗时。</div>`;
-          return;
-        }
-
-        durationBadgeEl.textContent = currentDurationMs === null ? "运行中" : `${currentDurationMs}ms`;
-        durationBadgeEl.className = `status-pill ${
-          currentDurationMs === null ? "info" : currentDurationMs > 5000 ? "warn" : "success"
-        }`;
-
-        const totalRow =
-          currentDurationMs === null
-            ? ""
-            : `<div class="latency-row"><span>总耗时</span><strong>${currentDurationMs}ms</strong></div>`;
-        const rows = timings
-          .map(
-            (timing) => `
-              <div class="latency-row">
-                <span>${escapeHtml(formatTimingStep(timing.step))}</span>
-                <strong>${escapeHtml(timing.duration_ms)}ms</strong>
-              </div>
-            `,
-          )
-          .join("");
-
-        latencySummaryEl.innerHTML = `${totalRow}${rows}`;
-      }
-
-      function resetLatencySummary() {
-        currentTimings = {};
-        currentDurationMs = null;
-        renderLatencySummary();
-      }
-
-      function resetTraceList() {
-        traceCounter = 0;
-        traceCountEl.textContent = "0 条";
-        traceListEl.innerHTML = `<div class="trace-placeholder">发送问题后展示路由、工具调用、风控和业务动作。</div>`;
-      }
-
-      function renderConversationId() {
-        conversationIdTextEl.textContent = `Conversation ID：${conversationId || "未生成"}`;
-      }
-
-      function syncTracePanels() {
-        localStorage.setItem("customer_support_show_trace", String(traceToggle.checked));
-        document.querySelector("#clearTraceBtn").disabled = !traceToggle.checked;
-      }
-
-      function resetAgentFlow() {
-        document.querySelectorAll(".flow-step").forEach((item) => {
-          item.classList.remove("active", "done", "warn");
-        });
-      }
-
-      function setFlowState(step, state) {
-        const item = document.querySelector(`.flow-step[data-step="${step}"]`);
-        if (!item) return;
-
-        item.classList.remove("active", "done", "warn");
-        if (state) item.classList.add(state);
-      }
-
-      function updateAgentFlow(route) {
-        resetAgentFlow();
-        setFlowState("router", "done");
-
-        const agents = Array.isArray(route.agent_plan) ? route.agent_plan : [];
-        const plannedTools = Array.isArray(route.tool_plan) ? route.tool_plan : [];
-
-        if (
-          agents.includes("customer_agent") ||
-          route.need_policy ||
-          route.need_product_search ||
-          route.need_quick_reply
-        ) {
-          setFlowState("customer", "active");
-        }
-
-        if (
-          agents.includes("after_sales_agent") ||
-          route.need_order ||
-          route.need_refund_request ||
-          route.need_ticket
-        ) {
-          setFlowState("afterSales", "active");
-        }
-
-        if (
-          agents.includes("risk_agent") ||
-          route.need_risk_check ||
-          plannedTools.includes("risk_check") ||
-          route.risk_level === "high"
-        ) {
-          setFlowState("risk", route.risk_level === "high" ? "warn" : "active");
-        }
-      }
-
-      function formatAgentName(agentName) {
-        const names = {
-          customer_agent: "客服 Agent",
-          after_sales_agent: "售后 Agent",
-          risk_agent: "风控 Agent",
-          agent_orchestrator: "Orchestrator",
-        };
-        return names[agentName] || agentName;
-      }
-
-      function updateFlowByTool(toolName, success) {
-        const state = success ? "done" : "warn";
-        if (["policy_search", "get_shop_products", "send_goods_link", "get_quick_reply"].includes(toolName)) {
-          setFlowState("customer", state);
-        }
-        if (["order_lookup", "refund_apply", "create_ticket", "create_manual_review"].includes(toolName)) {
-          setFlowState("afterSales", state);
-        }
-        if (["risk_check", "transfer_to_human"].includes(toolName)) {
-          setFlowState("risk", state);
-        }
-      }
-
-      async function addFeedback() {
-        if (!conversationId) return;
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "feedback-row";
-        wrapper.innerHTML = `
-          <span>本轮评分</span>
-          ${[1, 2, 3, 4, 5].map((score) => `<button data-score="${score}">${score}</button>`).join("")}
-        `;
-        messagesEl.appendChild(wrapper);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-
-        wrapper.addEventListener("click", async (event) => {
-          const score = event.target.dataset.score;
-          if (!score) return;
-
-          await fetch("/feedback", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              conversation_id: conversationId,
-              score: Number(score),
-              comment: "web-ui-feedback",
-            }),
-          });
-
-          wrapper.innerHTML = `<span>已记录评分：${score}</span>`;
-        });
-      }
-
-      async function sendStreamingMessage(message) {
-        const assistantEl = addMessage("assistant", "正在处理...");
-        const response = await fetch("/agent/stream", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message,
-            conversation_id: conversationId || null,
-            use_llm: llmToggle.checked,
-            stream_tokens: streamToggle.checked,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
-        }
-
-        if (!response.body) {
-          throw new Error("浏览器没有收到流式响应体");
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let buffer = "";
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split("\n\n");
-          buffer = parts.pop();
-
-          for (const part of parts) {
-            const line = part.trim();
-            if (!line.startsWith("data:")) continue;
-
-            const payload = line.slice(5).trim();
-            if (payload === "[DONE]") continue;
-
-            handleStreamEvent(JSON.parse(payload), assistantEl);
-          }
-        }
-
-        addFeedback();
-      }
-
-      function handleStreamEvent(event, assistantEl) {
-        if (event.conversation_id && event.conversation_id !== conversationId) {
-          conversationId = event.conversation_id;
-          localStorage.setItem("customer_support_conversation_id", conversationId);
-          renderConversationId();
-        }
-
-        if (event.type === "route") {
-          addTracePanel("路由判断", event.content, buildRouteSummary(event.content), "success");
-          return;
-        }
-
-        if (event.type === "tool_result") {
-          const toolResult = event.content;
-          updateFlowByTool(toolResult.tool_name, toolResult.success);
-          addTracePanel(
-            toolNames[toolResult.tool_name] || toolResult.tool_name,
-            toolResult,
-            buildToolSummary(toolResult),
-            toolResult.success ? "success" : "warn",
-          );
-          return;
-        }
-
-        if (event.type === "execution_blocked") {
-          addTracePanel("执行拦截", event.content, buildExecutionBlockedSummary(event.content), "warn");
-          return;
-        }
-
-        if (event.type === "timing") {
-          currentTimings[event.content.step] = event.content;
-          renderLatencySummary();
-          return;
-        }
-
-        if (event.type === "status") {
-          assistantEl.textContent = event.content;
-          assistantEl.dataset.statusOnly = "true";
-          return;
-        }
-
-        if (event.type === "token") {
-          if (assistantEl.dataset.statusOnly === "true") {
-            assistantEl.textContent = "";
-            assistantEl.dataset.statusOnly = "false";
-          }
-
-          assistantEl.textContent += event.content;
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-          return;
-        }
-
-        if (event.type === "message") {
-          assistantEl.textContent = event.content;
-          return;
-        }
-
-        if (event.type === "done" && event.content) {
-          currentDurationMs = event.content.duration_ms ?? currentDurationMs;
-          currentTimings = event.content.timings || currentTimings;
-          renderLatencySummary();
-          return;
-        }
-
-        if (event.type === "error") {
-          assistantEl.textContent = `请求失败：${event.content}`;
-          addTracePanel("请求错误", event, `<div>${escapeHtml(event.content)}</div>`, "danger");
-        }
-      }
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -1987,68 +812,477 @@
           .replaceAll("'", "&#039;");
       }
 
-      async function handleSend() {
-        const message = inputEl.value.trim();
-        if (!message) return;
+      function formatBool(value) {
+        return value ? "是" : "否";
+      }
 
-        sendBtn.disabled = true;
-        inputEl.value = "";
-        resetLatencySummary();
-        resetTraceList();
-        resetAgentFlow();
-        updateOrderSnapshot(null);
-        addMessage("user", message);
+      function setPill(el, text, type = "") {
+        el.textContent = text;
+        el.className = `pill ${type}`.trim();
+      }
 
-        try {
-          await sendStreamingMessage(message);
-        } catch (error) {
-          addMessage("assistant", `请求失败：${error}`);
-          addTracePanel("请求错误", { error: String(error) }, `<div>${escapeHtml(error)}</div>`, "danger");
-        } finally {
-          sendBtn.disabled = false;
-          inputEl.focus();
+      function updateConversationId(id) {
+        if (!id) return;
+        state.conversationId = id;
+        localStorage.setItem("agent_conversation_id", id);
+        els.conversationId.textContent = id;
+      }
+
+      function renderArchitecture(activeAgents = []) {
+        const active = new Set(["FastAPI", "Agent Orchestrator", ...activeAgents]);
+        els.architectureList.innerHTML = ARCHITECTURE.map(([name, sub]) => `
+          <div class="arch-node ${active.has(name) ? "active" : ""}">
+            <span class="arch-dot"></span>
+            <div>
+              <div class="arch-name">${escapeHtml(name)}</div>
+              <div class="arch-sub">${escapeHtml(sub)}</div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function renderAgents(activeAgents = [], route = null) {
+        const active = new Set(["Orchestrator", ...activeAgents]);
+        const toolPlan = route?.tool_plan || [];
+        els.agentStrip.innerHTML = AGENTS.map((agent) => {
+          const tools = agent.name === "Orchestrator" ? toolPlan.join(" / ") || agent.tools : agent.tools;
+          return `
+            <div class="agent-card ${active.has(agent.name) ? "active" : ""}">
+              <div class="agent-role">${escapeHtml(agent.role)}</div>
+              <div class="agent-name">${escapeHtml(agent.name)}</div>
+              <div class="agent-tools">${escapeHtml(tools)}</div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function resetCurrentRun() {
+        state.route = null;
+        state.tools = [];
+        state.timings = {};
+        state.tokenUsage = null;
+        setPill(els.routeIntent, "路由中", "warn");
+        setPill(els.toolCount, "0");
+        els.routeSummary.innerHTML = `<div class="soft-note">等待路由结果。</div>`;
+        els.toolList.innerHTML = `<div class="soft-note">暂无工具调用。</div>`;
+        els.businessObjects.innerHTML = `<div class="soft-note">暂无业务对象。</div>`;
+        els.timingList.innerHTML = `<div class="soft-note">暂无耗时数据。</div>`;
+        els.metricsList.innerHTML = `<div class="soft-note">暂无指标。</div>`;
+        renderAgents();
+        renderArchitecture();
+      }
+
+      function addMessage(role, content = "") {
+        els.emptyState?.classList.add("hidden");
+        const wrapper = document.createElement("div");
+        wrapper.className = `message ${role}`;
+        wrapper.innerHTML = `
+          <div class="speaker">${role === "user" ? "用户" : "Agent"}</div>
+          <div class="bubble"></div>
+        `;
+        const bubble = wrapper.querySelector(".bubble");
+        bubble.textContent = content;
+        els.messages.appendChild(wrapper);
+        els.messages.scrollTop = els.messages.scrollHeight;
+        return { wrapper, bubble };
+      }
+
+      function addRating(wrapper) {
+        const rating = document.createElement("div");
+        rating.className = "rating";
+        rating.innerHTML = `
+          <span>本轮评分</span>
+          ${[1, 2, 3, 4, 5].map((score) => `<button type="button" data-score="${score}">${score}</button>`).join("")}
+        `;
+        rating.addEventListener("click", async (event) => {
+          const button = event.target.closest("button[data-score]");
+          if (!button || !state.conversationId) return;
+          await fetch("/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation_id: state.conversationId,
+              score: Number(button.dataset.score),
+            }),
+          });
+          rating.innerHTML = `<span>已评分 ${button.dataset.score}</span>`;
+        });
+        wrapper.appendChild(rating);
+      }
+
+      function renderRoute(route) {
+        if (!route) return;
+        const riskType = route.risk_level === "high" ? "danger" : route.risk_level === "medium" ? "warn" : "ok";
+        setPill(els.routeIntent, route.intent || "general_support", riskType);
+        const rows = [
+          ["订单号", route.order_id || "-"],
+          ["置信度", route.confidence ?? "-"],
+          ["需订单", formatBool(route.need_order)],
+          ["需 RAG", formatBool(route.need_policy)],
+          ["需退款", formatBool(route.need_refund_request)],
+          ["需风控", formatBool(route.need_risk_check)],
+          ["需工单", formatBool(route.need_ticket)],
+          ["人工审核", formatBool(route.manual_review_required || route.handoff_required)],
+          ["风险等级", route.risk_level || "low"],
+        ];
+        els.routeSummary.innerHTML = rows.map(([label, value]) => `
+          <div class="data-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+        `).join("");
+        renderAgents(route.agent_plan || [], route);
+        renderArchitecture(route.agent_plan || []);
+      }
+
+      function summarizeTool(tool) {
+        const result = tool.result;
+        if (tool.tool_name === "order_lookup" && tool.success && result) {
+          return `订单 ${result.order_id}，状态：${result.order_status}，物流：${result.shipping_status || "-"}`;
+        }
+        if (tool.tool_name === "policy_search" && tool.success && Array.isArray(result)) {
+          return result.slice(0, 2).map((item) => item.citation || item.source).join("；");
+        }
+        if (tool.tool_name === "risk_check" && tool.success && result) {
+          return `风险等级：${result.risk_level}，原因：${(result.risk_flags || []).join("、") || result.review_reason}`;
+        }
+        if (tool.tool_name === "refund_apply" && result) {
+          return tool.success
+            ? `退款单 ${result.refund_id}，状态：${result.status}，MQ：${result.mq_message_id || "-"}`
+            : result.reason || JSON.stringify(result);
+        }
+        if (tool.tool_name === "create_ticket" && tool.success && result) {
+          return `工单 ${result.ticket_id}，类型：${result.issue_type}，状态：${result.status}`;
+        }
+        if (tool.tool_name === "create_manual_review" && tool.success && result) {
+          return `审核单 ${result.review_id}，风险：${result.risk_level}，状态：${result.status}`;
+        }
+        if (tool.tool_name === "transfer_to_human" && tool.success && result) {
+          return result.handoff_summary || result.reason;
+        }
+        if (tool.tool_name === "ticket_decision" && result) {
+          return result.reason || JSON.stringify(result);
+        }
+        return typeof result === "string" ? result : JSON.stringify(result);
+      }
+
+      function renderTools() {
+        setPill(els.toolCount, String(state.tools.length), state.tools.some((item) => !item.success) ? "warn" : "ok");
+        if (!state.tools.length) {
+          els.toolList.innerHTML = `<div class="soft-note">暂无工具调用。</div>`;
+          return;
+        }
+        els.toolList.innerHTML = state.tools.map((tool) => `
+          <div class="tool-item">
+            <div class="tool-head">
+              <span class="tool-name">${escapeHtml(TOOL_LABELS[tool.tool_name] || tool.tool_name)}</span>
+              <span class="pill ${tool.success ? "ok" : "danger"}">${tool.success ? "成功" : "失败"}</span>
+            </div>
+            <div class="tool-summary">${escapeHtml(summarizeTool(tool))}</div>
+          </div>
+        `).join("");
+      }
+
+      function latestTool(name) {
+        return [...state.tools].reverse().find((item) => item.tool_name === name && item.success);
+      }
+
+      function renderBusinessObjects() {
+        const rows = [];
+        const order = latestTool("order_lookup")?.result;
+        const refund = latestTool("refund_apply")?.result;
+        const ticket = latestTool("create_ticket")?.result;
+        const review = latestTool("create_manual_review")?.result;
+
+        if (order) {
+          rows.push(["订单", `${order.order_id} · ${order.order_status}`]);
+        }
+        if (refund) {
+          rows.push(["退款", `${refund.refund_id} · ${refund.status}`]);
+          rows.push(["MQ", refund.mq_message_id || "-"]);
+        }
+        if (ticket) {
+          rows.push(["工单", `${ticket.ticket_id} · ${ticket.issue_type}`]);
+        }
+        if (review) {
+          rows.push(["审核", `${review.review_id} · ${review.risk_level}`]);
+        }
+
+        if (!rows.length) {
+          els.businessObjects.innerHTML = `<div class="soft-note">暂无业务对象。</div>`;
+          return;
+        }
+
+        els.businessObjects.innerHTML = rows.map(([label, value]) => `
+          <div class="data-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+        `).join("");
+      }
+
+      function renderTimings() {
+        const items = Object.values(state.timings);
+        if (!items.length) {
+          els.timingList.innerHTML = `<div class="soft-note">暂无耗时数据。</div>`;
+          return;
+        }
+        const max = Math.max(...items.map((item) => Number(item.duration_ms || 0)), 1);
+        els.timingList.innerHTML = items.map((item) => {
+          const width = Math.max(4, Math.min(100, Number(item.duration_ms || 0) / max * 100));
+          const label = String(item.step || "").replace("node.", "").replace("tool.", "");
+          return `
+            <div class="trace-item">
+              <span class="trace-step">${escapeHtml(label)}</span>
+              <div title="${escapeHtml(item.duration_ms)} ms">
+                <div class="trace-value"><div class="trace-bar" style="width:${width}%"></div></div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function renderMetrics(doneContent = null) {
+        if (doneContent?.token_usage) {
+          state.tokenUsage = doneContent.token_usage;
+        }
+        const token = state.tokenUsage || {};
+        const latestMetric = state.dashboard.metrics[0] || {};
+        const rows = [
+          ["Prompt", token.prompt_tokens_estimated ?? "-"],
+          ["Completion", token.completion_tokens_estimated ?? "-"],
+          ["Total", token.total_tokens_estimated ?? "-"],
+          ["本轮耗时", doneContent?.duration_ms ? `${doneContent.duration_ms}ms` : latestMetric.duration_ms ? `${latestMetric.duration_ms}ms` : "-"],
+          ["退款记录", state.dashboard.refunds.length],
+          ["MQ 消息", state.dashboard.mq.length],
+          ["人工审核", state.dashboard.reviews.length],
+        ];
+        els.metricsList.innerHTML = rows.map(([label, value]) => `
+          <div class="metric-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+        `).join("");
+      }
+
+      function handleEvent(event, assistantBubble) {
+        if (!event || event.type === "status") return;
+        if (event.conversation_id) updateConversationId(event.conversation_id);
+
+        if (event.type === "route") {
+          state.route = event.content;
+          renderRoute(state.route);
+          return;
+        }
+
+        if (event.type === "tool_result") {
+          state.tools.push(event.content);
+          renderTools();
+          renderBusinessObjects();
+          return;
+        }
+
+        if (event.type === "timing") {
+          state.timings[event.content.step] = event.content;
+          renderTimings();
+          return;
+        }
+
+        if (event.type === "token") {
+          assistantBubble.textContent += event.content;
+          els.messages.scrollTop = els.messages.scrollHeight;
+          return;
+        }
+
+        if (event.type === "message") {
+          assistantBubble.textContent = event.content;
+          els.messages.scrollTop = els.messages.scrollHeight;
+          return;
+        }
+
+        if (event.type === "done") {
+          if (event.content?.reply) {
+            assistantBubble.textContent = event.content.reply;
+          }
+          if (event.content?.route) {
+            state.route = event.content.route;
+            renderRoute(state.route);
+          }
+          if (Array.isArray(event.content?.tool_results)) {
+            state.tools = event.content.tool_results;
+            renderTools();
+            renderBusinessObjects();
+          }
+          if (event.content?.timings) {
+            state.timings = event.content.timings;
+            renderTimings();
+          }
+          renderMetrics(event.content);
+          refreshDashboard();
+        }
+
+        if (event.type === "error") {
+          assistantBubble.textContent = `请求失败：${event.content}`;
+          setPill(els.routeIntent, "错误", "danger");
         }
       }
 
-      sendBtn.addEventListener("click", handleSend);
-      traceToggle.addEventListener("change", syncTracePanels);
-      inputEl.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
+      async function sendByStream(message, assistantBubble) {
+        const response = await fetch("/agent/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            conversation_id: state.conversationId || null,
+            use_llm: els.llmToggle.checked,
+            stream_tokens: true,
+          }),
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split("\n\n");
+          buffer = chunks.pop() || "";
+
+          for (const chunk of chunks) {
+            const line = chunk.split("\n").find((item) => item.startsWith("data: "));
+            if (!line) continue;
+            const raw = line.slice(6);
+            if (raw === "[DONE]") continue;
+            handleEvent(JSON.parse(raw), assistantBubble);
+          }
+        }
+      }
+
+      async function sendByJson(message, assistantBubble) {
+        const response = await fetch("/agent/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            conversation_id: state.conversationId || null,
+            use_llm: els.llmToggle.checked,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.detail || `HTTP ${response.status}`);
+        }
+        handleEvent({ type: "done", content: result, conversation_id: result.conversation_id }, assistantBubble);
+      }
+
+      async function submitMessage(message) {
+        const text = message.trim();
+        if (!text) return;
+        resetCurrentRun();
+        addMessage("user", text);
+        const assistant = addMessage("agent", "正在处理...");
+        els.messageInput.value = "";
+        els.sendBtn.disabled = true;
+
+        try {
+          if (els.streamToggle.checked) {
+            await sendByStream(text, assistant.bubble);
+          } else {
+            await sendByJson(text, assistant.bubble);
+          }
+          addRating(assistant.wrapper);
+        } catch (error) {
+          assistant.bubble.textContent = `请求失败：${error.message}`;
+          setPill(els.routeIntent, "错误", "danger");
+        } finally {
+          els.sendBtn.disabled = false;
+          els.messageInput.focus();
+        }
+      }
+
+      async function loadServiceInfo() {
+        try {
+          const [infoResponse, healthResponse] = await Promise.all([
+            fetch("/info"),
+            fetch("/health"),
+          ]);
+          const info = await infoResponse.json();
+          const health = await healthResponse.json();
+          els.modelName.textContent = info.default_model || "-";
+          els.ragMode.textContent = health.rag_retrieval_mode || info.rag_embedding_provider || "-";
+          els.databaseBackend.textContent = health.database_backend || "-";
+          els.cacheBackend.textContent = health.cache?.backend || (health.redis_enabled ? "redis" : "local");
+          els.mqBackend.textContent = health.mq_backend || "-";
+          els.llmKeyState.textContent = info.has_llm_key ? "已配置" : "本地回复";
+          setPill(els.serviceStatus, health.success ? "在线" : "异常", health.success ? "ok" : "danger");
+        } catch (error) {
+          setPill(els.serviceStatus, "离线", "danger");
+        }
+      }
+
+      async function refreshDashboard() {
+        try {
+          const [refunds, tickets, reviews, mq, metrics] = await Promise.all([
+            fetch("/refunds?limit=20").then((res) => res.json()),
+            fetch("/tickets?limit=20").then((res) => res.json()),
+            fetch("/manual-reviews?limit=20").then((res) => res.json()),
+            fetch("/mq/messages?limit=20").then((res) => res.json()),
+            fetch("/observability/metrics?limit=20").then((res) => res.json()),
+          ]);
+          state.dashboard = {
+            refunds: refunds.data || [],
+            tickets: tickets.data || [],
+            reviews: reviews.data || [],
+            mq: mq.data || [],
+            metrics: metrics.data || [],
+          };
+          renderMetrics();
+        } catch (error) {
+          els.metricsList.innerHTML = `<div class="soft-note">指标读取失败。</div>`;
+        }
+      }
+
+      els.chatForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitMessage(els.messageInput.value);
+      });
+
+      els.messageInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
           event.preventDefault();
-          handleSend();
+          submitMessage(els.messageInput.value);
         }
       });
 
-      document.querySelector("#newChatBtn").addEventListener("click", () => {
-        conversationId = "";
-        activeConversation = null;
-        localStorage.removeItem("customer_support_conversation_id");
-        renderConversationId();
-        activeCaseTitleEl.textContent = "新对话";
-        activeCaseMetaEl.innerHTML = `<span class="status-pill">未选择平台</span>`;
-        messagesEl.innerHTML = "";
-        inputEl.value = "";
-        resetLatencySummary();
-        resetTraceList();
-        resetAgentFlow();
-        updateOrderSnapshot(null);
-        renderConversationList();
-        addMessage("assistant", "已开始新对话，请输入新的售后问题。");
-      });
-
-      document.querySelector("#clearTraceBtn").addEventListener("click", () => {
-        resetTraceList();
-      });
-
-      document.querySelectorAll(".quick").forEach((button) => {
+      document.querySelectorAll(".preset").forEach((button) => {
         button.addEventListener("click", () => {
-          inputEl.value = button.textContent.trim();
-          inputEl.focus();
+          els.messageInput.value = button.textContent.trim();
+          submitMessage(els.messageInput.value);
         });
       });
 
-      syncTracePanels();
-      initPage();
+      els.traceToggle.addEventListener("change", () => {
+        els.tracePanel.classList.toggle("hidden", !els.traceToggle.checked);
+      });
+
+      els.newChatBtn.addEventListener("click", () => {
+        state.conversationId = "";
+        localStorage.removeItem("agent_conversation_id");
+        els.conversationId.textContent = "-";
+        els.messages.innerHTML = `
+          <div class="empty-state" id="emptyState">
+            <h2>多 Agent 售后链路就绪</h2>
+            <p>当前控制台只覆盖客服问答、售后处理、风控审核、Hybrid RAG、Redis 状态、MQ 退款任务和可观测评测链路。</p>
+          </div>
+        `;
+        els.emptyState = document.querySelector("#emptyState");
+        resetCurrentRun();
+      });
+
+      renderArchitecture();
+      renderAgents();
+      if (state.conversationId) {
+        els.conversationId.textContent = state.conversationId;
+      }
+      loadServiceInfo();
+      refreshDashboard();
     </script>
   </body>
 </html>

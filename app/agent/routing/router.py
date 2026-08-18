@@ -36,10 +36,6 @@ POLICY_KEYWORDS = [
     "支付",
     "扣款",
     "发票",
-    "库存",
-    "缺货",
-    "补货",
-    "预售",
     "投诉",
     "曝光",
     "差评",
@@ -49,46 +45,6 @@ POLICY_KEYWORDS = [
     "质量",
     "黑屏",
 ]
-
-PRODUCT_KEYWORDS = [
-    "推荐",
-    "买",
-    "下单",
-    "链接",
-    "商品卡片",
-    "店里",
-    "同款",
-    "类似商品",
-    "价格",
-]
-
-PRODUCT_ACTION_KEYWORDS = [
-    "推荐",
-    "发链接",
-    "链接",
-    "商品卡片",
-    "发我",
-    "店里",
-    "同款",
-    "类似商品",
-    "下单",
-    "有库存",
-]
-
-GOODS_LINK_KEYWORDS = [
-    "发链接",
-    "商品卡片",
-    "链接",
-    "发我",
-    "推荐",
-]
-
-QUICK_REPLY_INTENT_KEYWORDS = {
-    "payment_invoice": ["怎么开", "如何开", "抬头", "税号", "邮箱"],
-    "missing_order_id": ["订单号"],
-    "handoff": ["人工", "真人", "转人工", "客服"],
-    "product_recommendation": ["推荐", "商品卡片", "发链接"],
-}
 
 HUMAN_HANDOFF_KEYWORDS = [
     "转人工",
@@ -135,7 +91,6 @@ TICKET_KEYWORDS = [
     "停住",
     "延迟",
     "丢件",
-    "支付失败",
     "支付异常",
     "扣款",
     "重复扣款",
@@ -200,11 +155,6 @@ INTENT_RULES = [
         "keywords": ["支付", "扣款", "银行卡", "发票", "税号", "抬头"],
     },
     {
-        "intent": "stock_restock",
-        "label": "库存补发",
-        "keywords": ["缺货", "补发", "补货", "预售"],
-    },
-    {
         "intent": "complaint",
         "label": "投诉升级",
         "keywords": ["投诉", "没人处理", "人工", "客服", "曝光", "差评", "起诉", "12315"],
@@ -213,11 +163,6 @@ INTENT_RULES = [
         "intent": "membership",
         "label": "会员权益",
         "keywords": ["会员", "黑金", "权益"],
-    },
-    {
-        "intent": "product_recommendation",
-        "label": "商品推荐",
-        "keywords": ["推荐", "商品", "店里", "买", "类似商品", "商品卡片"],
     },
 ]
 
@@ -288,15 +233,6 @@ def build_tool_plan(route: RouteDecision) -> list[str]:
     if route.manual_review_required:
         plan.append("create_manual_review")
 
-    if route.need_product_search:
-        plan.append("get_shop_products")
-
-    if route.need_goods_link:
-        plan.append("send_goods_link")
-
-    if route.need_quick_reply:
-        plan.append("get_quick_reply")
-
     if route.need_handoff:
         plan.append("transfer_to_human")
 
@@ -323,22 +259,6 @@ def is_refund_application(user_message: str, intent: str) -> bool:
     return True
 
 
-def detect_quick_reply_intent(user_message: str) -> str | None:
-    """判断是否适合使用客服工作台快捷回复。"""
-
-    if any(keyword in user_message for keyword in HUMAN_HANDOFF_KEYWORDS):
-        return None
-
-    for intent, keywords in QUICK_REPLY_INTENT_KEYWORDS.items():
-        if intent in {"handoff", "product_recommendation"}:
-            continue
-
-        if any(keyword in user_message for keyword in keywords):
-            return intent
-
-    return None
-
-
 def route_tools(user_message: str) -> RouteDecision:
     """根据用户问题判断本轮需要调用哪些工具。"""
 
@@ -359,22 +279,10 @@ def route_tools(user_message: str) -> RouteDecision:
     handoff_required, handoff_reason = should_handoff_to_human(user_message)
 
     need_order = order_id is not None
-    need_product_search = any(keyword in user_message for keyword in PRODUCT_ACTION_KEYWORDS)
-    need_goods_link = need_product_search and any(keyword in user_message for keyword in GOODS_LINK_KEYWORDS)
     need_policy = any(keyword in user_message for keyword in POLICY_KEYWORDS)
-
-    if (
-        need_product_search
-        and not order_id
-        and not any(keyword in user_message for keyword in ["缺货", "补货", "补发", "补货提醒", "预售"])
-    ):
-        need_policy = False
-    quick_reply_intent = detect_quick_reply_intent(user_message)
-    need_quick_reply = quick_reply_intent is not None and not need_clarification
     need_handoff = (
         any(keyword in user_message for keyword in HUMAN_HANDOFF_KEYWORDS)
         or handoff_required
-        or ("缺货" in user_message and not order_id)
     )
     has_ticket_intent = any(keyword in user_message for keyword in TICKET_KEYWORDS)
     need_refund_request = is_refund_application(user_message, intent) and order_id is not None
@@ -408,12 +316,7 @@ def route_tools(user_message: str) -> RouteDecision:
         need_refund_request=need_refund_request,
         need_risk_check=need_risk_check,
         manual_review_required=manual_review_required,
-        need_product_search=need_product_search,
-        need_goods_link=need_goods_link,
-        need_quick_reply=need_quick_reply,
         need_handoff=need_handoff,
-        quick_reply_intent=quick_reply_intent,
-        product_query=user_message if need_product_search else None,
         need_clarification=need_clarification,
         clarification_question="请您提供订单号，我才能继续查询订单状态并判断售后方案。"
         if need_clarification

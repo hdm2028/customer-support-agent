@@ -39,12 +39,6 @@ POLICY_PROFILES = [
         "required_keywords": ["会员", "不能", "质量检测", "绕过"],
     },
     {
-        "name": "stock_restock",
-        "triggers": ["缺货", "补发", "补货", "预售", "继续等待"],
-        "expected_sources": ["库存与补货政策.md"],
-        "required_keywords": ["缺货", "补发", "继续等待", "补货提醒"],
-    },
-    {
         "name": "complaint",
         "triggers": ["投诉", "商家没人处理", "没人处理", "起诉", "差评", "曝光", "12315"],
         "expected_sources": ["售后FAQ.md"],

@@ -37,9 +37,6 @@ def infer_policy_intent(user_message: str) -> str:
     if "发票" in user_message:
         return "电子发票 发票抬头 税号 邮箱"
 
-    if "缺货" in user_message or "补发" in user_message or "补货" in user_message:
-        return "缺货订单处理 补发 继续等待 补货提醒"
-
     if "会员" in user_message:
         return "会员权益 售后权益限制 质量检测"
 

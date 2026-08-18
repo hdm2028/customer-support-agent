@@ -113,33 +113,11 @@ def build_after_sales_context(tool_results: list[ToolResult]) -> str:
     return "\n".join(lines)
 
 
-def build_workbench_context(tool_results: list[ToolResult]) -> str:
-    """整理商品推荐、快捷回复和转人工等工作台工具结果。"""
+def build_handoff_context(tool_results: list[ToolResult]) -> str:
+    """整理转人工交接结果。"""
 
     lines = []
-    product_result = get_tool_result(tool_results, "get_shop_products")
-    goods_link_result = get_tool_result(tool_results, "send_goods_link")
-    quick_reply_result = get_tool_result(tool_results, "get_quick_reply")
     handoff_result = get_tool_result(tool_results, "transfer_to_human")
-
-    if product_result:
-        lines.append("[商品推荐]")
-        if product_result.success:
-            for product in product_result.result:
-                lines.append(
-                    f"- {product.get('title')}，价格 {product.get('price')} 元，"
-                    f"库存 {product.get('stock')}，卖点：{'；'.join(product.get('selling_points', [])[:2])}"
-                )
-        else:
-            lines.append(f"查询失败：{product_result.result}")
-
-    if goods_link_result:
-        lines.append("[商品卡片]")
-        lines.append(str(goods_link_result.result))
-
-    if quick_reply_result:
-        lines.append("[快捷回复]")
-        lines.append(str(quick_reply_result.result))
 
     if handoff_result:
         lines.append("[转人工交接]")
@@ -156,7 +134,7 @@ def build_tool_context(tool_results: list[ToolResult]) -> str:
         build_policy_evidence(tool_results),
         build_after_sales_context(tool_results),
         build_ticket_context(tool_results),
-        build_workbench_context(tool_results),
+        build_handoff_context(tool_results),
     ]
     context_parts = [part for part in context_parts if part]
 
@@ -181,7 +159,6 @@ def build_model_messages(
         "不要编造工具结果里不存在的信息。"
         "涉及退款、赔付、取消订单、修改地址等高风险操作时，只能按工具结果说明申请、MQ 异步处理或人工审核状态，不能承诺已经完成。"
         "如果信息不足，要明确告诉用户还需要补充什么。"
-        "如果工具生成了商品卡片或快捷回复，要把这些工作台结果自然告知用户。"
     )
 
     user_prompt = (

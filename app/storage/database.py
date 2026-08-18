@@ -108,7 +108,7 @@ DEFAULT_CUSTOMER_PROFILES = [
         "account_status": "normal",
         "refund_count_30d": 2,
         "complaint_count_30d": 1,
-        "risk_tags": ["缺货补发"],
+        "risk_tags": ["发货时效待确认"],
     },
     {
         "user_id": "u011",

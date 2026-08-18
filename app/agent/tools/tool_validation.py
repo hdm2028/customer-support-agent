@@ -24,9 +24,6 @@ def validate_tool_plan(route: RouteDecision) -> tuple[bool, list[str]]:
     if route.need_refund_request and not route.need_risk_check:
         errors.append("创建退款申请前必须执行风控检测。")
 
-    if route.need_goods_link and not route.need_product_search:
-        errors.append("发送商品卡片前必须先查询商品。")
-
     return len(errors) == 0, errors
 
 
@@ -79,13 +76,6 @@ def validate_tool_chain(route: RouteDecision, tool_results: list[ToolResult]) ->
     if "create_manual_review" in tool_names and "risk_check" in tool_names:
         if tool_names.index("create_manual_review") < tool_names.index("risk_check"):
             errors.append("create_manual_review 不能早于 risk_check 执行。")
-
-    if "send_goods_link" in tool_names:
-        if "get_shop_products" not in tool_names:
-            errors.append("send_goods_link 前缺少 get_shop_products。")
-
-        if tool_names.index("send_goods_link") < tool_names.index("get_shop_products"):
-            errors.append("send_goods_link 不能早于 get_shop_products 执行。")
 
     order_result = next((item for item in tool_results if item.tool_name == "order_lookup"), None)
     if order_result and not order_result.success:

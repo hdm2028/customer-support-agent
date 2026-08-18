@@ -121,13 +121,13 @@
     "user_name": "林可",
     "product_name": "扫地机器人 X5",
     "category": "家电",
-    "order_status": "缺货等待补发",
-    "shipping_status": "商品暂时缺货，预计 3 个工作日内补发",
+    "order_status": "待发货",
+    "shipping_status": "仓库待出库，发货时效待人工确认",
     "signed_date": null,
     "warranty_months": 12,
     "return_window_days": 7,
     "can_refund_directly": false,
-    "notes": "缺货订单可选择继续等待、申请取消或登记补货提醒，最终处理需人工确认。"
+    "notes": "待发货订单可申请取消或退款，但需要先确认仓库是否已经进入出库流程。"
   },
   {
     "order_id": "10011",

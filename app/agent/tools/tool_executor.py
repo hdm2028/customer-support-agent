@@ -204,59 +204,6 @@ def run_policy_search(
     return policy_result
 
 
-def run_product_search(
-    user_message: str,
-    route: RouteDecision,
-    trace: dict | None,
-) -> ToolResult:
-    """执行商品搜索工具。"""
-
-    return call_tool(
-        trace=trace,
-        step_name="tool.get_shop_products",
-        tool_name="get_shop_products",
-        arguments={
-            "query": route.product_query or user_message,
-            "limit": 5,
-        },
-        fallback_action="ask_user_or_handoff_to_human",
-    )
-
-
-def run_goods_link(route: RouteDecision, tool_results: list[ToolResult], trace: dict | None) -> ToolResult:
-    """基于商品搜索结果生成商品卡片。"""
-
-    product_result = get_tool_result(tool_results, "get_shop_products")
-    product_id = None
-
-    if product_result and product_result.success and product_result.result:
-        product_id = product_result.result[0].get("product_id")
-
-    return call_tool(
-        trace=trace,
-        step_name="tool.send_goods_link",
-        tool_name="send_goods_link",
-        arguments={
-            "product_id": product_id,
-        },
-        fallback_action="ask_user_or_handoff_to_human",
-    )
-
-
-def run_quick_reply(route: RouteDecision, trace: dict | None) -> ToolResult:
-    """执行快捷回复模板查询。"""
-
-    return call_tool(
-        trace=trace,
-        step_name="tool.get_quick_reply",
-        tool_name="get_quick_reply",
-        arguments={
-            "intent": route.quick_reply_intent,
-        },
-        fallback_action="fallback_to_generated_reply",
-    )
-
-
 def run_risk_check(user_message: str, route: RouteDecision, trace: dict | None) -> ToolResult:
     """调用风控 Agent。"""
 
@@ -560,26 +507,6 @@ def execute_tools(
             return tool_results
 
         apply_risk_result_to_route(route, risk_result)
-
-    if route.need_product_search:
-        add_agent_event(
-            trace,
-            CUSTOMER_AGENT.name,
-            "get_shop_products",
-            {"query": route.product_query or user_message},
-        )
-        tool_results.append(run_product_search(user_message, route, trace))
-        add_tool_failure_trace(trace, tool_results[-1])
-
-    if route.need_goods_link:
-        add_agent_event(trace, CUSTOMER_AGENT.name, "send_goods_link")
-        tool_results.append(run_goods_link(route, tool_results, trace))
-        add_tool_failure_trace(trace, tool_results[-1])
-
-    if route.need_quick_reply:
-        add_agent_event(trace, CUSTOMER_AGENT.name, "get_quick_reply")
-        tool_results.append(run_quick_reply(route, trace))
-        add_tool_failure_trace(trace, tool_results[-1])
 
     if route.need_refund_request:
         refund_result = run_refund_apply(user_message, route, tool_results, trace)
