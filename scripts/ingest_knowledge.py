@@ -16,7 +16,7 @@ from app.rag.document_loader import (
     build_chunks_from_dir,
 )
 from app.rag.embedding_client import EmbeddingProvider
-from app.rag.vector_index import InMemoryVectorIndex
+from app.rag.hybrid_index import HybridRAGIndex
 from app.storage.store import KNOWLEDGE_DIR
 
 
@@ -126,9 +126,17 @@ def count_chunks_by_source(chunks: list) -> dict[str, int]:
 
 
 def build_embedding_text(chunk) -> str:
-    """保持和 InMemoryVectorIndex 一致的 embedding 输入文本。"""
+    """保持和 HybridRAGIndex 一致的 embedding 输入文本。"""
 
-    return f"{chunk.source}\n{chunk.section}\n{chunk.text}"
+    metadata = chunk.metadata or {}
+    return "\n".join([
+        chunk.source,
+        chunk.section,
+        metadata.get("knowledge_category", ""),
+        metadata.get("business_domain", ""),
+        metadata.get("source_type", ""),
+        chunk.text,
+    ])
 
 
 def estimate_embedding_cache(chunks: list) -> dict:
@@ -289,7 +297,7 @@ def main() -> None:
     embedding_cache = estimate_embedding_cache(chunks)
 
     # 构建一次内存索引，触发缺失 embedding 的生成和缓存写入。
-    InMemoryVectorIndex(chunks)
+    HybridRAGIndex(chunks)
 
     manifest = build_manifest(
         current_files=current_files,

@@ -8,7 +8,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.agent.agent_core import run_customer_support_agent
+from app.agent.entry.agent_core import run_customer_support_agent
 from app.core.config import BASE_DIR
 
 
@@ -132,6 +132,8 @@ def infer_final_action(result: dict) -> str:
     create_ticket_result = find_tool_result(result, "create_ticket")
     ticket_decision_result = find_tool_result(result, "ticket_decision")
     order_lookup_result = find_tool_result(result, "order_lookup")
+    refund_result = find_tool_result(result, "refund_apply")
+    manual_review_result = find_tool_result(result, "create_manual_review")
 
     if route.get("blocked_by_guardrail"):
         return "blocked_by_guardrail"
@@ -149,6 +151,15 @@ def infer_final_action(result: dict) -> str:
 
     if ticket_decision_result and not ticket_decision_result.get("success"):
         return "ticket_blocked"
+
+    if refund_result and refund_result.get("success"):
+        refund = refund_result.get("result", {})
+        if refund.get("status") == "pending_manual_review":
+            return "refund_pending_manual_review"
+        return "refund_queued"
+
+    if manual_review_result and manual_review_result.get("success"):
+        return "manual_review_created"
 
     if create_ticket_result and create_ticket_result.get("success"):
         ticket = create_ticket_result.get("result", {})

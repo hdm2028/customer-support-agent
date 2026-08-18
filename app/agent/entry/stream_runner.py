@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from time import perf_counter
 
-from app.agent.workflow import (
+from app.agent.entry.workflow import (
     build_initial_state,
     build_model_context_node,
     dump_model,
@@ -19,6 +19,7 @@ from app.observability.tracing import (
     build_timing_event,
     finish_trace,
     save_trace,
+    set_completion_token_usage,
 )
 
 
@@ -174,6 +175,7 @@ async def stream_llm_reply(state: dict, conversation_id: str) -> AsyncGenerator[
             "reply_chars": len(reply),
         },
     )
+    set_completion_token_usage(state["trace"], reply)
     add_trace_timing(
         state["trace"],
         "node.generate_reply",

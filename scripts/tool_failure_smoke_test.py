@@ -6,8 +6,8 @@ from uuid import uuid4
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import app.agent.agent_core as agent_core
-import app.agent.tool_registry as tool_registry
+import app.agent.entry.agent_core as agent_core
+import app.agent.tools.tool_registry as tool_registry
 
 
 def tool_names(result: dict) -> list[str]:
@@ -51,7 +51,7 @@ def run_ticket_failure_case() -> dict:
 
     try:
         return agent_core.run_customer_support_agent(
-            user_message="订单 10001 退款",
+            user_message="订单 10001 耳机坏了，还在保修期内吗？",
             conversation_id=f"tool-failure-ticket-{uuid4().hex}",
             use_llm=False,
         )

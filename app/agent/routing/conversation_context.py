@@ -1,5 +1,5 @@
-from app.agent.fallback_policy import requires_order_id
-from app.agent.router import extract_order_id
+from app.agent.policies.fallback_policy import requires_order_id
+from app.agent.routing.router import extract_order_id
 
 
 ISSUE_CONTEXT_KEYWORDS = [

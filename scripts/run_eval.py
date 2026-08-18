@@ -7,7 +7,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.agent.agent_core import run_customer_support_agent
+from app.agent.entry.agent_core import run_customer_support_agent
 from app.core.config import BASE_DIR
 EVAL_PATH = BASE_DIR / "data" / "eval" / "customer_support_eval.jsonl"
 REPORT_DIR = BASE_DIR / "data" / "eval_reports"

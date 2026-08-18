@@ -1,16 +1,17 @@
 import re
 
-from app.agent.fallback_policy import (
+from app.agent.policies.fallback_policy import (
     should_ask_order_id,
     should_handoff_to_human,
 )
-from app.agent.guardrails import check_user_input, contains_risky_action
+from app.agent.policies.guardrails import check_user_input, contains_risky_action
 from app.core.schemas import RouteDecision
 
 
 POLICY_KEYWORDS = [
     "退货",
     "退款",
+    "退钱",
     "不想要",
     "不要了",
     "换货",
@@ -26,6 +27,9 @@ POLICY_KEYWORDS = [
     "换新",
     "售后",
     "物流",
+    "快递",
+    "未收到",
+    "没收到",
     "发货",
     "签收",
     "会员",
@@ -37,12 +41,17 @@ POLICY_KEYWORDS = [
     "补货",
     "预售",
     "投诉",
+    "曝光",
+    "差评",
+    "起诉",
+    "12315",
     "七天无理由",
+    "质量",
+    "黑屏",
 ]
 
 PRODUCT_KEYWORDS = [
     "推荐",
-    "商品",
     "买",
     "下单",
     "链接",
@@ -51,6 +60,19 @@ PRODUCT_KEYWORDS = [
     "同款",
     "类似商品",
     "价格",
+]
+
+PRODUCT_ACTION_KEYWORDS = [
+    "推荐",
+    "发链接",
+    "链接",
+    "商品卡片",
+    "发我",
+    "店里",
+    "同款",
+    "类似商品",
+    "下单",
+    "有库存",
 ]
 
 GOODS_LINK_KEYWORDS = [
@@ -81,10 +103,16 @@ TICKET_KEYWORDS = [
     "取消订单",
     "修改地址",
     "改地址",
+    "修改为",
     "改收货地址",
     "收货地址",
     "投诉",
+    "曝光",
+    "差评",
+    "起诉",
+    "12315",
     "退款",
+    "退钱",
     "赔付",
     "工单",
     "人工",
@@ -96,8 +124,15 @@ TICKET_KEYWORDS = [
     "检测",
     "维修",
     "物流异常",
+    "快递",
+    "未收到",
+    "没收到",
+    "没有更新",
     "不更新",
     "没更新",
+    "三天没动",
+    "超过48",
+    "停住",
     "延迟",
     "丢件",
     "支付失败",
@@ -107,12 +142,37 @@ TICKET_KEYWORDS = [
     "改派",
 ]
 
+REFUND_APPLY_KEYWORDS = [
+    "申请退款",
+    "我要退款",
+    "帮我退款",
+    "给我退款",
+    "退款",
+    "退钱",
+    "退款申请",
+    "退货退款",
+    "不想要了",
+    "不要了",
+]
+
+REFUND_QUESTION_KEYWORDS = [
+    "可以",
+    "能不能",
+    "能否",
+    "为什么",
+    "多久到账",
+    "还不到账",
+    "政策",
+    "吗",
+    "怎么办",
+]
+
 
 INTENT_RULES = [
     {
         "intent": "address_change",
         "label": "修改收货地址",
-        "keywords": ["改收货地址", "修改地址", "改地址", "收货地址"],
+        "keywords": ["改收货地址", "修改地址", "改地址", "修改为", "收货地址"],
     },
     {
         "intent": "cancel_order",
@@ -122,17 +182,17 @@ INTENT_RULES = [
     {
         "intent": "return_refund",
         "label": "退货退款",
-        "keywords": ["退货", "退款", "七天无理由", "不想要", "不要了"],
+        "keywords": ["退货", "退款", "退钱", "七天无理由", "不想要", "不要了"],
     },
     {
         "intent": "shipping_exception",
         "label": "物流异常",
-        "keywords": ["物流", "快递", "发货", "没更新", "不更新", "延迟", "丢件"],
+        "keywords": ["物流", "快递", "发货", "没更新", "没有更新", "不更新", "三天没动", "超过48", "停住", "延迟", "丢件", "未收到", "没收到"],
     },
     {
         "intent": "warranty_repair",
         "label": "保修维修",
-        "keywords": ["保修", "维修", "检测", "坏了", "故障", "质量问题", "换新"],
+        "keywords": ["保修", "维修", "检测", "坏了", "故障", "质量问题", "质量", "黑屏", "换新"],
     },
     {
         "intent": "payment_invoice",
@@ -147,7 +207,7 @@ INTENT_RULES = [
     {
         "intent": "complaint",
         "label": "投诉升级",
-        "keywords": ["投诉", "没人处理", "人工", "客服"],
+        "keywords": ["投诉", "没人处理", "人工", "客服", "曝光", "差评", "起诉", "12315"],
     },
     {
         "intent": "membership",
@@ -219,6 +279,15 @@ def build_tool_plan(route: RouteDecision) -> list[str]:
     if route.need_policy:
         plan.append("policy_search")
 
+    if route.need_risk_check:
+        plan.append("risk_check")
+
+    if route.need_refund_request:
+        plan.append("refund_apply")
+
+    if route.manual_review_required:
+        plan.append("create_manual_review")
+
     if route.need_product_search:
         plan.append("get_shop_products")
 
@@ -235,6 +304,23 @@ def build_tool_plan(route: RouteDecision) -> list[str]:
         plan.append("create_ticket")
 
     return plan
+
+
+def is_refund_application(user_message: str, intent: str) -> bool:
+    """区分“问退款政策”和“要发起退款申请”。"""
+
+    if intent != "return_refund":
+        return False
+
+    has_apply_keyword = any(keyword in user_message for keyword in REFUND_APPLY_KEYWORDS)
+
+    if not has_apply_keyword:
+        return False
+
+    if any(keyword in user_message for keyword in REFUND_QUESTION_KEYWORDS):
+        return False
+
+    return True
 
 
 def detect_quick_reply_intent(user_message: str) -> str | None:
@@ -273,9 +359,16 @@ def route_tools(user_message: str) -> RouteDecision:
     handoff_required, handoff_reason = should_handoff_to_human(user_message)
 
     need_order = order_id is not None
-    need_policy = any(keyword in user_message for keyword in POLICY_KEYWORDS)
-    need_product_search = any(keyword in user_message for keyword in PRODUCT_KEYWORDS)
+    need_product_search = any(keyword in user_message for keyword in PRODUCT_ACTION_KEYWORDS)
     need_goods_link = need_product_search and any(keyword in user_message for keyword in GOODS_LINK_KEYWORDS)
+    need_policy = any(keyword in user_message for keyword in POLICY_KEYWORDS)
+
+    if (
+        need_product_search
+        and not order_id
+        and not any(keyword in user_message for keyword in ["缺货", "补货", "补发", "补货提醒", "预售"])
+    ):
+        need_policy = False
     quick_reply_intent = detect_quick_reply_intent(user_message)
     need_quick_reply = quick_reply_intent is not None and not need_clarification
     need_handoff = (
@@ -284,10 +377,25 @@ def route_tools(user_message: str) -> RouteDecision:
         or ("缺货" in user_message and not order_id)
     )
     has_ticket_intent = any(keyword in user_message for keyword in TICKET_KEYWORDS)
+    need_refund_request = is_refund_application(user_message, intent) and order_id is not None
+    need_risk_check = bool(
+        order_id
+        and (
+            need_refund_request
+            or intent == "complaint"
+            or handoff_required
+            or contains_risky_action(user_message)
+        )
+    )
 
     # 工单通常需要订单号承载，避免“会员权益解释”等纯咨询被误建工单。
     # 高风险动作即使没有订单号，也要进入人工审核链路或被安全策略拦截。
-    need_ticket = (need_order and has_ticket_intent) or contains_risky_action(user_message)
+    need_ticket = (
+        (need_order and has_ticket_intent)
+        or need_refund_request
+        or contains_risky_action(user_message)
+    )
+    manual_review_required = handoff_required
 
     route = RouteDecision(
         intent=intent,
@@ -297,6 +405,9 @@ def route_tools(user_message: str) -> RouteDecision:
         need_order=need_order,
         need_policy=need_policy,
         need_ticket=need_ticket,
+        need_refund_request=need_refund_request,
+        need_risk_check=need_risk_check,
+        manual_review_required=manual_review_required,
         need_product_search=need_product_search,
         need_goods_link=need_goods_link,
         need_quick_reply=need_quick_reply,
@@ -322,11 +433,20 @@ def infer_issue_type(user_message: str) -> str:
     if "投诉" in user_message:
         return "投诉升级"
 
-    if "改收货地址" in user_message or "修改地址" in user_message or "改地址" in user_message:
+    if "改收货地址" in user_message or "修改地址" in user_message or "改地址" in user_message or "修改为" in user_message:
         return "地址修改"
 
-    if "退款" in user_message or "退货" in user_message or "不想要" in user_message or "不要了" in user_message:
+    if (
+        "退款" in user_message
+        or "退钱" in user_message
+        or "退货" in user_message
+        or "不想要" in user_message
+        or "不要了" in user_message
+    ):
         return "退货退款"
+
+    if "支付异常" in user_message or "重复扣款" in user_message or "扣款" in user_message:
+        return "支付异常"
 
     if "物流" in user_message:
         return "物流异常"

@@ -339,16 +339,97 @@ def split_text_with_overlap(text: str, max_chars: int, overlap: int) -> list[tup
     return chunks
 
 
+def classify_document(source: str) -> dict:
+    if any(keyword in source for keyword in ["退款", "退换货", "商品售后规则"]):
+        return {
+            "knowledge_category": "refund_policy",
+            "business_domain": "after_sales",
+            "source_type": "policy",
+        }
+
+    if any(keyword in source for keyword in ["物流", "配送"]):
+        return {
+            "knowledge_category": "logistics_policy",
+            "business_domain": "fulfillment",
+            "source_type": "policy",
+        }
+
+    if any(keyword in source for keyword in ["商品说明", "保修"]):
+        return {
+            "knowledge_category": "product_manual",
+            "business_domain": "product_support",
+            "source_type": "manual",
+        }
+
+    if "客服SOP" in source:
+        return {
+            "knowledge_category": "customer_sop",
+            "business_domain": "customer_service",
+            "source_type": "sop",
+        }
+
+    if any(keyword in source for keyword in ["FAQ", "历史问题", "案例"]):
+        return {
+            "knowledge_category": "historical_case",
+            "business_domain": "customer_service",
+            "source_type": "case",
+        }
+
+    return {
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge",
+    }
+
+
+def choose_chunk_strategy(document: RawDocument) -> dict:
+    """按文档类型选择 chunk 策略，避免所有知识都被同一种长度切坏。"""
+
+    source = document.source
+
+    if document.file_type == "pdf":
+        return {"name": "pdf_page_section", "max_chars": 900, "overlap": 150}
+
+    if any(keyword in source for keyword in ["FAQ", "历史问题", "案例"]):
+        return {"name": "qa_case_short", "max_chars": 420, "overlap": 60}
+
+    if any(keyword in source for keyword in ["SOP", "客服"]):
+        return {"name": "sop_step", "max_chars": 500, "overlap": 80}
+
+    if "商品说明" in source:
+        return {"name": "product_manual", "max_chars": 520, "overlap": 80}
+
+    if any(keyword in source for keyword in ["退款", "退换货", "售后规则", "物流"]):
+        return {"name": "policy_clause", "max_chars": 650, "overlap": 100}
+
+    if any(keyword in source for keyword in ["FAQ", "历史问题", "案例"]):
+        return {"name": "qa_case_short", "max_chars": 420, "overlap": 60}
+
+    if any(keyword in source for keyword in ["SOP", "客服"]):
+        return {"name": "sop_step", "max_chars": 500, "overlap": 80}
+
+    if "商品说明" in source:
+        return {"name": "product_manual", "max_chars": 520, "overlap": 80}
+
+    if any(keyword in source for keyword in ["退款", "退换货", "售后规则", "物流"]):
+        return {"name": "policy_clause", "max_chars": 650, "overlap": 100}
+
+    return {"name": "default", "max_chars": 700, "overlap": 120}
+
+
 def chunk_raw_document(
     document: RawDocument,
-    max_chars: int = 700,
-    overlap: int = 120,
+    max_chars: int | None = None,
+    overlap: int | None = None,
 ) -> list[DocumentChunk]:
     """把原始文档切成可以进入检索系统的 DocumentChunk。"""
 
     if not document.text.strip():
         return []
 
+    strategy = choose_chunk_strategy(document)
+    max_chars = max_chars or strategy["max_chars"]
+    overlap = overlap if overlap is not None else strategy["overlap"]
     chunks = []
 
     if document.file_type == "md":
@@ -375,7 +456,13 @@ def chunk_raw_document(
                     section=section_title,
                     start_char=start,
                     end_char=end,
-                    metadata=document.metadata or {},
+                    metadata={
+                        **(document.metadata or {}),
+                        **classify_document(document.source),
+                        "chunk_strategy": strategy["name"],
+                        "max_chars": max_chars,
+                        "overlap": overlap,
+                    },
                 )
             )
 
@@ -384,8 +471,8 @@ def chunk_raw_document(
 
 def build_chunks_from_dir(
     directory: Path,
-    max_chars: int = 700,
-    overlap: int = 120,
+    max_chars: int | None = None,
+    overlap: int | None = None,
 ) -> list[DocumentChunk]:
     """文档工程总入口：读取目录中的文件，并统一切成 chunk。"""
 

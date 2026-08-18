@@ -1,4 +1,4 @@
-from app.agent.tool_results import (
+from app.agent.tools.tool_results import (
     get_tool_result,
     is_low_confidence_evidence,
     is_system_tool_failure,
@@ -13,6 +13,7 @@ ORDER_RELATED_KEYWORDS = [
     "发货",
     "签收",
     "退款",
+    "退钱",
     "退货",
     "换货",
     "保修",
@@ -179,6 +180,9 @@ def build_fallback_answer(route, tool_results: list) -> str:
     policy_result = get_tool_result(tool_results, "policy_search")
     ticket_decision_result = get_tool_result(tool_results, "ticket_decision")
     ticket_result = get_tool_result(tool_results, "create_ticket")
+    risk_result = get_tool_result(tool_results, "risk_check")
+    refund_result = get_tool_result(tool_results, "refund_apply")
+    manual_review_result = get_tool_result(tool_results, "create_manual_review")
     product_result = get_tool_result(tool_results, "get_shop_products")
     goods_link_result = get_tool_result(tool_results, "send_goods_link")
     quick_reply_result = get_tool_result(tool_results, "get_quick_reply")
@@ -222,6 +226,35 @@ def build_fallback_answer(route, tool_results: list) -> str:
         first_policy = policy_result.result[0]
         citation = first_policy.get("citation") or first_policy.get("source")
         parts.append(f"根据知识库来源《{citation}》，本问题需要结合售后政策进一步判断。")
+
+    if risk_result and risk_result.success:
+        risk = risk_result.result
+        if risk.get("risk_level") in {"medium", "high"}:
+            flags = "、".join(risk.get("risk_flags", [])) or "售后风险"
+            parts.append(f"风控 Agent 判定风险等级为{risk.get('risk_level')}，命中原因：{flags}。")
+
+    if refund_result and not refund_result.success:
+        result = refund_result.result
+        reason = result.get("reason") if isinstance(result, dict) else str(result)
+        parts.append(f"退款申请暂未创建成功：{reason}")
+
+    if refund_result and refund_result.success:
+        refund = refund_result.result
+        if refund.get("status") == "pending_manual_review":
+            parts.append(
+                f"已创建退款申请 {refund.get('refund_id')}，当前状态为待人工审核。"
+            )
+        else:
+            parts.append(
+                f"已创建退款申请 {refund.get('refund_id')}，并投递 MQ 消息 "
+                f"{refund.get('mq_message_id')}，等待退款处理服务异步处理。"
+            )
+
+    if manual_review_result and manual_review_result.success:
+        review = manual_review_result.result
+        parts.append(
+            f"已创建人工审核单 {review.get('review_id')}，后续由人工客服复核后再执行高风险操作。"
+        )
 
     if ticket_result and not ticket_result.success:
         if is_system_tool_failure(ticket_result):

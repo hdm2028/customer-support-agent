@@ -95,6 +95,45 @@ def analyze_tool_stats(traces:list[dict]) -> dict:
         "tool_success": dict(tool_success_counts),
     }
 
+
+def analyze_agent_stats(traces: list[dict]) -> dict:
+    """统计多 Agent 调度情况。"""
+
+    counter = Counter()
+
+    for trace in traces:
+        for event in trace.get("events", []):
+            if event.get("event_type") != "agent_step":
+                continue
+
+            payload = get_event_payload(event)
+            counter[payload.get("agent", "unknown")] += 1
+
+    return dict(counter)
+
+
+def analyze_token_usage(traces: list[dict]) -> dict:
+    """统计估算 token 消耗。"""
+
+    total_prompt = 0
+    total_completion = 0
+    total = 0
+
+    for trace in traces:
+        token_usage = trace.get("token_usage", {})
+        total_prompt += token_usage.get("prompt_tokens_estimated", 0)
+        total_completion += token_usage.get("completion_tokens_estimated", 0)
+        total += token_usage.get("total_tokens_estimated", 0)
+
+    count = len(traces)
+
+    return {
+        "total_prompt_tokens_estimated": total_prompt,
+        "total_completion_tokens_estimated": total_completion,
+        "total_tokens_estimated": total,
+        "avg_tokens_estimated": round(total / count, 2) if count else 0,
+    }
+
 def analyze_reply_modes(traces: list[dict]) -> dict:
     """统计回复是 fallback 生成还是 LLM 生成。"""
 
@@ -159,6 +198,17 @@ def print_report(report: dict) -> None:
         success = report["tools"]["tool_success"].get(key, 0)
         print(f"- {key}: 调用 {value} 次，成功 {success} 次")
 
+    print("\nAgent 调度次数：")
+    for key, value in report["agents"].items():
+        print(f"- {key}: {value}")
+
+    print("\nToken 消耗估算：")
+    token_usage = report["token_usage"]
+    print(f"- Prompt: {token_usage['total_prompt_tokens_estimated']}")
+    print(f"- Completion: {token_usage['total_completion_tokens_estimated']}")
+    print(f"- Total: {token_usage['total_tokens_estimated']}")
+    print(f"- 平均每次请求: {token_usage['avg_tokens_estimated']}")
+
     print("\n回复模式：")
     for key, value in report["reply_modes"].items():
         print(f"- {key}: {value}")
@@ -179,6 +229,8 @@ def main() -> None:
         "basic": analyze_basic_stats(traces),
         "routes": analyze_route_stats(traces),
         "tools": analyze_tool_stats(traces),
+        "agents": analyze_agent_stats(traces),
+        "token_usage": analyze_token_usage(traces),
         "reply_modes": analyze_reply_modes(traces),
         "timings": analyze_timing_stats(traces),
     }

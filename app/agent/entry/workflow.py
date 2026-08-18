@@ -3,19 +3,23 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from app.agent.conversation_context import apply_conversation_context
-from app.agent.fallback_policy import build_fallback_answer
-from app.agent.memory import ConversationMemory
-from app.agent.pending_task import (
+from app.agent.routing.conversation_context import apply_conversation_context
+from app.agent.policies.fallback_policy import build_fallback_answer
+from app.agent.routing.memory import ConversationMemory
+from app.agent.routing.pending_task import (
     apply_slot_requirements,
     build_pending_task,
     prepare_pending_task_context,
     should_store_pending_task,
 )
-from app.agent.prompt_builder import build_model_messages
-from app.agent.router import route_tools
-from app.agent.tool_executor import execute_tools
-from app.agent.tool_results import has_failed_order_lookup, has_failed_tool_call
+from app.agent.response.prompt_builder import build_model_messages
+from app.agent.orchestration.orchestrator import (
+    build_agent_plan,
+    describe_agent_plan,
+    route_user_request,
+    run_orchestrated_tools,
+)
+from app.agent.tools.tool_results import has_failed_order_lookup, has_failed_tool_call
 from app.core.schemas import RouteDecision, ToolResult
 from app.llm.llm_client import call_zhipu_chat
 from app.observability.tracing import (
@@ -23,12 +27,34 @@ from app.observability.tracing import (
     add_trace_timing,
     finish_trace,
     save_trace,
+    set_completion_token_usage,
+    set_prompt_token_usage,
     start_trace,
     timed_step,
 )
+from app.storage.cache import cache_agent_state
 
 
 memory = ConversationMemory()
+
+
+def mark_agent_state(
+    state: "AgentWorkflowState",
+    current_node: str,
+    status: str,
+    payload: dict | None = None,
+) -> None:
+    """把当前执行节点写入 Redis/内存缓存。缓存失败不能影响主链路。"""
+
+    try:
+        cache_agent_state(
+            conversation_id=state["real_conversation_id"],
+            current_node=current_node,
+            status=status,
+            payload=payload,
+        )
+    except Exception:
+        pass
 
 
 class AgentWorkflowState(TypedDict, total=False):
@@ -49,6 +75,7 @@ class AgentWorkflowState(TypedDict, total=False):
     required_slots: list[str]
     missing_slots: list[str]
     route: RouteDecision
+    orchestration: dict
     tool_results: list[ToolResult]
     model_messages: list[dict]
     reply: str
@@ -113,6 +140,7 @@ def load_context_node(state: AgentWorkflowState) -> dict:
     """加载会话历史和 pending task，并合并用户本轮有效输入。"""
 
     def work() -> dict:
+        mark_agent_state(state, "load_context", "running")
         real_conversation_id = state["real_conversation_id"]
         history = memory.load(real_conversation_id)
         pending_task = memory.get_pending_task(real_conversation_id)
@@ -135,7 +163,7 @@ def load_context_node(state: AgentWorkflowState) -> dict:
             used_pending_task=used_pending_task,
         )
 
-        return {
+        result = {
             "history": history,
             "pending_task": pending_task,
             "effective_user_message": effective_user_message,
@@ -145,6 +173,17 @@ def load_context_node(state: AgentWorkflowState) -> dict:
             "slots": slots,
             "required_slots": required_slots,
         }
+        mark_agent_state(
+            state,
+            "load_context",
+            "done",
+            {
+                "history_count": len(history),
+                "has_pending_task": pending_task is not None,
+            },
+        )
+
+        return result
 
     return timed_step(state["trace"], "node.load_context", work)
 
@@ -153,18 +192,21 @@ def route_node(state: AgentWorkflowState) -> dict:
     """执行 Router，并根据槽位要求决定是否追问用户补充信息。"""
 
     def work() -> dict:
+        mark_agent_state(state, "route", "running")
         real_conversation_id = state["real_conversation_id"]
         pending_task = state.get("pending_task")
         effective_user_message = state["effective_user_message"]
         slots = state["slots"]
         required_slots = state["required_slots"]
 
-        route = route_tools(effective_user_message)
+        route = route_user_request(effective_user_message)
         route, missing_slots = apply_slot_requirements(
             route=route,
             required_slots=required_slots,
             slots=slots,
         )
+        route.agent_plan = build_agent_plan(route)
+        orchestration = describe_agent_plan(route)
 
         if state["used_pending_task"] and not missing_slots:
             memory.clear_pending_task(real_conversation_id)
@@ -187,6 +229,7 @@ def route_node(state: AgentWorkflowState) -> dict:
             )
 
         add_trace_event(state["trace"], event_type="route", data=dump_model(route))
+        add_trace_event(state["trace"], event_type="agent_plan", data=orchestration)
         add_trace_event(
             state["trace"],
             event_type="pending_task",
@@ -201,10 +244,22 @@ def route_node(state: AgentWorkflowState) -> dict:
                 "missing_slots": missing_slots,
             },
         )
+        mark_agent_state(
+            state,
+            "route",
+            "done",
+            {
+                "intent": route.intent,
+                "agent_plan": route.agent_plan,
+                "tool_plan": route.tool_plan,
+                "missing_slots": missing_slots,
+            },
+        )
 
         return {
             "route": route,
             "missing_slots": missing_slots,
+            "orchestration": orchestration,
         }
 
     return timed_step(state["trace"], "node.route", work)
@@ -214,7 +269,16 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
     """根据 route 调用受控工具链。"""
 
     def work() -> dict:
-        tool_results = execute_tools(
+        mark_agent_state(
+            state,
+            "execute_tools",
+            "running",
+            {
+                "agent_plan": state["route"].agent_plan,
+                "tool_plan": state["route"].tool_plan,
+            },
+        )
+        tool_results = run_orchestrated_tools(
             user_message=state["effective_user_message"],
             route=state["route"],
             trace=state["trace"],
@@ -227,6 +291,14 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
                 "items": [dump_model(item) for item in tool_results],
             },
         )
+        mark_agent_state(
+            state,
+            "execute_tools",
+            "done",
+            {
+                "tool_results": [dump_model(item) for item in tool_results],
+            },
+        )
 
         return {"tool_results": tool_results}
 
@@ -237,11 +309,13 @@ def build_model_context_node(state: AgentWorkflowState) -> dict:
     """把历史消息、工具结果和当前问题整理成大模型上下文。"""
 
     def work() -> dict:
+        mark_agent_state(state, "build_model_context", "running")
         model_messages = build_model_messages(
             user_message=state["effective_user_message"],
             history=state["history"],
             tool_results=state["tool_results"],
         )
+        set_prompt_token_usage(state["trace"], model_messages)
         add_trace_event(
             state["trace"],
             event_type="model_context",
@@ -249,6 +323,12 @@ def build_model_context_node(state: AgentWorkflowState) -> dict:
                 "message_count": len(model_messages),
                 "context_chars": sum(len(item["content"]) for item in model_messages),
             },
+        )
+        mark_agent_state(
+            state,
+            "build_model_context",
+            "done",
+            {"message_count": len(model_messages)},
         )
 
         return {"model_messages": model_messages}
@@ -260,6 +340,7 @@ def generate_reply_node(state: AgentWorkflowState) -> dict:
     """根据配置选择真实大模型回复或本地确定性回复。"""
 
     def work() -> dict:
+        mark_agent_state(state, "generate_reply", "running")
         if should_force_fallback(state["route"], state["tool_results"]):
             reply = build_fallback_answer(state["route"], state["tool_results"])
             reply_mode = "rule_fallback"
@@ -278,6 +359,16 @@ def generate_reply_node(state: AgentWorkflowState) -> dict:
                 "reply_chars": len(reply),
             },
         )
+        set_completion_token_usage(state["trace"], reply)
+        mark_agent_state(
+            state,
+            "generate_reply",
+            "done",
+            {
+                "reply_mode": reply_mode,
+                "reply_chars": len(reply),
+            },
+        )
 
         return {
             "reply": reply,
@@ -290,6 +381,7 @@ def generate_reply_node(state: AgentWorkflowState) -> dict:
 def persist_result_node(state: AgentWorkflowState) -> dict:
     """保存会话和 trace，并组装 API 层需要返回的最终结果。"""
 
+    mark_agent_state(state, "persist_result", "running")
     start = perf_counter()
     real_conversation_id = state["real_conversation_id"]
     reply = state["reply"]
@@ -318,11 +410,22 @@ def persist_result_node(state: AgentWorkflowState) -> dict:
     )
     finished_trace = finish_trace(state["trace"], reply, success=True)
     save_trace(finished_trace)
+    mark_agent_state(
+        state,
+        "persist_result",
+        "done",
+        {
+            "conversation_id": real_conversation_id,
+            "duration_ms": finished_trace.get("duration_ms"),
+            "token_usage": finished_trace.get("token_usage", {}),
+        },
+    )
 
     return {
         "result": {
             "success": True,
             "conversation_id": real_conversation_id,
+            "orchestration": state.get("orchestration", {}),
             "route": dump_model(state["route"]),
             "tool_results": [dump_model(item) for item in state["tool_results"]],
             "reply": reply,
@@ -335,6 +438,7 @@ def persist_result_node(state: AgentWorkflowState) -> dict:
             "missing_slots": state["missing_slots"],
             "workflow_engine": "langgraph",
             "timings": finished_trace.get("timings", {}),
+            "token_usage": finished_trace.get("token_usage", {}),
             "duration_ms": finished_trace.get("duration_ms"),
         }
     }

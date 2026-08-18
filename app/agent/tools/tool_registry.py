@@ -3,11 +3,14 @@ from typing import Any
 
 from app.core.schemas import ToolResult
 from app.tools.support_tools import (
+    create_manual_review,
     create_ticket,
     get_quick_reply,
     get_shop_products,
     order_lookup,
     policy_search,
+    refund_apply,
+    risk_check,
     send_goods_link,
     transfer_to_human,
 )
@@ -50,6 +53,90 @@ FUNCTION_TOOL_SPECS = [
                     },
                 },
                 "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "risk_check",
+            "description": "调用风控 Agent 检测高频退款、异常账号、恶意投诉和虚假描述。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "string",
+                        "description": "关联订单号。",
+                    },
+                    "user_request": {
+                        "type": "string",
+                        "description": "用户原始售后诉求。",
+                    },
+                },
+                "required": ["order_id", "user_request"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "refund_apply",
+            "description": "创建退款申请并投递 MQ，由退款处理服务异步更新订单状态。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "string",
+                        "description": "关联订单号。",
+                    },
+                    "user_request": {
+                        "type": "string",
+                        "description": "用户原始退款诉求。",
+                    },
+                    "risk_assessment": {
+                        "type": "object",
+                        "description": "风控 Agent 输出的风险评估。",
+                    },
+                },
+                "required": ["order_id", "user_request"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_manual_review",
+            "description": "创建人工审核单，处理大额退款、异常账号和投诉升级等高风险售后动作。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "string",
+                        "description": "关联订单号。",
+                    },
+                    "review_type": {
+                        "type": "string",
+                        "description": "审核类型，如 refund、complaint、risk_control。",
+                    },
+                    "risk_level": {
+                        "type": "string",
+                        "description": "风控等级。",
+                    },
+                    "risk_flags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "触发的风险原因。",
+                    },
+                    "user_request": {
+                        "type": "string",
+                        "description": "用户原始诉求。",
+                    },
+                    "related_id": {
+                        "type": "string",
+                        "description": "关联退款申请号或工单号。",
+                    },
+                },
+                "required": ["review_type", "risk_level", "risk_flags", "user_request"],
             },
         },
     },
@@ -188,6 +275,9 @@ FUNCTION_TOOL_SPECS = [
 TOOL_HANDLERS = {
     "order_lookup": order_lookup,
     "policy_search": policy_search,
+    "risk_check": risk_check,
+    "refund_apply": refund_apply,
+    "create_manual_review": create_manual_review,
     "create_ticket": create_ticket,
     "get_shop_products": get_shop_products,
     "send_goods_link": send_goods_link,

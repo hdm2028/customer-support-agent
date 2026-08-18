@@ -1,4 +1,4 @@
-from app.agent.tool_results import get_tool_result
+from app.agent.tools.tool_results import get_tool_result
 from app.core.schemas import ToolResult
 
 
@@ -90,6 +90,29 @@ def build_ticket_context(tool_results: list[ToolResult]) -> str:
     )
 
 
+def build_after_sales_context(tool_results: list[ToolResult]) -> str:
+    """整理退款申请、风控和人工审核上下文。"""
+
+    lines = []
+    risk_result = get_tool_result(tool_results, "risk_check")
+    refund_result = get_tool_result(tool_results, "refund_apply")
+    review_result = get_tool_result(tool_results, "create_manual_review")
+
+    if risk_result:
+        lines.append("[风控结果]")
+        lines.append(str(risk_result.result))
+
+    if refund_result:
+        lines.append("[退款申请]")
+        lines.append(str(refund_result.result))
+
+    if review_result:
+        lines.append("[人工审核]")
+        lines.append(str(review_result.result))
+
+    return "\n".join(lines)
+
+
 def build_workbench_context(tool_results: list[ToolResult]) -> str:
     """整理商品推荐、快捷回复和转人工等工作台工具结果。"""
 
@@ -131,6 +154,7 @@ def build_tool_context(tool_results: list[ToolResult]) -> str:
     context_parts = [
         build_order_context(tool_results),
         build_policy_evidence(tool_results),
+        build_after_sales_context(tool_results),
         build_ticket_context(tool_results),
         build_workbench_context(tool_results),
     ]
@@ -155,7 +179,7 @@ def build_model_messages(
         "你是中文电商平台的智能售后客服 Agent。"
         "你必须根据订单信息、售后政策、工单结果回答用户。"
         "不要编造工具结果里不存在的信息。"
-        "涉及退款、赔付、取消订单、修改地址等高风险操作时，只能解释规则或创建工单，不能承诺已经完成。"
+        "涉及退款、赔付、取消订单、修改地址等高风险操作时，只能按工具结果说明申请、MQ 异步处理或人工审核状态，不能承诺已经完成。"
         "如果信息不足，要明确告诉用户还需要补充什么。"
         "如果工具生成了商品卡片或快捷回复，要把这些工作台结果自然告知用户。"
     )

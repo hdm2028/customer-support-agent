@@ -9,7 +9,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.core.config import BASE_DIR
 from app.core.schemas import ToolResult
-from app.agent.evidence_guardrail import validate_policy_evidence
+from app.agent.policies.evidence_guardrail import validate_policy_evidence
 from app.rag.rag import search_documents
 
 
@@ -74,7 +74,10 @@ def simplify_result(result: dict) -> dict:
         "section": result.get("section"),
         "citation": result.get("citation"),
         "score": result.get("score"),
+        "retrieval_mode": result.get("retrieval_mode"),
+        "hybrid_score": result.get("hybrid_score"),
         "vector_score": result.get("vector_score"),
+        "bm25_score": result.get("bm25_score"),
         "keyword_score": result.get("keyword_score"),
         "retrieval_score": result.get("retrieval_score"),
         "rerank_bonus": result.get("rerank_bonus"),

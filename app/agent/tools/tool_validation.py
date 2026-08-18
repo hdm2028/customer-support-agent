@@ -15,6 +15,15 @@ def validate_tool_plan(route: RouteDecision) -> tuple[bool, list[str]]:
     if route.need_ticket and not route.need_order:
         errors.append("创建工单前必须先执行订单查询。")
 
+    if route.need_refund_request and not route.order_id:
+        errors.append("创建退款申请必须先有订单号。")
+
+    if route.need_refund_request and not route.need_order:
+        errors.append("创建退款申请前必须先执行订单查询。")
+
+    if route.need_refund_request and not route.need_risk_check:
+        errors.append("创建退款申请前必须执行风控检测。")
+
     if route.need_goods_link and not route.need_product_search:
         errors.append("发送商品卡片前必须先查询商品。")
 
@@ -46,6 +55,30 @@ def validate_tool_chain(route: RouteDecision, tool_results: list[ToolResult]) ->
 
         if "ticket_decision" in tool_names:
             errors.append("ticket_decision 拒绝后不应继续 create_ticket。")
+
+    if "risk_check" in tool_names:
+        if "order_lookup" not in tool_names:
+            errors.append("risk_check 前缺少 order_lookup。")
+
+        if tool_names.index("risk_check") < tool_names.index("order_lookup"):
+            errors.append("risk_check 不能早于 order_lookup 执行。")
+
+    if "refund_apply" in tool_names:
+        if "order_lookup" not in tool_names:
+            errors.append("refund_apply 前缺少 order_lookup。")
+
+        if route.need_policy and "policy_search" not in tool_names:
+            errors.append("refund_apply 前缺少 policy_search。")
+
+        if "risk_check" not in tool_names:
+            errors.append("refund_apply 前缺少 risk_check。")
+
+        if tool_names.index("refund_apply") < tool_names.index("risk_check"):
+            errors.append("refund_apply 不能早于 risk_check 执行。")
+
+    if "create_manual_review" in tool_names and "risk_check" in tool_names:
+        if tool_names.index("create_manual_review") < tool_names.index("risk_check"):
+            errors.append("create_manual_review 不能早于 risk_check 执行。")
 
     if "send_goods_link" in tool_names:
         if "get_shop_products" not in tool_names:

@@ -4,26 +4,26 @@ from app.core.schemas import ToolResult
 POLICY_PROFILES = [
     {
         "name": "address_change",
-        "triggers": ["改收货地址", "修改地址", "改地址", "收货地址"],
+        "triggers": ["改收货地址", "修改地址", "改地址", "修改为", "收货地址"],
         "expected_sources": ["订单取消与修改政策.md"],
         "required_keywords": ["修改收货地址", "地址修改工单", "出库前"],
     },
     {
         "name": "shipping_exception",
-        "triggers": ["物流", "快递", "发货", "没更新", "不更新", "延迟", "丢件"],
-        "expected_sources": ["物流配送政策.md", "售后FAQ.md"],
+        "triggers": ["物流", "快递", "发货", "没更新", "没有更新", "不更新", "三天没动", "超过48", "停住", "延迟", "丢件", "未收到", "没收到"],
+        "expected_sources": ["物流配送政策.md", "物流规则.md", "售后FAQ.md"],
         "required_keywords": ["物流", "48 小时", "工单"],
     },
     {
         "name": "warranty_repair",
-        "triggers": ["保修", "维修", "检测", "坏了", "故障", "质量问题", "换新"],
-        "expected_sources": ["保修政策.md", "售后FAQ.md"],
+        "triggers": ["保修", "维修", "检测", "坏了", "故障", "质量问题", "质量", "黑屏", "换新"],
+        "expected_sources": ["保修政策.md", "商品售后规则.md", "商品说明文档.md", "售后FAQ.md"],
         "required_keywords": ["保修", "检测工单", "12 个月"],
     },
     {
         "name": "return_refund",
-        "triggers": ["退货", "退款", "七天无理由", "不想要", "不要了"],
-        "expected_sources": ["退换货政策.md", "售后FAQ.md"],
+        "triggers": ["退货", "退款", "退钱", "七天无理由", "不想要", "不要了"],
+        "expected_sources": ["退换货政策.md", "退款政策.md", "商品售后规则.md", "历史问题案例.md", "售后FAQ.md"],
         "required_keywords": ["退款", "退货", "七天无理由", "质检"],
     },
     {
@@ -46,7 +46,7 @@ POLICY_PROFILES = [
     },
     {
         "name": "complaint",
-        "triggers": ["投诉", "商家没人处理", "没人处理"],
+        "triggers": ["投诉", "商家没人处理", "没人处理", "起诉", "差评", "曝光", "12315"],
         "expected_sources": ["售后FAQ.md"],
         "required_keywords": ["投诉", "升级工单", "人工客服"],
     },
@@ -71,6 +71,10 @@ def contains_any(text: str, keywords: list[str]) -> bool:
 
 def detect_policy_profile(query: str) -> dict | None:
     """根据用户问题识别本轮期望的政策类型。"""
+
+    for profile in POLICY_PROFILES:
+        if profile["name"] == "return_refund" and contains_any(query, profile["triggers"]):
+            return profile
 
     for profile in POLICY_PROFILES:
         if contains_any(query, profile["triggers"]):

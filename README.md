@@ -1,381 +1,240 @@
 # 中文电商智能售后客服 Agent
 
-一个面向中文电商售后和客服工作台场景的智能客服 Agent。项目基于 FastAPI、LangGraph、RAG、SQLite 和智谱大模型构建，支持订单查询、售后政策检索、商品推荐、商品卡片、快捷回复、转人工交接、多轮槽位补全、风险控制、流式输出、执行轨迹展示和自动化评估。
+## 项目简介
 
-项目不是简单聊天机器人，而是围绕真实售后流程设计的 Agent 服务：用户输入售后问题后，系统会先进行路由判断，再按需查询订单、检索政策、判断工单资格、创建待审核工单，最后基于订单信息和政策证据生成客服回复。
-
-## 在线演示
-
-Render 部署地址：
+这是一个面向中文电商售后场景的多 Agent 智能客服服务。项目目标不是做通用聊天机器人，而是把用户售后诉求转成一条可控、可观测、可评测的业务自动化链路：
 
 ```text
-https://customer-support-agent-dnhl.onrender.com
+用户问题
+-> FastAPI
+-> Agent Orchestrator
+-> 客服 Agent / 售后 Agent / 风控 Agent
+-> RAG / 业务 Tool / 风险规则
+-> Redis 状态缓存
+-> MQ 退款任务
+-> 业务处理服务
+-> 结果反馈与数据分析
 ```
 
-说明：Render 免费实例长时间未访问后可能冷启动，首次请求会慢一些。
-
-## 核心能力
-
-- **Agent 工作流编排**：使用 LangGraph `StateGraph` 拆分加载上下文、路由、工具执行、上下文构造、回复生成和持久化节点。
-- **可解释售后意图路由**：识别订单查询、政策检索、工单创建、信息追问、人工审核和安全拦截，并返回 `intent`、`confidence`、`routing_reason` 和 `tool_plan`。
-- **受控 Function Calling**：用工具注册表声明订单查询、RAG 政策检索、工单草稿创建的 schema，执行前校验工具名和必要参数。
-- **客服工作台场景**：模拟拼多多、淘宝、京东、小红书等多平台会话，支持商品目录、快捷回复、转人工交接和工作台概览。
-- **商品推荐工具链**：支持按用户需求检索店铺商品、生成商品卡片，覆盖缺货替代推荐和主动推荐场景。
-- **RAG 政策检索**：支持 Markdown、TXT、PDF 文档解析，按章节切分 chunk，保留 `source`、`section`、`page`、`citation` 元数据。
-- **两阶段检索与 Rerank**：先用 embedding + 关键词混合检索召回候选 chunk，再基于业务意图、章节标题、政策短语和订单状态做二次排序。
-- **RAG 证据兜底**：对检索结果做分数阈值、来源文档和关键政策词校验，召回不全时停止自动动作。
-- **知识库增量 Ingest**：通过文档 hash 生成 manifest，识别新增、修改、未变化和删除文档，并结合 embedding cache 复用已有向量。
-- **多轮槽位补全**：支持用户分多轮补充订单号、新收货地址等信息，信息不完整时不会提前创建工单。
-- **多轮上下文继承**：用户后续只说“退款”“投诉”等短追问时，系统会从会话历史继承最近订单号继续处理。
-- **业务风险控制**：退款、赔付、取消订单、修改地址等高风险动作只生成待人工审核工单，不直接执行业务变更。
-- **工单资格判断**：创建工单前结合订单状态、签收状态、物流更新时间和保修期做二次校验。
-- **可观测性**：记录 route、tool results、model context、reply、timings，并在 Web 页面展示执行轨迹。
-- **自动化评估**：覆盖 Router 工具调用、RAG 召回、最终回答质量、API 主链路、多轮槽位补全和客服工作台场景。
-- **端到端业务评估**：从用户输入开始检查路由、槽位、工具序列、工具参数、最终业务动作和回复约束。
+系统支持普通客服问答、售后政策 RAG、多轮槽位补全、订单查询、退款申请、MQ 异步处理、人工审核、商品推荐、快捷回复、转人工、工单草稿、流式输出、执行轨迹、Token 估算和自动化评估。
 
 ## 技术栈
 
-| 类型 | 技术 |
+| 方向 | 技术 |
 | --- | --- |
 | 后端服务 | FastAPI, Uvicorn |
 | Agent 编排 | LangGraph |
 | 大模型 | 智谱 GLM |
-| Embedding | 智谱 `embedding-3` |
-| RAG | 文档切分、metadata、citation、混合检索、业务 reranker |
-| 数据库 | SQLite |
-| 工作台数据 | JSON 商品目录、快捷回复、多平台会话样例 |
+| Embedding | 智谱 `embedding-3` / 本地 hash embedding |
+| 知识库 | Markdown / TXT / PDF, RAG Chunk 策略 |
+| 业务库 | 统一业务数据库门面：MySQL 生产适配 / SQLite 本地后端 |
+| 缓存 | Redis / 本地 TTL 缓存 |
+| MQ | SQLite 模拟队列，可替换 RabbitMQ/Kafka |
 | 前端 | 原生 HTML/CSS/JavaScript, SSE |
 | 部署 | Docker, Render |
-| 评估 | 自定义 eval 脚本、聚合指标报告、trace 分析 |
 
-> 为了保持本地 demo 简单可跑，本项目默认使用 SQLite + 内存向量索引 + 业务规则 reranker；生产增强时可把 `app/rag/vector_index.py` 替换为 PostgreSQL + pgvector，把 `app/rag/reranker.py` 替换为 BGE reranker，Agent 主链路不需要大改。
-
-## 项目架构
+## 核心链路
 
 ```text
-用户问题
--> FastAPI API
--> 输入安全检查
--> 多轮 pending task 合并
--> LangGraph Agent Workflow
-   -> load_context
-   -> route
-      -> intent / confidence / tool_plan
-   -> execute_tools
-      -> order_lookup
-      -> policy_search
-      -> get_shop_products
-      -> send_goods_link
-      -> get_quick_reply
-      -> transfer_to_human
-      -> ticket_decision
-      -> create_ticket
-   -> build_model_context
-   -> generate_reply
-   -> persist_result
--> SSE 流式返回给 Web 工作台
+FastAPI API
+-> app.agent.entry.workflow
+   -> Agent Orchestrator    统一路由和多 Agent 分派
+   -> load_context          加载会话历史和 pending task
+   -> route                 识别意图、订单号、风险等级、Agent 计划和工具计划
+   -> execute_tools         客服/售后/风控 Agent 协作执行工具链
+   -> build_model_context   整理订单信息、政策证据和工具结果
+   -> generate_reply        调用 LLM 或使用确定性 fallback 回复
+   -> persist_result        保存会话、工单和执行 trace
+-> 返回 API / SSE 响应
 ```
 
-## 目录结构
+工具调用采用白名单机制：工具必须先在 `tool_registry.py` 注册，执行前会校验参数和工具链，避免在订单不存在、政策证据不足或高风险场景下继续执行错误动作。
+
+## 多 Agent 架构
+
+```text
+用户
+ |
+FastAPI
+ |
+Agent Orchestrator
+ |
+--------------------------------
+|              |               |
+客服 Agent      售后 Agent      风控 Agent
+|              |               |
+知识库 RAG     业务 Tool       风险规则
+|              |
+Vector DB      MySQL/SQLite
+ |
+Redis
+ |
+MQ 消息队列
+ |
+业务处理服务
+```
+
+- 客服 Agent：普通咨询、意图识别、知识库 RAG、快捷回复、商品推荐。
+- 售后 Agent：订单查询、退款申请、工单创建、人工审核流转、MQ 退款任务。
+- 风控 Agent：高频退款、异常账号、恶意投诉、虚假描述、大额退款审核。
+
+## 项目结构
 
 ```text
 .
-├─ main.py
-├─ web/
-│  └─ index.html
+├─ main.py                    FastAPI 入口
+├─ web/                       浏览器客服工作台
 ├─ app/
-│  ├─ agent/
-│  │  ├─ agent_core.py
-│  │  ├─ router.py
-│  │  ├─ pending_task.py
-│  │  ├─ ticket_policy.py
-│  │  ├─ fallback_policy.py
-│  │  ├─ guardrails.py
-│  │  └─ memory.py
-│  ├─ rag/
-│  │  ├─ document_loader.py
-│  │  ├─ embedding_client.py
-│  │  ├─ vector_index.py
-│  │  └─ rag.py
-│  ├─ tools/
-│  │  └─ support_tools.py
-│  ├─ storage/
-│  │  ├─ database.py
-│  │  ├─ store.py
-│  │  └─ feedback_store.py
-│  ├─ observability/
-│  │  └─ tracing.py
-│  ├─ llm/
-│  │  └─ llm_client.py
-│  └─ core/
-│     ├─ config.py
-│     └─ schemas.py
+│  ├─ agent/                  Agent 入口、编排、路由、工具、安全和回复
+│  │  ├─ entry/               API 入口、非流式/流式工作流
+│  │  ├─ orchestration/       Orchestrator 与客服/售后/风控 Agent
+│  │  ├─ routing/             意图识别、槽位补全、上下文和记忆
+│  │  ├─ tools/               工具注册、执行、校验和结果处理
+│  │  ├─ policies/            工单策略、安全规则和 RAG 证据校验
+│  │  └─ response/            Prompt 与回复上下文构造
+│  ├─ mq/                     MQ 消息队列适配层
+│  ├─ services/               退款等业务处理服务
+│  ├─ rag/                    知识库加载、切片、Embedding、检索、重排
+│  ├─ tools/                  订单查询、政策检索、工单、商品、转人工工具
+│  ├─ storage/                SQLite 表结构和数据读写
+│  ├─ llm/                    智谱大模型调用
+│  ├─ workbench/              商品、快捷回复、多平台会话样例
+│  ├─ observability/          trace 和耗时记录
+│  └─ core/                   配置和 API schema
 ├─ data/
-│  ├─ orders.json
-│  ├─ knowledge/
-│  └─ eval/
-├─ scripts/
-│  ├─ run_eval.py
-│  ├─ run_rag_eval.py
-│  ├─ run_answer_eval.py
-│  ├─ multi_turn_smoke_test.py
-│  ├─ api_smoke_test.py
-│  └─ analyze_traces.py
-├─ docs/
-│  ├─ optimization_log.md
-│  └─ deployment.md
+│  ├─ knowledge/              售后知识库
+│  ├─ orders.json             订单种子数据
+│  ├─ workbench/              商品和快捷回复数据
+│  ├─ eval/                   自动化评估样本
+│  ├─ eval_reports/           评估报告
+│  ├─ cache/                  Embedding cache 和知识库 manifest
+│  └─ traces/                 Agent 执行日志
+├─ scripts/                   知识库 ingest、评估脚本、冒烟测试
+├─ docs/                      部署说明和优化记录
 ├─ Dockerfile
 ├─ render.yaml
-└─ requirements.txt
+├─ requirements.txt
+└─ .env.example
 ```
 
-## 关键流程
+## 核心模块说明
 
-### 1. 路由与工具执行
+| 模块 | 说明 |
+| --- | --- |
+| `app/agent/entry/workflow.py` | LangGraph 主工作流，串联上下文、Orchestrator、工具、回复和持久化 |
+| `app/agent/entry/stream_runner.py` | SSE 流式工作流 |
+| `app/agent/orchestration/orchestrator.py` | 多 Agent 编排入口，生成 Agent 计划并分发工具链 |
+| `app/agent/orchestration/customer_agent.py` | 客服问答 Agent |
+| `app/agent/orchestration/after_sales_agent.py` | 售后处理 Agent，包含退款资格判断 |
+| `app/agent/orchestration/risk_agent.py` | 风控 Agent，输出风险等级、风险原因和人工审核判断 |
+| `app/agent/routing/router.py` | 抽取订单号，识别售后意图，生成工具计划 |
+| `app/agent/routing/memory.py` | 会话历史和 pending task 管理 |
+| `app/agent/tools/tool_registry.py` | 维护工具 schema 和工具白名单 |
+| `app/agent/tools/tool_executor.py` | 执行工具，捕获异常，校验工具链并做失败截断 |
+| `app/agent/policies/evidence_guardrail.py` | 校验 RAG 证据来源和关键词是否足够支撑业务动作 |
+| `app/agent/response/prompt_builder.py` | 将订单、政策证据、退款、审核和工单结果整理为 LLM 上下文 |
+| `app/rag/document_loader.py` | 加载 Markdown/TXT/PDF 并切分 chunk |
+| `app/rag/hybrid_index.py` | Hybrid RAG：向量召回 + BM25/关键词召回 + 候选融合 |
+| `app/rag/vector_index.py` | 向量相似度工具和旧版内存索引 |
+| `app/rag/reranker.py` | 基于业务规则对检索结果重排 |
+| `app/tools/support_tools.py` | 具体业务工具实现 |
+| `app/storage/database.py` | 业务数据库统一门面，按配置分发到 MySQL 或 SQLite |
+| `app/storage/mysql_database.py` | MySQL 生产适配：建表、种子数据、业务 CRUD 和 MQ 状态流转 |
+| `app/storage/cache.py` | Redis/本地 TTL 缓存，用于会话、热点知识和 Agent 状态 |
+| `app/concurrency/refund_guard.py` | Redis 分布式锁和退款幂等控制，解决同一订单高并发重复退款 |
+| `app/mq/queue.py` | MQ 发布、消费、ack/fail |
+| `app/services/refund_service.py` | 退款处理服务，消费 MQ 并更新订单状态 |
 
-Router 会从用户输入中抽取订单号，并判断本轮是否需要：
-
-- 查询订单
-- 检索政策
-- 创建工单
-- 追问用户
-- 转人工审核
-- 安全拦截
-
-执行层不会盲目相信 Router 的初步计划。比如订单查询失败后，系统会立即停止政策检索和工单创建，避免对不存在订单生成虚假售后结果。
-
-### 2. RAG 政策检索
-
-知识库位于：
-
-```text
-data/knowledge/
-```
-
-RAG 流程：
-
-```text
-原始政策文档
--> 文档解析
--> 章节级 chunk 切分
--> 保留 citation
--> embedding 向量化
--> 向量相似度 + 关键词混合排序
--> top_k 证据进入模型上下文
-```
-
-每个 chunk 示例：
-
-```json
-{
-  "source": "退换货政策.md",
-  "section": "七天无理由退货",
-  "text": "政策片段正文",
-  "citation": "退换货政策.md - 七天无理由退货"
-}
-```
-
-### 3. 多轮槽位补全
-
-修改地址等任务需要多个槽位：
-
-```text
-order_id
-new_address
-```
-
-如果用户只说“帮我改收货地址”，系统会先追问订单号和新地址。只有槽位补齐后，才会继续订单查询、政策检索和工单创建。
-
-### 4. 高风险与工单资格控制
-
-系统不会直接执行真实退款、赔付、取消订单、修改地址等动作。
-
-创建工单前还会进行业务资格判断：
-
-- 订单不存在：不继续检索政策，不创建工单。
-- 订单未签收：不创建保修检测工单。
-- 物流更新未超过 48 小时：不创建物流异常工单。
-- 地址修改、退款、投诉等高风险动作：只创建 `pending_human_review` 工单。
-
-## 数据持久化
-
-项目使用 SQLite 保存运行数据：
-
-```text
-data/customer_support.db
-```
+## 数据表
 
 | 表 | 作用 |
 | --- | --- |
 | `orders` | 订单数据 |
+| `customer_profiles` | 客户画像和风控特征 |
 | `tickets` | 工单草稿 |
+| `refund_requests` | 退款申请 |
+| `manual_reviews` | 人工审核单 |
+| `mq_messages` | MQ 消息 |
+| `notifications` | 用户通知 |
+| `agent_metrics` | Token、耗时、错误等可观测指标 |
 | `conversation_messages` | 多轮会话历史 |
 | `pending_tasks` | 待补全槽位任务 |
 | `feedback` | 用户评分和反馈 |
 
-本地数据库文件已加入 `.gitignore`，不会提交到 GitHub。
-
-## 接口说明
-
-| 接口 | 方法 | 作用 |
-| --- | --- | --- |
-| `/` | GET | Web 工作台 |
-| `/health` | GET | 健康检查 |
-| `/info` | GET | 服务元数据 |
-| `/agent/chat` | POST | 非流式聊天 |
-| `/agent/stream` | POST | SSE 流式聊天 |
-| `/agent/history` | POST | 查询会话历史 |
-| `/feedback` | POST | 保存用户评分 |
-| `/orders/{order_id}` | GET | 订单查询调试 |
-| `/tickets` | GET | 查看工单草稿 |
-| `/knowledge/search` | GET | 知识库检索调试 |
-| `/knowledge/chunks` | GET | 查看知识库 chunk |
-| `/tools` | GET | 查看 Function Calling 工具 schema |
-| `/workbench/overview` | GET | 查看客服工作台概览 |
-| `/workbench/conversations` | GET | 查看多平台会话样例 |
-| `/workbench/products` | GET | 查询商品目录 |
-| `/workbench/quick-replies` | GET | 查看快捷回复模板 |
-
-## 环境变量
-
-复制 `.env.example` 为 `.env`，并填写智谱 API Key：
-
-```env
-LLM_API_KEY=你的智谱APIKey
-LLM_ENDPOINT=https://open.bigmodel.cn/api/paas/v4/chat/completions
-ZHIPU_MODEL=glm-4-flash
-
-RAG_EMBEDDING_PROVIDER=zhipu
-ZHIPU_EMBEDDING_URL=https://open.bigmodel.cn/api/paas/v4/embeddings
-ZHIPU_EMBEDDING_MODEL=embedding-3
-EMBEDDING_DIMENSIONS=1024
-LLM_TIMEOUT_SECONDS=60
-```
+MySQL 表结构见 `docs/mysql_schema.sql`。本地默认使用 SQLite；生产替换时设置 `DATABASE_BACKEND=mysql` 并填写 `MYSQL_DSN=mysql+pymysql://user:password@host:3306/customer_support`。
 
 ## 本地启动
 
-安装依赖：
-
 ```powershell
+copy .env.example .env
 py -3.13 -m pip install -r requirements.txt
-```
-
-启动服务：
-
-```powershell
+docker compose -f docker-compose.dev.yml up -d
 py -3.13 -m uvicorn main:app --host 127.0.0.1 --port 8012
 ```
 
-打开 Web 工作台：
+`docker-compose.dev.yml` 会启动本地 MySQL 和 Redis。`.env` 中设置 `DATABASE_BACKEND=mysql`、`MYSQL_DSN` 和 `REDIS_URL` 后，项目启动时会自动创建 MySQL 业务表并导入订单/客户画像种子数据。
+
+访问：
 
 ```text
-http://127.0.0.1:8012/
+Web:     http://127.0.0.1:8012/
+Swagger: http://127.0.0.1:8012/docs
 ```
 
-打开 Swagger：
+默认可以不配置真实大模型，接口参数 `use_llm=false` 时会走本地确定性回复。如需调用智谱模型，在 `.env` 中配置 `LLM_API_KEY`。
 
-```text
-http://127.0.0.1:8012/docs
-```
+## 知识库更新
 
-## 文档更新与 Ingest
-
-如果 `data/knowledge/` 下的政策文档更新，运行：
+知识库目录是 `data/knowledge/`。更新 Markdown、TXT 或 PDF 后执行：
 
 ```powershell
 py -3.13 scripts\ingest_knowledge.py
 ```
 
-脚本会完成：
-
-```text
-扫描知识库文档
--> 计算每个文件的 sha256 hash
--> 对比上一次 manifest
--> 识别新增 / 修改 / 未变化 / 删除文档
--> 重新切分 chunk
--> 构建内存向量索引并预热 embedding cache
--> 输出 Knowledge Ingest Report
--> 写入 data/cache/knowledge_manifest.json
-```
-
-示例输出：
-
-```text
-Knowledge Ingest Report
-文档总数: 8
-chunk 总数: 31
-新增文档: 0
-修改文档: 0
-未变化文档: 8
-删除文档: 0
-预计复用 embedding: 31
-预计新增 embedding: 0
-```
-
-`data/cache/` 属于运行时缓存，已加入 `.gitignore`，不会提交到 GitHub。文档更新后需要重启服务或重新部署，让线上服务重新加载最新知识库。
+脚本会扫描文档、计算 hash、识别新增/修改/删除文件、重新切分 chunk，并预热 embedding cache。
 
 ## 自动化评估
-
-当前回归结果：
-
-| 核心指标 | 当前结果 | 说明 |
-| --- | ---: | --- |
-| 评估断言规模 | 66 条 | Router、RAG、回答质量、端到端和工作台评测合计 |
-| 意图路由准确率 | 100% | `scripts/run_eval.py` route 维度 21/21 |
-| 工具计划准确率 | 100% | `scripts/run_eval.py` tools 维度 21/21 |
-| 工具结果符合预期率 | 100% | `scripts/run_e2e_eval.py` 工具 success 与标注一致 |
-| RAG 准确率 | 100% | `scripts/run_rag_eval.py` 来源、关键词和证据校验 8/8 |
-| RAG Top1 来源命中率 | 100% | top1 命中期望政策来源 |
-| 回答质量通过率 | 100% | citation 引用和高风险回复控制 21/21 |
-| 端到端任务完成率 | 100% | `scripts/run_e2e_eval.py` 业务动作与回复约束 12/12 |
-| 工作台任务完成率 | 100% | `scripts/run_workbench_eval.py` 商品推荐、快捷回复、转人工 4/4 |
-
-| 脚本 | 评估内容 | 当前结果 |
-| --- | --- | --- |
-| `scripts/run_eval.py` | Router 路由和工具调用 | 21/21 |
-| `scripts/run_rag_eval.py` | RAG 来源命中和关键词命中 | 8/8 |
-| `scripts/run_answer_eval.py` | Citation 引用和高风险回复控制 | 21/21 |
-| `scripts/run_e2e_eval.py` | 端到端业务链路、工具序列和最终动作 | 12/12 |
-| `scripts/run_workbench_eval.py` | 商品推荐、快捷回复、转人工等客服工作台场景 | 4/4 |
-| `scripts/multi_turn_smoke_test.py` | 多轮槽位补全 | 通过 |
-| `scripts/context_smoke_test.py` | 多轮上下文继承 | 通过 |
-| `scripts/tool_failure_smoke_test.py` | 工具异常、链路短路和降级回复 | 通过 |
-| `scripts/retrieval_guardrail_smoke_test.py` | RAG 低置信、来源不匹配和召回不全兜底 | 通过 |
-| `scripts/api_smoke_test.py` | API 主链路 | 通过 |
-| `scripts/db_smoke_test.py` | SQLite 持久化 | 通过 |
-
-运行：
 
 ```powershell
 py -3.13 scripts\run_eval.py
 py -3.13 scripts\run_rag_eval.py
 py -3.13 scripts\run_answer_eval.py
 py -3.13 scripts\run_e2e_eval.py
-py -3.13 scripts\run_workbench_eval.py
+py -3.13 scripts\run_multi_agent_eval.py
 py -3.13 scripts\run_metrics.py
-py -3.13 scripts\multi_turn_smoke_test.py
-py -3.13 scripts\context_smoke_test.py
-py -3.13 scripts\tool_failure_smoke_test.py
-py -3.13 scripts\retrieval_guardrail_smoke_test.py
-py -3.13 scripts\api_smoke_test.py
-py -3.13 scripts\db_smoke_test.py
 ```
 
-## 部署
+评估样本在 `data/eval/`，报告输出到 `data/eval_reports/`。
 
-本地 Docker：
+## 关键接口
+
+| 接口 | 说明 |
+| --- | --- |
+| `POST /agent/chat` | 非流式多 Agent 对话 |
+| `POST /agent/stream` | SSE 流式多 Agent 对话 |
+| `GET /agent/state/{conversation_id}` | 查看 Redis/本地缓存中的 Agent 状态 |
+| `GET /cache/health` | 查看当前缓存后端、Redis 可达性和降级原因 |
+| `GET /knowledge/catalog` | 查看企业知识库文档分类、chunk 策略和 Hybrid RAG 架构 |
+| `GET /knowledge/search` | 调试 Hybrid RAG 检索结果和召回分数 |
+| `GET /refunds` | 查看退款申请 |
+| `POST /refund-tasks/process` | 触发退款处理服务消费 MQ |
+| `GET /manual-reviews` | 查看人工审核单 |
+| `GET /mq/messages` | 查看 MQ 消息 |
+| `GET /observability/metrics` | 查看 Token、耗时、错误等指标 |
+
+## 高并发退款压测
+
+```powershell
+py -3.13 scripts\refund_concurrency_stress_test.py
+```
+
+该脚本会模拟 50 个并发退款请求打到同一个订单。旧流程中所有请求都会通过退款资格判断，可能重复创建退款申请；新流程使用 Redis `SET NX EX` 分布式锁和退款幂等结果缓存，只允许一个请求创建退款申请和 MQ 消息，其余请求复用同一退款结果。
+
+## Docker
 
 ```powershell
 docker build -t customer-support-agent .
 docker run --rm -p 8012:8012 --env-file .env customer-support-agent
 ```
 
-Render 部署需要配置环境变量：
-
-```text
-LLM_API_KEY=你的智谱 API Key
-DATABASE_PATH=/var/data/customer_support.db
-```
-
-部署细节见 [docs/deployment.md](docs/deployment.md)。
+Render 部署配置见 `render.yaml`，详细说明见 `docs/deployment.md`。

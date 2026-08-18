@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from app.storage.cache import delete_cache, get_json_cache, set_json_cache
 from app.storage.database import (
     append_message_to_db,
     clear_pending_task_in_db,
@@ -7,6 +8,14 @@ from app.storage.database import (
     load_messages_from_db,
     set_pending_task_in_db,
 )
+
+
+def history_cache_key(conversation_id: str) -> str:
+    return f"conversation_history:{conversation_id}"
+
+
+def pending_task_cache_key(conversation_id: str) -> str:
+    return f"pending_task:{conversation_id}"
 
 
 class ConversationMemory:
@@ -24,10 +33,18 @@ class ConversationMemory:
 
     # 读取某个会话的历史消息，用于恢复聊天窗口或构造大模型上下文。
     def load(self, conversation_id: str) -> list[dict]:
-        return load_messages_from_db(
+        cached = get_json_cache(history_cache_key(conversation_id))
+
+        if cached is not None:
+            return cached
+
+        messages = load_messages_from_db(
             conversation_id=conversation_id,
             limit=self.max_messages,
         )
+        set_json_cache(history_cache_key(conversation_id), messages)
+
+        return messages
 
     # 追加一条消息。读取时只取最近 max_messages 条，避免上下文无限增长。
     def append(self, conversation_id: str, role: str, content: str) -> None:
@@ -36,15 +53,28 @@ class ConversationMemory:
             role=role,
             content=content,
         )
+        delete_cache(history_cache_key(conversation_id))
 
     # 保存待补全任务。典型场景：用户说“帮我改地址”，但没有提供订单号。
     def set_pending_task(self, conversation_id: str, task: dict) -> None:
         set_pending_task_in_db(conversation_id, task)
+        set_json_cache(pending_task_cache_key(conversation_id), task)
 
     # 读取待补全任务，用于用户下一轮补充订单号后继续执行。
     def get_pending_task(self, conversation_id: str) -> dict | None:
-        return get_pending_task_from_db(conversation_id)
+        cached = get_json_cache(pending_task_cache_key(conversation_id))
+
+        if cached is not None:
+            return cached
+
+        task = get_pending_task_from_db(conversation_id)
+
+        if task is not None:
+            set_json_cache(pending_task_cache_key(conversation_id), task)
+
+        return task
 
     # 当任务已经拿到缺失信息并完成处理后，清除待补全任务。
     def clear_pending_task(self, conversation_id: str) -> None:
         clear_pending_task_in_db(conversation_id)
+        delete_cache(pending_task_cache_key(conversation_id))

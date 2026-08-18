@@ -1,4 +1,4 @@
-from app.agent.router import build_tool_plan, extract_order_id
+from app.agent.routing.router import build_tool_plan, extract_order_id
 from app.core.schemas import RouteDecision
 
 
@@ -8,6 +8,7 @@ ADDRESS_CHANGE_KEYWORDS = [
     "改地址",
     "修改收货地址",
     "换地址",
+    "修改为",
 ]
 
 
@@ -46,6 +47,8 @@ def extract_new_address(
         "收货地址为",
         "地址是",
         "地址为",
+        "改地址到",
+        "地址改成",
         "改成",
         "修改为",
         "换成",

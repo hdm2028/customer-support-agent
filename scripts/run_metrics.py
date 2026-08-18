@@ -112,6 +112,21 @@ def run_workbench_eval() -> tuple[dict, Path]:
     return report, report_path
 
 
+def run_multi_agent_eval() -> tuple[dict, Path]:
+    """执行多 Agent 分派与关键工具触发评测。"""
+
+    multi_agent_eval = importlib.import_module("scripts.run_multi_agent_eval")
+    cases = multi_agent_eval.load_eval_cases()
+    results = [
+        multi_agent_eval.run_single_case(case)
+        for case in cases
+    ]
+    report = multi_agent_eval.build_report(results)
+    report_path = multi_agent_eval.save_report(report)
+
+    return report, report_path
+
+
 def build_metrics_report() -> dict:
     """聚合各评测脚本的核心指标，形成 README 可展示的指标表。"""
 
@@ -120,6 +135,7 @@ def build_metrics_report() -> dict:
     answer_report, answer_report_path = run_answer_eval()
     e2e_report, e2e_report_path, tool_result_match_rate = run_e2e_eval()
     workbench_report, workbench_report_path = run_workbench_eval()
+    multi_agent_report, multi_agent_report_path = run_multi_agent_eval()
 
     return {
         "created_at": datetime.now().isoformat(timespec="seconds"),
@@ -129,12 +145,14 @@ def build_metrics_report() -> dict:
             "answer_cases": answer_report["total"],
             "e2e_cases": e2e_report["total"],
             "workbench_cases": workbench_report["total"],
+            "multi_agent_cases": multi_agent_report["total"],
             "total_eval_checks": (
                 router_report["total"]
                 + rag_report["total"]
                 + answer_report["total"]
                 + e2e_report["total"]
                 + workbench_report["total"]
+                + multi_agent_report["total"]
             ),
         },
         "metrics": {
@@ -148,6 +166,8 @@ def build_metrics_report() -> dict:
             "risk_control_pass_rate": answer_report["risk_control_pass_rate"],
             "e2e_task_completion_rate": e2e_report["overall_pass_rate"],
             "workbench_task_completion_rate": workbench_report["overall_pass_rate"],
+            "multi_agent_dispatch_pass_rate": multi_agent_report["agent_dispatch_pass_rate"],
+            "multi_agent_tool_trigger_pass_rate": multi_agent_report["tool_trigger_pass_rate"],
         },
         "source_reports": {
             "router": str(router_report_path),
@@ -155,6 +175,7 @@ def build_metrics_report() -> dict:
             "answer": str(answer_report_path),
             "e2e": str(e2e_report_path),
             "workbench": str(workbench_report_path),
+            "multi_agent": str(multi_agent_report_path),
         },
     }
 
@@ -192,6 +213,8 @@ def print_metrics_report(report: dict, report_path: Path) -> None:
     print(f"风险控制通过率: {percent(metrics['risk_control_pass_rate'])}")
     print(f"端到端任务完成率: {percent(metrics['e2e_task_completion_rate'])}")
     print(f"工作台任务完成率: {percent(metrics['workbench_task_completion_rate'])}")
+    print(f"多 Agent 分派通过率: {percent(metrics['multi_agent_dispatch_pass_rate'])}")
+    print(f"多 Agent 工具触发通过率: {percent(metrics['multi_agent_tool_trigger_pass_rate'])}")
     print(f"聚合报告文件: {report_path}")
     print("=" * 60)
 

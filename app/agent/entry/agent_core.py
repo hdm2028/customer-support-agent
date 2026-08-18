@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 
-from app.agent.stream_runner import stream_workflow
-from app.agent.workflow import get_conversation_history, run_workflow
+from app.agent.entry.stream_runner import stream_workflow
+from app.agent.entry.workflow import get_conversation_history, run_workflow
 
 
 def run_customer_support_agent(

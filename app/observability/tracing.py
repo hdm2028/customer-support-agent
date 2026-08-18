@@ -22,6 +22,12 @@ def start_trace(user_message: str, conversation_id: str | None = None) -> dict:
         "success": None,
         "events": [],
         "timings": {},
+        "token_usage": {
+            "prompt_tokens_estimated": 0,
+            "completion_tokens_estimated": 0,
+            "total_tokens_estimated": 0,
+            "source": "local_estimate",
+        },
         "_start_perf":perf_counter(),
     }
 
@@ -41,6 +47,44 @@ def add_trace_timing(trace: dict, step_name: str, duration_ms: float, data: dict
     }
     trace.setdefault("timings", {})[step_name] = timing
     add_trace_event(trace, event_type="timing", data=timing)
+
+
+def estimate_tokens(text: str) -> int:
+    """粗略估算 token，适合无真实 LLM usage 时做成本趋势分析。"""
+
+    if not text:
+        return 0
+
+    chinese_chars = sum(1 for char in text if "\u4e00" <= char <= "\u9fff")
+    other_chars = max(len(text) - chinese_chars, 0)
+
+    return chinese_chars + max(1, other_chars // 4)
+
+
+def set_prompt_token_usage(trace: dict, messages: list[dict]) -> None:
+    prompt_tokens = sum(estimate_tokens(item.get("content", "")) for item in messages)
+    trace.setdefault("token_usage", {})["prompt_tokens_estimated"] = prompt_tokens
+    trace["token_usage"]["total_tokens_estimated"] = (
+        prompt_tokens + trace["token_usage"].get("completion_tokens_estimated", 0)
+    )
+    add_trace_event(
+        trace,
+        event_type="token_usage",
+        data=trace["token_usage"],
+    )
+
+
+def set_completion_token_usage(trace: dict, reply: str) -> None:
+    completion_tokens = estimate_tokens(reply)
+    trace.setdefault("token_usage", {})["completion_tokens_estimated"] = completion_tokens
+    trace["token_usage"]["total_tokens_estimated"] = (
+        trace["token_usage"].get("prompt_tokens_estimated", 0) + completion_tokens
+    )
+    add_trace_event(
+        trace,
+        event_type="token_usage",
+        data=trace["token_usage"],
+    )
 
 
 def timed_step(trace: dict, step_name: str, callback, data: dict | None = None):
@@ -109,3 +153,10 @@ def save_trace(trace: dict) -> None:
     TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with TRACE_PATH.open("a",encoding= "utf-8") as f:
          f.write(json.dumps(trace, ensure_ascii=False) + "\n")
+
+    try:
+        from app.storage.database import save_agent_metric_to_db
+
+        save_agent_metric_to_db(trace)
+    except Exception:
+        pass

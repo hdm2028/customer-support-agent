@@ -38,11 +38,15 @@ class RouteDecision(BaseModel):
     intent: str = "general_support"
     confidence: float = 0.0
     routing_reason: str | None = None
+    agent_plan: list[str] = Field(default_factory=list)
     tool_plan: list[str] = Field(default_factory=list)
     order_id: str | None = None
     need_order: bool = False
     need_policy: bool = False
     need_ticket: bool = False
+    need_refund_request: bool = False
+    need_risk_check: bool = False
+    manual_review_required: bool = False
     need_product_search: bool = False
     need_goods_link: bool = False
     need_quick_reply: bool = False
@@ -56,15 +60,27 @@ class RouteDecision(BaseModel):
     handoff_required: bool = False
     handoff_reason: str | None = None
     risk_level: str = "low"
+    risk_flags: list[str] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):
     success: bool
     conversation_id: str
+    orchestration: dict = Field(default_factory=dict)
     route: RouteDecision
     tool_results: list[ToolResult]
     reply: str
     model_messages: list[dict]
+    timings: dict = Field(default_factory=dict)
+    token_usage: dict = Field(default_factory=dict)
+    duration_ms: float | None = None
+    used_pending_task: bool = False
+    used_conversation_context: bool = False
+    conversation_context: dict = Field(default_factory=dict)
+    effective_user_message: str | None = None
+    slots: dict = Field(default_factory=dict)
+    missing_slots: list[str] = Field(default_factory=list)
+    workflow_engine: str | None = None
 
 
 class ChatHistoryRequest(BaseModel):
