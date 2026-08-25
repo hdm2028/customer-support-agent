@@ -1,5 +1,5 @@
 from app.mq.queue import (
-    REFUND_REQUESTED_TOPIC,
+    REFUND_CREATED_TOPIC,
     ack_message,
     consume_messages,
     fail_message,
@@ -9,7 +9,7 @@ from app.mq.queue import (
 
 
 __all__ = [
-    "REFUND_REQUESTED_TOPIC",
+    "REFUND_CREATED_TOPIC",
     "ack_message",
     "consume_messages",
     "fail_message",

@@ -1,8 +1,15 @@
-from datetime import datetime
-
-from app.agent.agents.risk import evaluate_risk
-from app.agent.policies.ticket_policy import parse_date
-from app.core.schemas import RouteDecision
+from app.agent.policies.ticket_policy import evaluate_ticket_creation
+from app.agent.routing.router import infer_issue_type
+from app.agent.state import AgentResult, AgentState
+from app.agent.tools.tool_results import get_tool_result
+from app.core.schemas import RouteDecision, ToolResult
+from app.domain.refund_policy import (
+    days_since_signed,
+    evaluate_refund_eligibility,
+    infer_refund_reason,
+    is_quality_or_fault_request,
+)
+from app.tools.executor import execute_agent_tool, safe_tool_call
 
 
 class AfterSalesAgent:
@@ -20,6 +27,7 @@ class AfterSalesAgent:
                 route.need_ticket,
                 route.need_handoff,
                 route.handoff_required,
+                route.manual_review_required,
             ]
         )
 
@@ -43,95 +51,206 @@ class AfterSalesAgent:
 
         return tools
 
+    def run(self, state: AgentState) -> AgentResult:
+        route = state.route
 
-def is_quality_or_fault_request(user_request: str) -> bool:
-    return any(
-        keyword in user_request
-        for keyword in ["质量问题", "坏了", "故障", "不能用", "无法使用", "破损", "少件"]
-    )
+        if route.need_order and route.order_id and state.order is None:
+            return self.lookup_order(state)
 
+        if route.need_risk_check and state.risk is None:
+            return AgentResult(agent=self.key, success=True, next_hint="risk_agent")
 
-def infer_refund_reason(user_request: str) -> str:
-    if is_quality_or_fault_request(user_request):
-        return "quality_issue"
+        if self.should_create_manual_review(state):
+            return self.create_manual_review(state)
 
-    if "未收到" in user_request or "没收到" in user_request:
-        return "not_received"
+        if self.manual_review_blocks_auto_refund(state):
+            if route.need_handoff and state.handoff is None:
+                return self.transfer_to_human(state)
 
-    if "不想要" in user_request or "不要了" in user_request or "七天无理由" in user_request:
-        return "no_reason_return"
+            return AgentResult(agent=self.key, success=True)
 
-    if "重复扣款" in user_request or "支付异常" in user_request or "扣款" in user_request:
-        return "payment_issue"
+        if route.need_refund_request and state.refund is None:
+            return self.apply_refund(state)
 
-    return "refund_request"
+        if route.need_ticket and state.ticket is None:
+            refund_result = get_tool_result(state.tool_results, "refund_apply")
+            if not route.need_refund_request or (refund_result and refund_result.success):
+                return self.create_ticket(state)
 
+        if route.need_handoff and state.handoff is None:
+            return self.transfer_to_human(state)
 
-def days_since_signed(order: dict) -> int | None:
-    signed_at = parse_date(order.get("signed_date"))
+        return AgentResult(agent=self.key, success=True)
 
-    if not signed_at:
-        return None
+    def lookup_order(self, state: AgentState) -> AgentResult:
+        result = execute_agent_tool(
+            agent_key=self.key,
+            tool_name="order_lookup",
+            arguments={"order_id": state.order_id},
+            trace=state.trace,
+            fallback_action="ask_user_to_retry_or_handoff",
+        )
 
-    return (datetime.now() - signed_at).days
+        return AgentResult(
+            agent=self.key,
+            success=result.success,
+            state_updates={"order": result.result if result.success else None},
+            tool_results=[result],
+            error=None if result.success else str(result.result),
+        )
 
+    def apply_refund(self, state: AgentState) -> AgentResult:
+        result = execute_agent_tool(
+            agent_key=self.key,
+            tool_name="refund_apply",
+            arguments={
+                "order_id": state.order_id,
+                "user_request": state.user_message,
+                "risk_assessment": state.risk,
+            },
+            trace=state.trace,
+            fallback_action="create_manual_review_or_explain_policy",
+        )
 
-def evaluate_refund_eligibility(
-    order: dict,
-    user_request: str,
-    risk_assessment: dict | None = None,
-) -> dict:
-    """判断退款申请是否可以进入自动业务流。"""
+        return AgentResult(
+            agent=self.key,
+            success=result.success,
+            state_updates={"refund": result.result if result.success else None},
+            tool_results=[result],
+            error=None if result.success else str(result.result),
+        )
 
-    risk_assessment = risk_assessment or evaluate_risk(order, user_request)
-    order_status = order.get("order_status") or ""
-    category = order.get("category") or ""
-    amount = float(order.get("amount") or 0)
-    reason = infer_refund_reason(user_request)
-    signed_days = days_since_signed(order)
-    return_window_days = int(order.get("return_window_days") or 0)
+    def create_ticket(self, state: AgentState) -> AgentResult:
+        order = state.order
+        issue_type = infer_issue_type(state.user_message)
+        decision_result = safe_tool_call(
+            "ticket_decision",
+            lambda: evaluate_ticket_creation(
+                route=state.route,
+                order=order,
+                issue_type=issue_type,
+                user_message=state.user_message,
+            ),
+            fallback_action="handoff_to_human",
+        )
 
-    if order.get("payment_status") == "unpaid" or "待支付" in order_status:
-        return {
-            "eligible": False,
-            "reason": "订单尚未支付，不会产生退款；用户可自行取消待支付订单。",
-            "refund_reason": reason,
-            "review_required": False,
-        }
+        if not decision_result.success:
+            return AgentResult(
+                agent=self.key,
+                success=False,
+                tool_results=[decision_result],
+                error=str(decision_result.result),
+            )
 
-    if "退货审核中" in order_status or "退款" in order_status:
-        return {
-            "eligible": False,
-            "reason": "订单已有售后或退款流程在处理中，不能重复创建退款申请。",
-            "refund_reason": reason,
-            "review_required": False,
-        }
+        decision = decision_result.result
+        if not decision["can_create"]:
+            return AgentResult(
+                agent=self.key,
+                success=False,
+                tool_results=[ToolResult(tool_name="ticket_decision", success=False, result=decision)],
+                error=decision.get("reason"),
+            )
 
-    if "定制" in category and not is_quality_or_fault_request(user_request):
-        return {
-            "eligible": False,
-            "reason": "定制商品通常不支持七天无理由退款，质量问题除外。",
-            "refund_reason": reason,
-            "review_required": True,
-        }
+        result = execute_agent_tool(
+            agent_key=self.key,
+            tool_name="create_ticket",
+            arguments={
+                "order_id": state.order_id,
+                "issue_type": issue_type,
+                "user_request": state.user_message,
+                "priority": decision["priority"],
+            },
+            trace=state.trace,
+            fallback_action="retry_or_handoff_to_human",
+        )
 
-    if signed_days is not None and return_window_days > 0 and signed_days > return_window_days:
-        if not is_quality_or_fault_request(user_request):
-            return {
-                "eligible": False,
-                "reason": f"订单签收已超过 {return_window_days} 天无理由退货窗口，不能自动创建退款申请。",
-                "refund_reason": reason,
-                "review_required": True,
-            }
+        return AgentResult(
+            agent=self.key,
+            success=result.success,
+            state_updates={"ticket": result.result if result.success else None},
+            tool_results=[result],
+            error=None if result.success else str(result.result),
+        )
 
-    review_required = bool(risk_assessment.get("review_required")) or amount >= 1000
+    def should_create_manual_review(self, state: AgentState) -> bool:
+        if state.manual_review is not None or not state.order_id:
+            return False
 
-    if "已发货" in order_status and signed_days is None:
-        review_required = True
+        if state.route.need_risk_check and state.risk is None:
+            return False
 
-    return {
-        "eligible": True,
-        "reason": "订单满足进入退款申请流程的基础条件。",
-        "refund_reason": reason,
-        "review_required": review_required,
-    }
+        risk = state.risk or {}
+        refund_result = get_tool_result(state.tool_results, "refund_apply")
+        refund = refund_result.result if refund_result and isinstance(refund_result.result, dict) else {}
+
+        return bool(
+            state.route.manual_review_required
+            or risk.get("review_required")
+            or refund.get("status") == "pending_manual_review"
+            or (
+                refund_result
+                and not refund_result.success
+                and isinstance(refund_result.result, dict)
+                and refund_result.result.get("review_required")
+            )
+        )
+
+    def manual_review_blocks_auto_refund(self, state: AgentState) -> bool:
+        risk = state.risk or {}
+
+        return bool(
+            state.manual_review is not None
+            and state.refund is None
+            and state.route.need_refund_request
+            and (
+                state.route.manual_review_required
+                or risk.get("review_required")
+            )
+        )
+
+    def create_manual_review(self, state: AgentState) -> AgentResult:
+        risk = state.risk or {}
+        refund = state.refund or {}
+        result = execute_agent_tool(
+            agent_key=self.key,
+            tool_name="create_manual_review",
+            arguments={
+                "order_id": state.order_id,
+                "review_type": "refund" if state.route.need_refund_request else "risk_control",
+                "risk_level": risk.get("risk_level", state.route.risk_level),
+                "risk_flags": risk.get("risk_flags", state.route.risk_flags),
+                "user_request": state.user_message,
+                "related_id": refund.get("refund_id"),
+            },
+            trace=state.trace,
+            fallback_action="manual_queue",
+        )
+
+        return AgentResult(
+            agent=self.key,
+            success=result.success,
+            state_updates={"manual_review": result.result if result.success else None},
+            tool_results=[result],
+            error=None if result.success else str(result.result),
+        )
+
+    def transfer_to_human(self, state: AgentState) -> AgentResult:
+        result = execute_agent_tool(
+            agent_key=self.key,
+            tool_name="transfer_to_human",
+            arguments={
+                "reason": state.route.handoff_reason or "用户要求人工客服或该场景需要人工接管。",
+                "user_request": state.user_message,
+                "priority": "high" if state.route.risk_level == "high" else "normal",
+            },
+            trace=state.trace,
+            fallback_action="manual_queue",
+        )
+
+        return AgentResult(
+            agent=self.key,
+            success=result.success,
+            state_updates={"handoff": result.result if result.success else None},
+            tool_results=[result],
+            error=None if result.success else str(result.result),
+        )

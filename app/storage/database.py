@@ -138,6 +138,25 @@ def get_connection() -> sqlite3.Connection:
     return connection
 
 
+def sqlite_column_exists(connection: sqlite3.Connection, table_name: str, column_name: str) -> bool:
+    rows = connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return any(row["name"] == column_name for row in rows)
+
+
+def apply_sqlite_migrations(connection: sqlite3.Connection) -> None:
+    if not sqlite_column_exists(connection, "refund_requests", "idempotency_key"):
+        connection.execute(
+            "ALTER TABLE refund_requests ADD COLUMN idempotency_key TEXT"
+        )
+
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uk_refunds_idempotency_key
+        ON refund_requests(idempotency_key)
+        """
+    )
+
+
 def init_database() -> None:
     """初始化数据库表，并把 orders.json 作为订单种子数据导入。"""
 
@@ -200,6 +219,7 @@ def init_database() -> None:
             CREATE TABLE IF NOT EXISTS refund_requests (
                 refund_id TEXT PRIMARY KEY,
                 order_id TEXT NOT NULL,
+                idempotency_key TEXT,
                 user_id TEXT,
                 amount REAL NOT NULL,
                 reason TEXT NOT NULL,
@@ -212,6 +232,9 @@ def init_database() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_refunds_order_status
             ON refund_requests(order_id, status, created_at);
+
+            CREATE UNIQUE INDEX IF NOT EXISTS uk_refunds_idempotency_key
+            ON refund_requests(idempotency_key);
 
             CREATE TABLE IF NOT EXISTS manual_reviews (
                 review_id TEXT PRIMARY KEY,
@@ -262,6 +285,7 @@ def init_database() -> None:
             );
             """
         )
+        apply_sqlite_migrations(connection)
 
     seed_orders_from_json()
     seed_customer_profiles()
@@ -302,7 +326,7 @@ def seed_orders_from_json(path: Path = ORDERS_SEED_PATH) -> None:
 
 
 def normalize_order(order: dict) -> dict:
-    """给旧版订单种子补齐业务字段，避免改动旧数据也能跑通新流程。"""
+    """给订单种子补齐业务字段，保证本地和正式数据库字段一致。"""
 
     defaults = ORDER_BUSINESS_DEFAULTS.get(str(order["order_id"]), {})
     normalized = {
@@ -428,6 +452,7 @@ def save_refund_request_to_db(refund_request: dict) -> dict:
     now = now_text()
     saved = {
         "refund_id": refund_request.get("refund_id") or f"R-{uuid4().hex[:12]}",
+        "idempotency_key": refund_request.get("idempotency_key") or f"refund_apply:{refund_request['order_id']}",
         "created_at": refund_request.get("created_at") or now,
         "updated_at": now,
         **refund_request,
@@ -437,14 +462,15 @@ def save_refund_request_to_db(refund_request: dict) -> dict:
         connection.execute(
             """
             INSERT INTO refund_requests (
-                refund_id, order_id, user_id, amount, reason, status,
+                refund_id, order_id, idempotency_key, user_id, amount, reason, status,
                 risk_level, payload, created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 saved["refund_id"],
                 saved["order_id"],
+                saved["idempotency_key"],
                 saved.get("user_id"),
                 float(saved.get("amount") or 0),
                 saved["reason"],

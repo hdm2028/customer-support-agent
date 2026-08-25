@@ -1,9 +1,12 @@
 from app.core.schemas import ToolResult
-from app.rag.rag import search_documents
+from app.rag.retriever import HybridRetriever
+
+
+_RETRIEVER = HybridRetriever()
 
 
 def policy_search(query: str, top_k: int = 2) -> ToolResult:
-    results = search_documents(query, top_k=top_k)
+    results = _RETRIEVER.retrieve(query=query, top_k=top_k)
 
     if not results:
         return ToolResult(

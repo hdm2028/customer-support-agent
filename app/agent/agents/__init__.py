@@ -5,7 +5,7 @@ from app.agent.agents.after_sales import (
     infer_refund_reason,
 )
 from app.agent.agents.customer import CustomerAgent, CustomerQAAgent
-from app.agent.agents.risk import RiskAgent, RiskControlAgent, evaluate_risk
+from app.agent.agents.risk import RiskAgent, RiskControlAgent
 
 
 __all__ = [
@@ -16,6 +16,5 @@ __all__ = [
     "RiskControlAgent",
     "days_since_signed",
     "evaluate_refund_eligibility",
-    "evaluate_risk",
     "infer_refund_reason",
 ]

@@ -17,7 +17,7 @@ from app.agent.orchestrator import (
     build_agent_plan,
     describe_agent_plan,
     route_user_request,
-    run_orchestrated_tools,
+    run_orchestrated_state,
 )
 from app.agent.tools.tool_results import has_failed_order_lookup, has_failed_tool_call
 from app.core.schemas import RouteDecision, ToolResult
@@ -278,17 +278,27 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
                 "tool_plan": state["route"].tool_plan,
             },
         )
-        tool_results = run_orchestrated_tools(
+        agent_state = run_orchestrated_state(
             user_message=state["effective_user_message"],
             route=state["route"],
+            conversation_id=state["real_conversation_id"],
+            history=state.get("history", []),
+            pending_task=state.get("pending_task"),
             trace=state["trace"],
         )
+        tool_results = agent_state.tool_results
+        orchestration = {
+            **state.get("orchestration", {}),
+            "runtime_agent_steps": agent_state.agent_steps,
+            "shared_state": agent_state.to_summary(),
+        }
         add_trace_event(
             state["trace"],
             event_type="tool_results",
             data={
                 "count": len(tool_results),
                 "items": [dump_model(item) for item in tool_results],
+                "agent_steps": agent_state.agent_steps,
             },
         )
         mark_agent_state(
@@ -297,10 +307,14 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
             "done",
             {
                 "tool_results": [dump_model(item) for item in tool_results],
+                "agent_steps": agent_state.agent_steps,
             },
         )
 
-        return {"tool_results": tool_results}
+        return {
+            "tool_results": tool_results,
+            "orchestration": orchestration,
+        }
 
     return timed_step(state["trace"], "node.execute_tools", work)
 

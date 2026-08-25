@@ -7,13 +7,14 @@ from time import perf_counter
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.agent.agents.after_sales import evaluate_refund_eligibility
-from app.agent.agents.risk import evaluate_risk
 from app.concurrency.refund_guard import refund_idempotency_key, refund_lock_key
-from app.mq.queue import REFUND_REQUESTED_TOPIC, list_messages
+from app.domain.refund_policy import evaluate_refund_eligibility
+from app.domain.risk_policy import evaluate_refund_risk
+from app.mq.queue import REFUND_CREATED_TOPIC, list_messages
 from app.storage.cache import cache_health, delete_cache
 from app.storage.database import (
     database_health,
+    get_customer_profile_from_db,
     get_active_refund_request_by_order_id_from_db,
     init_database,
     list_refund_requests_from_db,
@@ -40,7 +41,7 @@ def order_refund_messages(order_id: str) -> list[dict]:
         message
         for message in list_messages(limit=1000)
         if (
-            message.get("topic") == REFUND_REQUESTED_TOPIC
+            message.get("topic") == REFUND_CREATED_TOPIC
             and str(message.get("payload", {}).get("order_id")) == str(order_id)
         )
     ]
@@ -69,7 +70,8 @@ def unsafe_refund_decision(order_id: str, user_request: str) -> bool:
     if not order:
         return False
 
-    risk_assessment = evaluate_risk(order, user_request)
+    profile = get_customer_profile_from_db(order.get("user_id"))
+    risk_assessment = evaluate_refund_risk(order, profile, user_request)
     eligibility = evaluate_refund_eligibility(
         order=order,
         user_request=user_request,

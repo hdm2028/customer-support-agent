@@ -1,4 +1,4 @@
-from app.mq.queue import REFUND_REQUESTED_TOPIC, ack_message, consume_messages, fail_message
+from app.mq.queue import REFUND_CREATED_TOPIC, ack_message, consume_messages, fail_message
 from app.storage.database import (
     get_refund_request_from_db,
     save_notification_to_db,
@@ -85,7 +85,7 @@ def process_refund_message(message: dict) -> dict:
 def process_refund_tasks(limit: int = 10) -> dict:
     """消费一批退款任务，模拟独立业务处理服务。"""
 
-    messages = consume_messages(topic=REFUND_REQUESTED_TOPIC, limit=limit)
+    messages = consume_messages(topic=REFUND_CREATED_TOPIC, limit=limit)
     results = []
 
     for message in messages:

@@ -21,7 +21,7 @@ from app.core.schemas import (
     ServiceMetadata,
     StreamChatRequest,
 )
-from app.rag.rag import get_knowledge_catalog, list_chunks
+from app.rag.retriever import HybridRetriever
 from app.mq.queue import list_messages
 from app.services.refund_service import process_refund_tasks
 from app.storage.cache import cache_health, get_agent_state
@@ -42,6 +42,7 @@ from app.tools.policy import policy_search
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
 init_database()
+knowledge_retriever = HybridRetriever()
 
 
 @app.get("/")
@@ -277,7 +278,7 @@ def search_knowledge(query: str, top_k: int = 2) -> dict:
 
 @app.get("/knowledge/catalog")
 def knowledge_catalog() -> dict:
-    catalog = get_knowledge_catalog()
+    catalog = knowledge_retriever.catalog()
 
     return {
         "success": True,
@@ -302,7 +303,7 @@ def list_function_tools() -> dict:
 def get_knowledge_chunks() -> dict:
     """查看当前知识库切分结果，方便调试 RAG chunk 是否合理。"""
 
-    chunks = list_chunks()
+    chunks = knowledge_retriever.list_chunks()
 
     return {
         "success": True,

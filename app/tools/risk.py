@@ -1,5 +1,5 @@
-from app.agent.agents.risk import evaluate_risk
 from app.core.schemas import ToolResult
+from app.domain.risk_policy import evaluate_refund_risk
 from app.storage.database import get_customer_profile_from_db
 from app.storage.store import get_order_by_id
 
@@ -17,10 +17,10 @@ def risk_check(order_id: str, user_request: str) -> ToolResult:
         )
 
     profile = get_customer_profile_from_db(order.get("user_id"))
-    assessment = evaluate_risk(
+    assessment = evaluate_refund_risk(
         order=order,
+        customer_profile=profile,
         user_request=user_request,
-        profile=profile,
     )
 
     return ToolResult(

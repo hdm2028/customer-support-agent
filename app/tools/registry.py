@@ -203,6 +203,18 @@ TOOL_HANDLERS = {
     "transfer_to_human": transfer_to_human,
 }
 
+AGENT_TOOL_PERMISSIONS = {
+    "customer_agent": {"policy_search"},
+    "after_sales_agent": {
+        "order_lookup",
+        "refund_apply",
+        "create_manual_review",
+        "create_ticket",
+        "transfer_to_human",
+    },
+    "risk_agent": {"risk_check"},
+}
+
 
 def get_function_tool_specs() -> list[dict[str, Any]]:
     """返回 Function Calling 风格的工具定义，供 API、评测和前端展示。"""
@@ -237,6 +249,12 @@ def validate_tool_arguments(tool_name: str, arguments: dict[str, Any]) -> tuple[
         return False, [f"缺少必要参数：{', '.join(missing)}"]
 
     return True, []
+
+
+def can_agent_use_tool(agent_key: str, tool_name: str) -> bool:
+    """校验 Agent 是否拥有指定工具的调用权限。"""
+
+    return tool_name in AGENT_TOOL_PERMISSIONS.get(agent_key, set())
 
 
 def execute_registered_tool(tool_name: str, arguments: dict[str, Any]) -> ToolResult:

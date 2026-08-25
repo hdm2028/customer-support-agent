@@ -1,1 +1,1 @@
-"""Controlled Agent tool registry, execution, validation, and result helpers."""
+"""Agent tool validation and result helpers."""

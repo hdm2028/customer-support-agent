@@ -6,7 +6,7 @@ from app.storage.database import (
 )
 
 
-REFUND_REQUESTED_TOPIC = "refund.requested"
+REFUND_CREATED_TOPIC = "refund.created"
 
 
 def publish_message(topic: str, payload: dict) -> dict:

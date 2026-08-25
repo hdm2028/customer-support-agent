@@ -1,5 +1,3 @@
-from app.agent.agents.after_sales import evaluate_refund_eligibility, infer_refund_reason
-from app.agent.agents.risk import evaluate_risk
 from app.concurrency.refund_guard import (
     build_idempotent_replay,
     cache_refund_idempotency,
@@ -8,8 +6,11 @@ from app.concurrency.refund_guard import (
     wait_for_refund_idempotency,
 )
 from app.core.schemas import ToolResult
-from app.mq.queue import REFUND_REQUESTED_TOPIC, publish_message
+from app.domain.refund_policy import evaluate_refund_eligibility, infer_refund_reason
+from app.domain.risk_policy import evaluate_refund_risk
+from app.mq.queue import REFUND_CREATED_TOPIC, publish_message
 from app.storage.database import (
+    get_customer_profile_from_db,
     get_active_refund_request_by_order_id_from_db,
     save_refund_request_to_db,
     update_refund_request_in_db,
@@ -36,7 +37,8 @@ def _create_refund_request_unlocked(
             },
         )
 
-    assessment = risk_assessment or evaluate_risk(order, user_request)
+    profile = get_customer_profile_from_db(order.get("user_id"))
+    assessment = risk_assessment or evaluate_refund_risk(order, profile, user_request)
     eligibility = evaluate_refund_eligibility(
         order=order,
         user_request=user_request,
@@ -56,22 +58,35 @@ def _create_refund_request_unlocked(
         )
 
     status = "pending_manual_review" if eligibility["review_required"] else "queued"
-    refund_request = save_refund_request_to_db(
-        {
-            "order_id": order_id,
-            "user_id": order.get("user_id"),
-            "amount": float(order.get("amount") or 0),
-            "reason": infer_refund_reason(user_request),
-            "status": status,
-            "risk_level": assessment["risk_level"],
-            "risk_assessment": assessment,
-            "eligibility": eligibility,
-            "user_request": user_request,
-            "next_step": "等待退款处理服务消费 MQ 消息。",
-        }
-    )
+    try:
+        refund_request = save_refund_request_to_db(
+            {
+                "order_id": order_id,
+                "idempotency_key": f"refund_apply:{order_id}",
+                "user_id": order.get("user_id"),
+                "amount": float(order.get("amount") or 0),
+                "reason": infer_refund_reason(user_request),
+                "status": status,
+                "risk_level": assessment["risk_level"],
+                "risk_assessment": assessment,
+                "eligibility": eligibility,
+                "user_request": user_request,
+                "next_step": "等待退款处理服务消费 MQ 消息。",
+            }
+        )
+    except Exception:
+        existing_refund = get_active_refund_request_by_order_id_from_db(order_id)
+        if existing_refund is not None:
+            cache_refund_idempotency(order_id, existing_refund)
+            return ToolResult(
+                tool_name="refund_apply",
+                success=True,
+                result=build_idempotent_replay(existing_refund),
+            )
+
+        raise
     mq_message = publish_message(
-        REFUND_REQUESTED_TOPIC,
+        REFUND_CREATED_TOPIC,
         {
             "refund_id": refund_request["refund_id"],
             "order_id": order_id,

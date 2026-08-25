@@ -1,5 +1,4 @@
 import time
-from contextlib import contextmanager
 from uuid import uuid4
 
 from app.core.config import get_settings
@@ -46,23 +45,40 @@ def build_idempotent_replay(refund_request: dict) -> dict:
     }
 
 
-@contextmanager
-def refund_distributed_lock(order_id: str):
-    settings = get_settings()
-    backend = get_cache_backend()
-    token = uuid4().hex
-    lock_key = refund_lock_key(order_id)
-    acquired = backend.set_if_absent(
-        lock_key,
-        token,
-        ex=settings.refund_lock_ttl_seconds,
-    )
+class RefundLock:
+    """订单粒度的退款分布式锁，底层由 Redis SET NX + TTL 实现。"""
 
-    try:
-        yield acquired
-    finally:
-        if acquired:
-            backend.compare_and_delete(lock_key, token)
+    def __init__(self, order_id: str) -> None:
+        self.order_id = order_id
+        self.token = uuid4().hex
+        self.lock_key = refund_lock_key(order_id)
+        self.acquired = False
+
+    def acquire(self) -> bool:
+        settings = get_settings()
+        backend = get_cache_backend()
+        self.acquired = backend.set_if_absent(
+            self.lock_key,
+            self.token,
+            ex=settings.refund_lock_ttl_seconds,
+        )
+
+        return self.acquired
+
+    def release(self) -> None:
+        if self.acquired:
+            get_cache_backend().compare_and_delete(self.lock_key, self.token)
+            self.acquired = False
+
+    def __enter__(self) -> bool:
+        return self.acquire()
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        self.release()
+
+
+def refund_distributed_lock(order_id: str) -> RefundLock:
+    return RefundLock(order_id)
 
 
 def wait_for_refund_idempotency(order_id: str) -> dict | None:

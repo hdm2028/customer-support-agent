@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS tickets (
 CREATE TABLE IF NOT EXISTS refund_requests (
     refund_id VARCHAR(64) PRIMARY KEY,
     order_id VARCHAR(64) NOT NULL,
+    idempotency_key VARCHAR(128) NULL,
     user_id VARCHAR(64) NULL,
     amount DECIMAL(12, 2) NOT NULL,
     reason VARCHAR(64) NOT NULL,
@@ -58,7 +59,8 @@ CREATE TABLE IF NOT EXISTS refund_requests (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_refunds_order_id (order_id),
     INDEX idx_refunds_status (status),
-    INDEX idx_refunds_order_status (order_id, status, created_at)
+    INDEX idx_refunds_order_status (order_id, status, created_at),
+    UNIQUE KEY uk_refunds_idempotency_key (idempotency_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS manual_reviews (

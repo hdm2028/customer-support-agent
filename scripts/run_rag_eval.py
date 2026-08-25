@@ -10,12 +10,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from app.core.config import BASE_DIR
 from app.core.schemas import ToolResult
 from app.agent.policies.evidence_guardrail import validate_policy_evidence
-from app.rag.rag import search_documents
+from app.rag.retriever import HybridRetriever
 
 
 EVAL_PATH = BASE_DIR / "data" / "eval" / "rag_eval.jsonl"
 REPORT_DIR = BASE_DIR / "data" / "eval_reports"
 DEFAULT_TOP_K = 3
+RETRIEVER = HybridRetriever()
 
 
 def load_eval_cases() -> list[dict]:
@@ -90,7 +91,7 @@ def simplify_result(result: dict) -> dict:
 def run_single_case(case: dict, top_k: int = DEFAULT_TOP_K) -> dict:
     """执行单条 RAG eval：检索、判断来源命中、判断关键词命中。"""
 
-    results = search_documents(case["query"], top_k=top_k)
+    results = RETRIEVER.retrieve(case["query"], top_k=top_k)
     expected_sources = case.get("expected_sources", [])
     expected_keywords = case.get("expected_keywords", [])
 

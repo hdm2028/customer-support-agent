@@ -1,173 +1,156 @@
 # 中文电商智能售后客服 Agent
 
-## 项目简介
+面向电商售后场景的多 Agent 自动化客服平台。系统不是让 LLM 直接接管业务，而是由 Agent Orchestrator 统一调度客服、售后、风控三个平级 Agent，通过 Tool Calling、Hybrid RAG、MySQL、Redis、MQ 把用户咨询转成可控、可观测、可评测的售后流程。
 
-这是一个面向中文电商售后场景的多 Agent 智能客服服务。项目目标不是做通用聊天机器人，而是把用户售后诉求转成一条可控、可观测、可评测的业务自动化链路：
-
-```text
-用户问题
--> FastAPI
--> Agent Orchestrator
--> 客服 Agent / 售后 Agent / 风控 Agent
--> RAG / 业务 Tool / 风险规则
--> Redis 状态缓存
--> MQ 退款任务
--> 业务处理服务
--> 结果反馈与数据分析
-```
-
-系统支持普通客服问答、售后政策 RAG、多轮槽位补全、订单查询、退款申请、MQ 异步处理、人工审核、转人工、工单草稿、流式输出、执行轨迹、Token 估算和自动化评估。
-
-## 技术栈
-
-| 方向 | 技术 |
-| --- | --- |
-| 后端服务 | FastAPI, Uvicorn |
-| Agent 编排 | LangGraph |
-| 大模型 | 智谱 GLM |
-| Embedding | 智谱 `embedding-3` / 本地 hash embedding |
-| 知识库 | Markdown / TXT / PDF, RAG Chunk 策略 |
-| 业务库 | 统一业务数据库门面：MySQL 生产适配 / SQLite 本地后端 |
-| 缓存 | Redis / 本地 TTL 缓存 |
-| MQ | SQLite 模拟队列，可替换 RabbitMQ/Kafka |
-| 前端 | 原生 HTML/CSS/JavaScript, SSE |
-| 部署 | Docker, Render |
-
-## 核心链路
+## 核心架构
 
 ```text
-FastAPI API
--> AgentOrchestrator
-   -> Router / State        识别意图、订单号、槽位、Agent 计划和工具计划
-   -> CustomerAgent         普通咨询、政策问答、Hybrid RAG
-   -> AfterSalesAgent       订单查询、退款申请、工单、MQ 退款任务
-   -> RiskAgent             风险评分、异常账号、高风险人工审核
-   -> Tool Registry         白名单工具、参数校验、异常转换
-   -> Response Builder      汇总订单、政策证据、工具结果并生成回复
--> 返回 API / SSE 响应
+                         User
+                          |
+                          v
+                       FastAPI
+                          |
+                          v
+                    Load Context
+                          |
+                          v
+                        Router
+                          |
+                          v
+                   Agent Orchestrator
+                          |
+                    Shared State
+                          |
+          ---------------------------------
+          |               |               |
+          v               v               v
+    Customer Agent   AfterSales Agent   Risk Agent
+          |               |               |
+          v               v               v
+     Hybrid RAG     Business Tools    Risk Policy
+          |               |               |
+          ----------- Shared State --------
+                          |
+                          v
+                   Generate Reply
 ```
 
-`LangGraph` 现在作为 Orchestrator 的内部状态流转实现，外部模块只需要通过 `AgentOrchestrator` 进入系统。工具调用采用白名单机制：工具必须先在 `app/tools/registry.py` 注册，执行前会校验参数和工具链，避免在订单不存在、政策证据不足或高风险场景下继续执行错误动作。
+外部入口统一通过 `AgentOrchestrator`。LangGraph 负责承载请求生命周期：加载上下文、路由、进入 Orchestrator 的 Agent Loop、构造回复、保存结果；普通接口和 SSE 流式接口复用同一套执行节点。
 
-## 多 Agent 架构
+## 三个 Agent
+
+| Agent | 职责 | 可调用工具 |
+| --- | --- | --- |
+| Customer Agent | 普通咨询、售后政策、物流规则、客服 SOP、知识库检索 | `policy_search` |
+| AfterSales Agent | 订单查询、退款申请、工单创建、人工审核、转人工 | `order_lookup`, `refund_apply`, `create_ticket`, `create_manual_review`, `transfer_to_human` |
+| Risk Agent | 高频退款、异常账号、恶意投诉、虚假描述、大额退款审核 | `risk_check` |
+
+三个 Agent 不直接互相调用。每个 Agent 执行后返回 `AgentResult`，Orchestrator 将结果写入 `AgentState`，再根据最新共享状态决定下一个 Agent。
+
+## 真实退款流程
 
 ```text
-用户
- |
-FastAPI
- |
-Agent Orchestrator
- |
---------------------------------
-|              |               |
-客服 Agent      售后 Agent      风控 Agent
-|              |               |
-知识库 RAG     业务 Tool       风险规则
-|              |
-Vector DB      MySQL/SQLite
- |
-Redis
- |
-MQ 消息队列
- |
-业务处理服务
-```
+用户：“订单 10001 耳机坏了我要退款”
+        |
+        v
+Orchestrator -> AfterSales Agent -> order_lookup -> MySQL
+        |
+        v
+Orchestrator -> Customer Agent -> Hybrid RAG
+        |
+        v
+Orchestrator -> Risk Agent -> risk_check -> RiskPolicy
+        |
+        v
+低风险：AfterSales Agent -> refund_apply
+        |
+        v
+Redis RefundLock + Redis Idempotency Cache
+        |
+        v
+DB Active Refund Check + idempotency_key Unique Index
+        |
+        v
+RefundRequest -> MySQL
+        |
+        v
+Publish refund.created -> MQ
+        |
+        v
+Refund Worker -> 更新退款状态、订单状态、用户通知
 
-- 客服 Agent：普通咨询、意图识别、知识库 RAG 和回复生成。
-- 售后 Agent：订单查询、退款申请、工单创建、人工审核流转、MQ 退款任务。
-- 风控 Agent：高频退款、异常账号、恶意投诉、虚假描述、大额退款审核。
+高风险：AfterSales Agent -> create_manual_review -> 人工审核
+```
 
 ## 项目结构
 
 ```text
-.
-├─ main.py                    FastAPI 入口
-├─ web/                       浏览器 Agent 控制台
-├─ app/
-│  ├─ agent/                  Agent 入口、编排、路由、工具、安全和回复
-│  │  ├─ orchestrator.py      AgentOrchestrator 统一编排入口
-│  │  ├─ agents/              客服/售后/风控 Agent
-│  │  ├─ entry/               非流式/流式执行入口，内部复用 Orchestrator
-│  │  ├─ routing/             意图识别、槽位补全、上下文和记忆
-│  │  ├─ tools/               Agent 工具链执行、校验和结果处理
-│  │  ├─ policies/            工单策略、安全规则和 RAG 证据校验
-│  │  └─ response/            Prompt 与回复上下文构造
-│  ├─ infrastructure/         MySQL、Redis、MQ 生产组件入口
-│  ├─ mq/                     MQ 消息队列适配层
-│  ├─ services/               退款等业务处理服务
-│  ├─ rag/                    Hybrid Retriever、切片、Embedding、BM25、重排
-│  ├─ tools/                  Function Calling 工具注册与业务工具
-│  ├─ storage/                MySQL/SQLite 业务数据门面和数据读写
-│  ├─ llm/                    智谱大模型调用
-│  ├─ observability/          trace 和耗时记录
-│  └─ core/                   配置和 API schema
-├─ data/
-│  ├─ knowledge/              售后知识库
-│  ├─ orders.json             订单种子数据
-│  ├─ eval/                   自动化评估样本
-│  ├─ eval_reports/           评估报告
-│  ├─ cache/                  Embedding cache 和知识库 manifest
-│  └─ traces/                 Agent 执行日志
-├─ scripts/                   知识库 ingest、评估脚本、冒烟测试
-├─ docs/                      部署说明和优化记录
-├─ Dockerfile
-├─ render.yaml
-├─ requirements.txt
-└─ .env.example
+app/
+├─ agent/
+│  ├─ orchestrator.py        Orchestrator 调度 Agent、更新 State、校验工具链
+│  ├─ state.py               AgentState / AgentResult 共享状态模型
+│  ├─ agents/                Customer / AfterSales / Risk 三个执行单元
+│  ├─ entry/                 LangGraph 非流式与流式入口
+│  ├─ routing/               意图识别、订单号抽取、槽位补全、会话上下文
+│  ├─ policies/              安全规则、工单规则、RAG 证据校验
+│  └─ response/              Prompt 与确定性回复构造
+├─ tools/
+│  ├─ registry.py            Function Calling schema、工具白名单、权限隔离
+│  ├─ executor.py            Tool lookup、参数校验、异常捕获、tracing
+│  ├─ order.py               订单查询工具
+│  ├─ policy.py              企业知识库检索工具
+│  ├─ risk.py                风控工具
+│  ├─ refund.py              退款申请、Redis 锁、DB 幂等、MQ 投递
+│  ├─ ticket.py              售后工单工具
+│  └─ human_review.py        人工审核与转人工工具
+├─ domain/
+│  ├─ risk_policy.py         确定性风险评分规则
+│  └─ refund_policy.py       退款资格与退款原因规则
+├─ rag/
+│  ├─ retriever.py           HybridRetriever 统一入口
+│  ├─ hybrid_index.py        Vector + BM25 + Keyword Fusion
+│  ├─ vector_store.py        向量相似度
+│  ├─ reranker.py            业务重排
+│  └─ document_loader.py     文档加载与 Chunk 策略
+├─ storage/                  MySQL/SQLite 业务数据门面、Redis 缓存封装
+├─ concurrency/              RefundLock 与退款幂等缓存
+├─ mq/                       refund.created 消息发布、消费、ack/fail
+├─ services/                 Refund Worker
+├─ infrastructure/           MySQL / Redis / MQ 生产组件入口
+└─ observability/            Trace、耗时、Token、错误信息落库
 ```
 
-## 核心模块说明
+## 数据与基础设施
 
-| 模块 | 说明 |
+| 组件 | 用途 |
 | --- | --- |
-| `app/agent/orchestrator.py` | AgentOrchestrator 统一入口，负责路由、Agent 选择、工具分发和计划描述 |
-| `app/agent/agents/customer.py` | 客服 Agent，负责普通咨询、政策问答、客服 SOP 和知识库检索 |
-| `app/agent/agents/after_sales.py` | 售后 Agent，负责订单、退款、工单、人工审核和退款资格判断 |
-| `app/agent/agents/risk.py` | 风控 Agent，负责高频退款、异常账号、恶意投诉、虚假描述和大额退款评分 |
-| `app/agent/entry/workflow.py` | LangGraph 状态流转实现，串联上下文、Orchestrator、工具、回复和持久化 |
-| `app/agent/entry/stream_runner.py` | SSE 流式工作流 |
-| `app/agent/routing/router.py` | 抽取订单号，识别售后意图，生成工具计划 |
-| `app/agent/routing/memory.py` | 会话历史和 pending task 管理 |
-| `app/tools/registry.py` | Function Calling 工具 schema、白名单和参数校验 |
-| `app/tools/order.py` | 订单查询工具 |
-| `app/tools/refund.py` | 退款申请工具，包含 Redis 分布式锁和 DB 幂等检查 |
-| `app/tools/ticket.py` | 售后工单工具 |
-| `app/tools/human_review.py` | 人工审核和转人工工具 |
-| `app/agent/tools/tool_executor.py` | Orchestrator 内部工具链执行，捕获异常、校验链路并做失败截断 |
-| `app/agent/policies/evidence_guardrail.py` | 校验 RAG 证据来源和关键词是否足够支撑业务动作 |
-| `app/agent/response/prompt_builder.py` | 将订单、政策证据、退款、审核和工单结果整理为 LLM 上下文 |
-| `app/rag/document_loader.py` | 加载 Markdown/TXT/PDF 并切分 chunk |
-| `app/rag/retriever.py` | Hybrid RAG 统一入口：Vector Recall + BM25 + Keyword Fusion + Rerank |
-| `app/rag/hybrid_index.py` | Hybrid RAG：向量召回 + BM25/关键词召回 + 候选融合 |
-| `app/rag/vector_index.py` | 向量相似度工具 |
-| `app/rag/reranker.py` | 基于业务规则对检索结果重排 |
-| `app/infrastructure/mysql.py` | MySQL 生产数据库入口 |
-| `app/infrastructure/redis.py` | Redis 缓存、状态和锁入口 |
-| `app/infrastructure/mq.py` | MQ 发布、消费、ack/fail 入口 |
-| `app/storage/database.py` | 业务数据库统一门面，按配置分发到 MySQL 或 SQLite |
-| `app/storage/mysql_database.py` | MySQL 生产适配：建表、种子数据、业务 CRUD 和 MQ 状态流转 |
-| `app/storage/cache.py` | Redis/本地 TTL 缓存，用于会话、热点知识和 Agent 状态 |
-| `app/concurrency/refund_guard.py` | Redis 分布式锁和退款幂等控制，解决同一订单高并发重复退款 |
-| `app/mq/queue.py` | MQ 发布、消费、ack/fail |
-| `app/services/refund_service.py` | 退款处理服务，消费 MQ 并更新订单状态 |
+| MySQL | 正式业务数据库，保存订单、退款申请、工单、人工审核、会话、Agent 执行记录、MQ 消息 |
+| SQLite | 本地 Demo / 测试后端，接口与 MySQL 对齐 |
+| Redis | 会话上下文缓存、Embedding 缓存、Agent 状态缓存、退款锁、退款幂等缓存 |
+| MQ | 只服务退款异步链路，主题为 `refund.created` |
 
-## 数据表
+MySQL 表结构见 `docs/mysql_schema.sql`。`refund_requests` 使用 `idempotency_key` 唯一索引做数据库兜底，Redis 锁只负责削峰与并发互斥，不能作为唯一一致性保障。
 
-| 表 | 作用 |
-| --- | --- |
-| `orders` | 订单数据 |
-| `customer_profiles` | 客户画像和风控特征 |
-| `tickets` | 工单草稿 |
-| `refund_requests` | 退款申请 |
-| `manual_reviews` | 人工审核单 |
-| `mq_messages` | MQ 消息 |
-| `notifications` | 用户通知 |
-| `agent_metrics` | Token、耗时、错误等可观测指标 |
-| `conversation_messages` | 多轮会话历史 |
-| `pending_tasks` | 待补全槽位任务 |
-| `feedback` | 用户评分和反馈 |
+## Hybrid RAG
 
-MySQL 表结构见 `docs/mysql_schema.sql`。生产环境推荐使用 MySQL；本地演示或测试可以切换到 SQLite。设置 `DATABASE_BACKEND=mysql` 并填写 `MYSQL_DSN=mysql+pymysql://user:password@host:3306/customer_support` 后，项目会使用 MySQL 作为主业务库。
+```text
+Query
+  |
+  +--> Vector Recall
+  |
+  +--> BM25 / Keyword Recall
+  |
+  v
+Fusion
+  |
+  v
+Business Rerank
+  |
+  v
+Top K Evidence
+```
+
+`policy_search` 只调用 `HybridRetriever.retrieve()`。知识库覆盖商品售后规则、退款政策、物流规则、商品说明、客服 SOP、历史问题案例等文档，并通过证据 Guardrail 校验来源、关键词和置信度，避免低置信检索结果触发自动业务动作。
 
 ## 本地启动
 
@@ -178,7 +161,13 @@ docker compose -f docker-compose.dev.yml up -d
 py -3.13 -m uvicorn main:app --host 127.0.0.1 --port 8012
 ```
 
-`docker-compose.dev.yml` 会启动本地 MySQL 和 Redis。`.env` 中设置 `DATABASE_BACKEND=mysql`、`MYSQL_DSN` 和 `REDIS_URL` 后，项目启动时会自动创建 MySQL 业务表并导入订单/客户画像种子数据。
+`.env` 中设置：
+
+```text
+DATABASE_BACKEND=mysql
+MYSQL_DSN=mysql+pymysql://user:password@127.0.0.1:3306/customer_support
+REDIS_URL=redis://127.0.0.1:6379/0
+```
 
 访问：
 
@@ -187,31 +176,6 @@ Web:     http://127.0.0.1:8012/
 Swagger: http://127.0.0.1:8012/docs
 ```
 
-默认可以不配置真实大模型，接口参数 `use_llm=false` 时会走本地确定性回复。如需调用智谱模型，在 `.env` 中配置 `LLM_API_KEY`。
-
-## 知识库更新
-
-知识库目录是 `data/knowledge/`。更新 Markdown、TXT 或 PDF 后执行：
-
-```powershell
-py -3.13 scripts\ingest_knowledge.py
-```
-
-脚本会扫描文档、计算 hash、识别新增/修改/删除文件、重新切分 chunk，并预热 embedding cache。
-
-## 自动化评估
-
-```powershell
-py -3.13 scripts\run_eval.py
-py -3.13 scripts\run_rag_eval.py
-py -3.13 scripts\run_answer_eval.py
-py -3.13 scripts\run_e2e_eval.py
-py -3.13 scripts\run_multi_agent_eval.py
-py -3.13 scripts\run_metrics.py
-```
-
-评估样本在 `data/eval/`，报告输出到 `data/eval_reports/`。
-
 ## 关键接口
 
 | 接口 | 说明 |
@@ -219,28 +183,25 @@ py -3.13 scripts\run_metrics.py
 | `POST /agent/chat` | 非流式多 Agent 对话 |
 | `POST /agent/stream` | SSE 流式多 Agent 对话 |
 | `GET /agent/state/{conversation_id}` | 查看 Redis/本地缓存中的 Agent 状态 |
-| `GET /cache/health` | 查看当前缓存后端、Redis 可达性和降级原因 |
-| `GET /knowledge/catalog` | 查看企业知识库文档分类、chunk 策略和 Hybrid RAG 架构 |
-| `GET /knowledge/search` | 调试 Hybrid RAG 检索结果和召回分数 |
+| `GET /knowledge/search` | 调试 Hybrid RAG 检索 |
+| `GET /knowledge/catalog` | 查看企业知识库目录 |
 | `GET /refunds` | 查看退款申请 |
-| `POST /refund-tasks/process` | 触发退款处理服务消费 MQ |
 | `GET /manual-reviews` | 查看人工审核单 |
 | `GET /mq/messages` | 查看 MQ 消息 |
-| `GET /observability/metrics` | 查看 Token、耗时、错误等指标 |
+| `POST /refund-tasks/process` | 触发 Refund Worker 消费 MQ |
+| `GET /observability/metrics` | 查看 Token、耗时、工具链路和错误信息 |
 
-## 高并发退款压测
+## 验证命令
 
 ```powershell
+py -3.13 scripts\agent_routing_test.py
+py -3.13 scripts\multi_agent_workflow_test.py
+py -3.13 scripts\tool_permission_test.py
+py -3.13 scripts\high_risk_manual_review_test.py
+py -3.13 scripts\run_rag_eval.py
+py -3.13 scripts\mq_refund_worker_test.py
 py -3.13 scripts\refund_concurrency_stress_test.py
+py -3.13 scripts\api_smoke_test.py
 ```
 
-该脚本会模拟 50 个并发退款请求打到同一个订单。旧流程中所有请求都会通过退款资格判断，可能重复创建退款申请；新流程使用 Redis `SET NX EX` 分布式锁、Redis 幂等缓存和数据库有效退款检查，只允许一个请求创建退款申请和 MQ 消息。如果数据库中已有同订单有效退款申请，则所有并发请求都会复用历史申请。
-
-## Docker
-
-```powershell
-docker build -t customer-support-agent .
-docker run --rm -p 8012:8012 --env-file .env customer-support-agent
-```
-
-Render 部署配置见 `render.yaml`，详细说明见 `docs/deployment.md`。
+并发退款压测会模拟 50 个请求同时提交同一订单退款。旧流程会让 50 个请求都通过资格判断，新流程通过 Redis RefundLock、Redis 幂等缓存、数据库活跃退款检查和 `idempotency_key` 唯一索引保证只复用或创建一条有效退款申请。

@@ -63,6 +63,7 @@ MYSQL_SCHEMA = [
     CREATE TABLE IF NOT EXISTS refund_requests (
         refund_id VARCHAR(64) PRIMARY KEY,
         order_id VARCHAR(64) NOT NULL,
+        idempotency_key VARCHAR(128) NULL,
         user_id VARCHAR(64) NULL,
         amount DECIMAL(12, 2) NOT NULL,
         reason VARCHAR(64) NOT NULL,
@@ -73,7 +74,8 @@ MYSQL_SCHEMA = [
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_refunds_order_id (order_id),
         INDEX idx_refunds_status (status),
-        INDEX idx_refunds_order_status (order_id, status, created_at)
+        INDEX idx_refunds_order_status (order_id, status, created_at),
+        UNIQUE KEY uk_refunds_idempotency_key (idempotency_key)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
@@ -306,6 +308,16 @@ def apply_mysql_migrations(cursor) -> None:
             "ALTER TABLE refund_requests ADD INDEX idx_refunds_order_status (order_id, status, created_at)"
         )
 
+    if not mysql_column_exists(cursor, "refund_requests", "idempotency_key"):
+        cursor.execute(
+            "ALTER TABLE refund_requests ADD COLUMN idempotency_key VARCHAR(128) NULL AFTER order_id"
+        )
+
+    if not mysql_index_exists(cursor, "refund_requests", "uk_refunds_idempotency_key"):
+        cursor.execute(
+            "ALTER TABLE refund_requests ADD UNIQUE KEY uk_refunds_idempotency_key (idempotency_key)"
+        )
+
 
 def seed_customer_profiles_to_mysql() -> None:
     from app.storage.database import DEFAULT_CUSTOMER_PROFILES
@@ -469,6 +481,7 @@ def save_refund_request_to_mysql(refund_request: dict) -> dict:
     now = now_text()
     saved = {
         "refund_id": refund_request.get("refund_id") or f"R-{uuid4().hex[:12]}",
+        "idempotency_key": refund_request.get("idempotency_key") or f"refund_apply:{refund_request['order_id']}",
         "created_at": refund_request.get("created_at") or now,
         "updated_at": now,
         **refund_request,
@@ -479,14 +492,15 @@ def save_refund_request_to_mysql(refund_request: dict) -> dict:
             cursor.execute(
                 """
                 INSERT INTO refund_requests (
-                    refund_id, order_id, user_id, amount, reason, status,
+                    refund_id, order_id, idempotency_key, user_id, amount, reason, status,
                     risk_level, payload, created_at, updated_at
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     saved["refund_id"],
                     saved["order_id"],
+                    saved["idempotency_key"],
                     saved.get("user_id"),
                     float(saved.get("amount") or 0),
                     saved["reason"],

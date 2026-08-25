@@ -5,7 +5,7 @@ from app.core.config import get_settings
 from app.rag.document_loader import DocumentChunk
 from app.rag.embedding_client import get_embedding_provider, keyword_score, tokenize
 from app.rag.reranker import rerank_documents
-from app.rag.vector_index import cosine_similarity
+from app.rag.vector_store import cosine_similarity
 
 
 class BM25Index:
