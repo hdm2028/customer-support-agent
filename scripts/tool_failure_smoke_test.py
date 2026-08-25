@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import app.agent.entry.agent_core as agent_core
-import app.agent.tools.tool_registry as tool_registry
+import app.tools.registry as tool_registry
 
 
 def tool_names(result: dict) -> list[str]:

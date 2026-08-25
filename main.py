@@ -8,7 +8,7 @@ from app.agent.entry.agent_core import (
     run_customer_support_agent,
     stream_customer_support_agent,
 )
-from app.agent.tools.tool_registry import get_function_tool_specs
+from app.tools.registry import get_function_tool_specs
 from app.core.config import BASE_DIR, get_settings
 from app.core.schemas import (
     AgentInfo,
@@ -36,7 +36,7 @@ from app.storage.database import (
 )
 from app.storage.feedback_store import save_feedback
 from app.storage.store import get_order_by_id
-from app.tools.support_tools import policy_search
+from app.tools.policy import policy_search
 
 
 settings = get_settings()

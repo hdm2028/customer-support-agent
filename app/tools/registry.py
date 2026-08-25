@@ -2,15 +2,12 @@ from copy import deepcopy
 from typing import Any
 
 from app.core.schemas import ToolResult
-from app.tools.support_tools import (
-    create_manual_review,
-    create_ticket,
-    order_lookup,
-    policy_search,
-    refund_apply,
-    risk_check,
-    transfer_to_human,
-)
+from app.tools.human_review import create_manual_review, transfer_to_human
+from app.tools.order import order_lookup
+from app.tools.policy import policy_search
+from app.tools.refund import refund_apply
+from app.tools.risk import risk_check
+from app.tools.ticket import create_ticket
 
 
 FUNCTION_TOOL_SPECS = [

@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS refund_requests (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_refunds_order_id (order_id),
-    INDEX idx_refunds_status (status)
+    INDEX idx_refunds_status (status),
+    INDEX idx_refunds_order_status (order_id, status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS manual_reviews (

@@ -13,7 +13,7 @@ from app.agent.routing.pending_task import (
     should_store_pending_task,
 )
 from app.agent.response.prompt_builder import build_model_messages
-from app.agent.orchestration.orchestrator import (
+from app.agent.orchestrator import (
     build_agent_plan,
     describe_agent_plan,
     route_user_request,

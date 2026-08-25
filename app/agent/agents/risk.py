@@ -13,7 +13,7 @@ FALSE_DESCRIPTION_PATTERNS = [
 ]
 
 
-class RiskControlAgent:
+class RiskAgent:
     """风控 Agent：检测高频退款、异常账号、恶意投诉和虚假描述。"""
 
     key = "risk_agent"
@@ -22,6 +22,9 @@ class RiskControlAgent:
 
     def should_handle(self, route) -> bool:
         return route.need_risk_check or route.handoff_required or route.manual_review_required
+
+
+RiskControlAgent = RiskAgent
 
 
 def evaluate_risk(order: dict, user_request: str, profile: dict | None = None) -> dict:

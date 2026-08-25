@@ -1,7 +1,10 @@
 from collections.abc import AsyncGenerator
 
-from app.agent.entry.stream_runner import stream_workflow
-from app.agent.entry.workflow import get_conversation_history, run_workflow
+from app.agent.orchestrator import DEFAULT_ORCHESTRATOR
+
+
+def get_conversation_history(conversation_id: str) -> list[dict]:
+    return DEFAULT_ORCHESTRATOR.history(conversation_id)
 
 
 def run_customer_support_agent(
@@ -11,7 +14,7 @@ def run_customer_support_agent(
 ) -> dict:
     """非流式 Agent 入口。"""
 
-    return run_workflow(
+    return DEFAULT_ORCHESTRATOR.run(
         user_message=user_message,
         conversation_id=conversation_id,
         use_llm=use_llm,
@@ -26,7 +29,7 @@ async def stream_customer_support_agent(
 ) -> AsyncGenerator[dict, None]:
     """流式 Agent 入口。"""
 
-    async for event in stream_workflow(
+    async for event in DEFAULT_ORCHESTRATOR.stream(
         user_message=user_message,
         conversation_id=conversation_id,
         use_llm=use_llm,

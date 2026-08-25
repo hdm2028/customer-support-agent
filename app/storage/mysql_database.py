@@ -72,7 +72,8 @@ MYSQL_SCHEMA = [
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_refunds_order_id (order_id),
-        INDEX idx_refunds_status (status)
+        INDEX idx_refunds_status (status),
+        INDEX idx_refunds_order_status (order_id, status, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
@@ -278,10 +279,31 @@ def mysql_column_exists(cursor, table_name: str, column_name: str) -> bool:
     return bool(row and row["count"])
 
 
+def mysql_index_exists(cursor, table_name: str, index_name: str) -> bool:
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND INDEX_NAME = %s
+        """,
+        (table_name, index_name),
+    )
+    row = cursor.fetchone()
+
+    return bool(row and row["count"])
+
+
 def apply_mysql_migrations(cursor) -> None:
     if not mysql_column_exists(cursor, "customer_profiles", "payload"):
         cursor.execute(
             "ALTER TABLE customer_profiles ADD COLUMN payload JSON NULL AFTER risk_tags"
+        )
+
+    if not mysql_index_exists(cursor, "refund_requests", "idx_refunds_order_status"):
+        cursor.execute(
+            "ALTER TABLE refund_requests ADD INDEX idx_refunds_order_status (order_id, status, created_at)"
         )
 
 
@@ -491,6 +513,30 @@ def get_refund_request_from_mysql(refund_id: str) -> dict | None:
             row = cursor.fetchone()
 
     return from_json(row["payload"]) if row else None
+
+
+def get_active_refund_request_by_order_id_from_mysql(order_id: str) -> dict | None:
+    ensure_mysql_database()
+    inactive_statuses = {"failed", "rejected", "cancelled", "canceled"}
+
+    with get_mysql_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT payload FROM refund_requests
+                WHERE order_id = %s
+                ORDER BY created_at DESC
+                """,
+                (str(order_id),),
+            )
+            rows = cursor.fetchall()
+
+    for row in rows:
+        refund_request = from_json(row["payload"])
+        if refund_request.get("status") not in inactive_statuses:
+            return refund_request
+
+    return None
 
 
 def update_refund_request_in_mysql(refund_id: str, updates: dict) -> dict | None:

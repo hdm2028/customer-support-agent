@@ -37,18 +37,17 @@
 
 ```text
 FastAPI API
--> app.agent.entry.workflow
-   -> Agent Orchestrator    统一路由和多 Agent 分派
-   -> load_context          加载会话历史和 pending task
-   -> route                 识别意图、订单号、风险等级、Agent 计划和工具计划
-   -> execute_tools         客服/售后/风控 Agent 协作执行工具链
-   -> build_model_context   整理订单信息、政策证据和工具结果
-   -> generate_reply        调用 LLM 或使用确定性 fallback 回复
-   -> persist_result        保存会话、工单和执行 trace
+-> AgentOrchestrator
+   -> Router / State        识别意图、订单号、槽位、Agent 计划和工具计划
+   -> CustomerAgent         普通咨询、政策问答、Hybrid RAG
+   -> AfterSalesAgent       订单查询、退款申请、工单、MQ 退款任务
+   -> RiskAgent             风险评分、异常账号、高风险人工审核
+   -> Tool Registry         白名单工具、参数校验、异常转换
+   -> Response Builder      汇总订单、政策证据、工具结果并生成回复
 -> 返回 API / SSE 响应
 ```
 
-工具调用采用白名单机制：工具必须先在 `tool_registry.py` 注册，执行前会校验参数和工具链，避免在订单不存在、政策证据不足或高风险场景下继续执行错误动作。
+`LangGraph` 现在作为 Orchestrator 的内部状态流转实现，外部模块只需要通过 `AgentOrchestrator` 进入系统。工具调用采用白名单机制：工具必须先在 `app/tools/registry.py` 注册，执行前会校验参数和工具链，避免在订单不存在、政策证据不足或高风险场景下继续执行错误动作。
 
 ## 多 Agent 架构
 
@@ -86,16 +85,18 @@ MQ 消息队列
 ├─ web/                       浏览器 Agent 控制台
 ├─ app/
 │  ├─ agent/                  Agent 入口、编排、路由、工具、安全和回复
-│  │  ├─ entry/               API 入口、非流式/流式工作流
-│  │  ├─ orchestration/       Orchestrator 与客服/售后/风控 Agent
+│  │  ├─ orchestrator.py      AgentOrchestrator 统一编排入口
+│  │  ├─ agents/              客服/售后/风控 Agent
+│  │  ├─ entry/               非流式/流式执行入口，内部复用 Orchestrator
 │  │  ├─ routing/             意图识别、槽位补全、上下文和记忆
-│  │  ├─ tools/               工具注册、执行、校验和结果处理
+│  │  ├─ tools/               Agent 工具链执行、校验和结果处理
 │  │  ├─ policies/            工单策略、安全规则和 RAG 证据校验
 │  │  └─ response/            Prompt 与回复上下文构造
+│  ├─ infrastructure/         MySQL、Redis、MQ 生产组件入口
 │  ├─ mq/                     MQ 消息队列适配层
 │  ├─ services/               退款等业务处理服务
-│  ├─ rag/                    知识库加载、切片、Embedding、检索、重排
-│  ├─ tools/                  订单查询、政策检索、退款、工单、转人工工具
+│  ├─ rag/                    Hybrid Retriever、切片、Embedding、BM25、重排
+│  ├─ tools/                  Function Calling 工具注册与业务工具
 │  ├─ storage/                MySQL/SQLite 业务数据门面和数据读写
 │  ├─ llm/                    智谱大模型调用
 │  ├─ observability/          trace 和耗时记录
@@ -119,23 +120,30 @@ MQ 消息队列
 
 | 模块 | 说明 |
 | --- | --- |
-| `app/agent/entry/workflow.py` | LangGraph 主工作流，串联上下文、Orchestrator、工具、回复和持久化 |
+| `app/agent/orchestrator.py` | AgentOrchestrator 统一入口，负责路由、Agent 选择、工具分发和计划描述 |
+| `app/agent/agents/customer.py` | 客服 Agent，负责普通咨询、政策问答、客服 SOP 和知识库检索 |
+| `app/agent/agents/after_sales.py` | 售后 Agent，负责订单、退款、工单、人工审核和退款资格判断 |
+| `app/agent/agents/risk.py` | 风控 Agent，负责高频退款、异常账号、恶意投诉、虚假描述和大额退款评分 |
+| `app/agent/entry/workflow.py` | LangGraph 状态流转实现，串联上下文、Orchestrator、工具、回复和持久化 |
 | `app/agent/entry/stream_runner.py` | SSE 流式工作流 |
-| `app/agent/orchestration/orchestrator.py` | 多 Agent 编排入口，生成 Agent 计划并分发工具链 |
-| `app/agent/orchestration/customer_agent.py` | 客服问答 Agent |
-| `app/agent/orchestration/after_sales_agent.py` | 售后处理 Agent，包含退款资格判断 |
-| `app/agent/orchestration/risk_agent.py` | 风控 Agent，输出风险等级、风险原因和人工审核判断 |
 | `app/agent/routing/router.py` | 抽取订单号，识别售后意图，生成工具计划 |
 | `app/agent/routing/memory.py` | 会话历史和 pending task 管理 |
-| `app/agent/tools/tool_registry.py` | 维护工具 schema 和工具白名单 |
-| `app/agent/tools/tool_executor.py` | 执行工具，捕获异常，校验工具链并做失败截断 |
+| `app/tools/registry.py` | Function Calling 工具 schema、白名单和参数校验 |
+| `app/tools/order.py` | 订单查询工具 |
+| `app/tools/refund.py` | 退款申请工具，包含 Redis 分布式锁和 DB 幂等检查 |
+| `app/tools/ticket.py` | 售后工单工具 |
+| `app/tools/human_review.py` | 人工审核和转人工工具 |
+| `app/agent/tools/tool_executor.py` | Orchestrator 内部工具链执行，捕获异常、校验链路并做失败截断 |
 | `app/agent/policies/evidence_guardrail.py` | 校验 RAG 证据来源和关键词是否足够支撑业务动作 |
 | `app/agent/response/prompt_builder.py` | 将订单、政策证据、退款、审核和工单结果整理为 LLM 上下文 |
 | `app/rag/document_loader.py` | 加载 Markdown/TXT/PDF 并切分 chunk |
+| `app/rag/retriever.py` | Hybrid RAG 统一入口：Vector Recall + BM25 + Keyword Fusion + Rerank |
 | `app/rag/hybrid_index.py` | Hybrid RAG：向量召回 + BM25/关键词召回 + 候选融合 |
-| `app/rag/vector_index.py` | 向量相似度工具和旧版内存索引 |
+| `app/rag/vector_index.py` | 向量相似度工具 |
 | `app/rag/reranker.py` | 基于业务规则对检索结果重排 |
-| `app/tools/support_tools.py` | 具体业务工具实现 |
+| `app/infrastructure/mysql.py` | MySQL 生产数据库入口 |
+| `app/infrastructure/redis.py` | Redis 缓存、状态和锁入口 |
+| `app/infrastructure/mq.py` | MQ 发布、消费、ack/fail 入口 |
 | `app/storage/database.py` | 业务数据库统一门面，按配置分发到 MySQL 或 SQLite |
 | `app/storage/mysql_database.py` | MySQL 生产适配：建表、种子数据、业务 CRUD 和 MQ 状态流转 |
 | `app/storage/cache.py` | Redis/本地 TTL 缓存，用于会话、热点知识和 Agent 状态 |
@@ -159,7 +167,7 @@ MQ 消息队列
 | `pending_tasks` | 待补全槽位任务 |
 | `feedback` | 用户评分和反馈 |
 
-MySQL 表结构见 `docs/mysql_schema.sql`。本地默认使用 SQLite；生产替换时设置 `DATABASE_BACKEND=mysql` 并填写 `MYSQL_DSN=mysql+pymysql://user:password@host:3306/customer_support`。
+MySQL 表结构见 `docs/mysql_schema.sql`。生产环境推荐使用 MySQL；本地演示或测试可以切换到 SQLite。设置 `DATABASE_BACKEND=mysql` 并填写 `MYSQL_DSN=mysql+pymysql://user:password@host:3306/customer_support` 后，项目会使用 MySQL 作为主业务库。
 
 ## 本地启动
 
@@ -226,7 +234,7 @@ py -3.13 scripts\run_metrics.py
 py -3.13 scripts\refund_concurrency_stress_test.py
 ```
 
-该脚本会模拟 50 个并发退款请求打到同一个订单。旧流程中所有请求都会通过退款资格判断，可能重复创建退款申请；新流程使用 Redis `SET NX EX` 分布式锁和退款幂等结果缓存，只允许一个请求创建退款申请和 MQ 消息，其余请求复用同一退款结果。
+该脚本会模拟 50 个并发退款请求打到同一个订单。旧流程中所有请求都会通过退款资格判断，可能重复创建退款申请；新流程使用 Redis `SET NX EX` 分布式锁、Redis 幂等缓存和数据库有效退款检查，只允许一个请求创建退款申请和 MQ 消息。如果数据库中已有同订单有效退款申请，则所有并发请求都会复用历史申请。
 
 ## Docker
 

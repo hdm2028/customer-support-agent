@@ -1,10 +1,10 @@
 from app.agent.policies.evidence_guardrail import apply_policy_evidence_guardrail
-from app.agent.orchestration.after_sales_agent import AfterSalesAgent
-from app.agent.orchestration.customer_agent import CustomerQAAgent
-from app.agent.orchestration.risk_agent import RiskControlAgent
+from app.agent.agents.after_sales import AfterSalesAgent
+from app.agent.agents.customer import CustomerAgent
+from app.agent.agents.risk import RiskAgent
 from app.agent.routing.router import infer_issue_type
 from app.agent.policies.ticket_policy import evaluate_ticket_creation
-from app.agent.tools.tool_registry import execute_registered_tool
+from app.tools.registry import execute_registered_tool
 from app.agent.tools.tool_results import (
     get_tool_result,
     get_order_lookup_result,
@@ -18,9 +18,9 @@ from app.observability.tracing import add_trace_event, timed_step
 from app.rag.query_builder import build_rag_query
 
 
-CUSTOMER_AGENT = CustomerQAAgent()
+CUSTOMER_AGENT = CustomerAgent()
 AFTER_SALES_AGENT = AfterSalesAgent()
-RISK_AGENT = RiskControlAgent()
+RISK_AGENT = RiskAgent()
 
 
 def safe_tool_call(

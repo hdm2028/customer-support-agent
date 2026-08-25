@@ -1,16 +1,16 @@
 from datetime import datetime
 
-from app.agent.orchestration.risk_agent import evaluate_risk
+from app.agent.agents.risk import evaluate_risk
 from app.agent.policies.ticket_policy import parse_date
 from app.core.schemas import RouteDecision
 
 
 class AfterSalesAgent:
-    """售后处理 Agent：负责订单、退款、工单、人工审核和业务动作。"""
+    """售后 Agent：负责订单查询、退款申请、售后工单和人工审核流转。"""
 
     key = "after_sales_agent"
     name = "售后 Agent"
-    responsibility = "订单查询、退款申请、售后工单、MQ 任务和人工审核流转"
+    responsibility = "订单查询、退款申请、售后工单、MQ 任务和业务流程执行"
 
     def should_handle(self, route: RouteDecision) -> bool:
         return any(

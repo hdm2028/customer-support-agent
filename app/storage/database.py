@@ -210,6 +210,9 @@ def init_database() -> None:
                 updated_at TEXT NOT NULL
             );
 
+            CREATE INDEX IF NOT EXISTS idx_refunds_order_status
+            ON refund_requests(order_id, status, created_at);
+
             CREATE TABLE IF NOT EXISTS manual_reviews (
                 review_id TEXT PRIMARY KEY,
                 order_id TEXT,
@@ -471,6 +474,30 @@ def get_refund_request_from_db(refund_id: str) -> dict | None:
         return None
 
     return json.loads(row["payload"])
+
+
+def get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
+    """按订单号读取最近一条仍有效的退款申请，用作数据库幂等检查。"""
+
+    ensure_database()
+    inactive_statuses = {"failed", "rejected", "cancelled", "canceled"}
+
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT payload FROM refund_requests
+            WHERE order_id = ?
+            ORDER BY created_at DESC
+            """,
+            (str(order_id),),
+        ).fetchall()
+
+    for row in rows:
+        refund_request = json.loads(row["payload"])
+        if refund_request.get("status") not in inactive_statuses:
+            return refund_request
+
+    return None
 
 
 def update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
@@ -1009,6 +1036,7 @@ _sqlite_update_order_in_db = update_order_in_db
 _sqlite_get_customer_profile_from_db = get_customer_profile_from_db
 _sqlite_save_refund_request_to_db = save_refund_request_to_db
 _sqlite_get_refund_request_from_db = get_refund_request_from_db
+_sqlite_get_active_refund_request_by_order_id_from_db = get_active_refund_request_by_order_id_from_db
 _sqlite_update_refund_request_in_db = update_refund_request_in_db
 _sqlite_list_refund_requests_from_db = list_refund_requests_from_db
 _sqlite_save_manual_review_to_db = save_manual_review_to_db
@@ -1196,6 +1224,13 @@ def get_refund_request_from_db(refund_id: str) -> dict | None:
         return _mysql_backend().get_refund_request_from_mysql(refund_id)
 
     return _sqlite_get_refund_request_from_db(refund_id)
+
+
+def get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
+    if using_mysql_backend():
+        return _mysql_backend().get_active_refund_request_by_order_id_from_mysql(order_id)
+
+    return _sqlite_get_active_refund_request_by_order_id_from_db(order_id)
 
 
 def update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
