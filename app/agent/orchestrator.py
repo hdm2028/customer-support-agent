@@ -348,18 +348,6 @@ class AgentOrchestrator:
 
         return state
 
-    def dispatch_tools(
-        self,
-        user_message: str,
-        route: RouteDecision,
-        trace: dict | None = None,
-    ) -> list[ToolResult]:
-        return self.run_agent_loop(
-            user_message=user_message,
-            route=route,
-            trace=trace,
-        ).tool_results
-
     def run(
         self,
         user_message: str,
@@ -428,11 +416,3 @@ def run_orchestrated_state(
         pending_task=pending_task,
         trace=trace,
     )
-
-
-def run_orchestrated_tools(
-    user_message: str,
-    route: RouteDecision,
-    trace: dict | None = None,
-) -> list[ToolResult]:
-    return DEFAULT_ORCHESTRATOR.dispatch_tools(user_message, route, trace)

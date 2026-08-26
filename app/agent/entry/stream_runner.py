@@ -5,9 +5,9 @@ from app.agent.entry.workflow import (
     build_initial_state,
     build_model_context_node,
     dump_model,
-    execute_tools_node,
     generate_reply_node,
     load_context_node,
+    orchestrate_agents_node,
     persist_result_node,
     route_node,
     should_force_fallback,
@@ -55,7 +55,7 @@ async def stream_workflow(
         if timing_event:
             yield timing_event
 
-        state.update(execute_tools_node(state))
+        state.update(orchestrate_agents_node(state))
         for tool_result in state["tool_results"]:
             yield {
                 "type": "tool_result",
@@ -80,7 +80,7 @@ async def stream_workflow(
                 "conversation_id": real_conversation_id,
             }
 
-        timing_event = build_timing_event(state["trace"], "node.execute_tools", real_conversation_id)
+        timing_event = build_timing_event(state["trace"], "node.orchestrate_agents", real_conversation_id)
         if timing_event:
             yield timing_event
 

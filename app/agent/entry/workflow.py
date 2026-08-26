@@ -265,13 +265,13 @@ def route_node(state: AgentWorkflowState) -> dict:
     return timed_step(state["trace"], "node.route", work)
 
 
-def execute_tools_node(state: AgentWorkflowState) -> dict:
-    """根据 route 调用受控工具链。"""
+def orchestrate_agents_node(state: AgentWorkflowState) -> dict:
+    """进入 Orchestrator 的 Agent Loop，由 Orchestrator 调度各 Agent。"""
 
     def work() -> dict:
         mark_agent_state(
             state,
-            "execute_tools",
+            "orchestrate_agents",
             "running",
             {
                 "agent_plan": state["route"].agent_plan,
@@ -294,7 +294,7 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
         }
         add_trace_event(
             state["trace"],
-            event_type="tool_results",
+            event_type="agent_loop_results",
             data={
                 "count": len(tool_results),
                 "items": [dump_model(item) for item in tool_results],
@@ -303,7 +303,7 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
         )
         mark_agent_state(
             state,
-            "execute_tools",
+            "orchestrate_agents",
             "done",
             {
                 "tool_results": [dump_model(item) for item in tool_results],
@@ -316,7 +316,7 @@ def execute_tools_node(state: AgentWorkflowState) -> dict:
             "orchestration": orchestration,
         }
 
-    return timed_step(state["trace"], "node.execute_tools", work)
+    return timed_step(state["trace"], "node.orchestrate_agents", work)
 
 
 def build_model_context_node(state: AgentWorkflowState) -> dict:
@@ -464,15 +464,15 @@ def build_agent_workflow():
     graph = StateGraph(AgentWorkflowState)
     graph.add_node("load_context", load_context_node)
     graph.add_node("route", route_node)
-    graph.add_node("execute_tools", execute_tools_node)
+    graph.add_node("orchestrate_agents", orchestrate_agents_node)
     graph.add_node("build_model_context", build_model_context_node)
     graph.add_node("generate_reply", generate_reply_node)
     graph.add_node("persist_result", persist_result_node)
 
     graph.add_edge(START, "load_context")
     graph.add_edge("load_context", "route")
-    graph.add_edge("route", "execute_tools")
-    graph.add_edge("execute_tools", "build_model_context")
+    graph.add_edge("route", "orchestrate_agents")
+    graph.add_edge("orchestrate_agents", "build_model_context")
     graph.add_edge("build_model_context", "generate_reply")
     graph.add_edge("generate_reply", "persist_result")
     graph.add_edge("persist_result", END)
