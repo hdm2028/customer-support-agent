@@ -233,9 +233,6 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS idx_refunds_order_status
             ON refund_requests(order_id, status, created_at);
 
-            CREATE UNIQUE INDEX IF NOT EXISTS uk_refunds_idempotency_key
-            ON refund_requests(idempotency_key);
-
             CREATE TABLE IF NOT EXISTS manual_reviews (
                 review_id TEXT PRIMARY KEY,
                 order_id TEXT,

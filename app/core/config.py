@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import quote
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -24,6 +25,52 @@ def load_env_file(path: Path = ENV_PATH) -> None:
         os.environ.setdefault(key, value)
 
 
+def build_mysql_dsn_from_env() -> str:
+    database = os.getenv("MYSQL_DATABASE", "")
+    user = os.getenv("MYSQL_USER", "")
+
+    if not database or not user:
+        return ""
+
+    password = os.getenv("MYSQL_PASSWORD", "")
+    host = os.getenv("MYSQL_HOST", "127.0.0.1")
+    port = os.getenv("MYSQL_PORT", "3306")
+    charset = os.getenv("MYSQL_CHARSET", "utf8mb4")
+    timeout = os.getenv("MYSQL_CONNECT_TIMEOUT", "5")
+    auth = quote(user, safe="")
+
+    if password:
+        auth = f"{auth}:{quote(password, safe='')}"
+
+    return (
+        f"mysql+pymysql://{auth}@{host}:{port}/{database}"
+        f"?charset={charset}&connect_timeout={timeout}"
+    )
+
+
+def build_redis_url_from_env() -> str:
+    host = os.getenv("REDIS_HOST", "")
+
+    if not host:
+        return ""
+
+    password = os.getenv("REDIS_PASSWORD", "")
+    port = os.getenv("REDIS_PORT", "6379")
+    database = os.getenv("REDIS_DB", "0")
+    auth = f":{quote(password, safe='')}@" if password else ""
+
+    return f"redis://{auth}{host}:{port}/{database}"
+
+
+def env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+
+    if value is None:
+        return default
+
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 @dataclass
 class Settings:
     app_name: str
@@ -38,6 +85,7 @@ class Settings:
     database_backend: str
     redis_url: str
     mysql_dsn: str
+    seed_demo_data: bool
     cache_ttl_seconds: int
     agent_state_ttl_seconds: int
     mq_backend: str
@@ -86,8 +134,9 @@ def get_settings() -> Settings:
         rag_embedding_provider=os.getenv("RAG_EMBEDDING_PROVIDER", "local").lower(),
         llm_timeout_seconds=int(os.getenv("LLM_TIMEOUT_SECONDS", "60")),
         database_backend=os.getenv("DATABASE_BACKEND", "auto").lower(),
-        redis_url=os.getenv("REDIS_URL", ""),
-        mysql_dsn=os.getenv("MYSQL_DSN", ""),
+        redis_url=os.getenv("REDIS_URL", "") or build_redis_url_from_env(),
+        mysql_dsn=os.getenv("MYSQL_DSN", "") or build_mysql_dsn_from_env(),
+        seed_demo_data=env_flag("SEED_DEMO_DATA", False),
         cache_ttl_seconds=int(os.getenv("CACHE_TTL_SECONDS", "300")),
         agent_state_ttl_seconds=int(os.getenv("AGENT_STATE_TTL_SECONDS", "1800")),
         mq_backend=os.getenv("MQ_BACKEND", "sqlite").lower(),

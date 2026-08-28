@@ -31,7 +31,7 @@ TABLES = [
 
 
 def main() -> None:
-    """检查 SQLite 是否已经保存订单、工单、会话、pending task 和 feedback。"""
+    """检查当前业务数据库是否已经保存订单、工单、会话、pending task 和 feedback。"""
 
     init_database()
 

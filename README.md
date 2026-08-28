@@ -125,11 +125,13 @@ app/
 | 组件 | 用途 |
 | --- | --- |
 | MySQL | 正式业务数据库，保存订单、退款申请、工单、人工审核、会话、Agent 执行记录、MQ 消息 |
-| SQLite | 本地 Demo / 测试后端，接口与 MySQL 对齐 |
+| SQLite | Demo / 测试兜底后端，接口与 MySQL 对齐 |
 | Redis | 会话上下文缓存、Embedding 缓存、Agent 状态缓存、退款锁、退款幂等缓存 |
 | MQ | 只服务退款异步链路，主题为 `refund.created` |
 
 MySQL 表结构见 `docs/mysql_schema.sql`。`refund_requests` 使用 `idempotency_key` 唯一索引做数据库兜底，Redis 锁只负责削峰与并发互斥，不能作为唯一一致性保障。
+
+本机 MySQL 已迁移真实数据时，保持 `SEED_DEMO_DATA=false`。系统启动只建表和执行兼容迁移，不会把 `data/orders.json` 的演示订单覆盖到 MySQL；需要重新导入演示数据时再显式改成 `true`。
 
 ## Hybrid RAG
 
@@ -157,16 +159,32 @@ Top K Evidence
 ```powershell
 copy .env.example .env
 py -3.13 -m pip install -r requirements.txt
-docker compose -f docker-compose.dev.yml up -d
 py -3.13 -m uvicorn main:app --host 127.0.0.1 --port 8012
 ```
 
-`.env` 中设置：
+`.env` 中连接你本机已经安装并迁移好数据的 MySQL / Redis：
 
 ```text
 DATABASE_BACKEND=mysql
-MYSQL_DSN=mysql+pymysql://user:password@127.0.0.1:3306/customer_support
-REDIS_URL=redis://127.0.0.1:6379/0
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=customer_support
+MYSQL_PASSWORD=your-local-password
+MYSQL_DATABASE=customer_support
+SEED_DEMO_DATA=false
+
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+```
+
+如果你更习惯完整连接串，也可以只设置 `MYSQL_DSN` 和 `REDIS_URL`。`MYSQL_DSN` 的优先级高于拆分配置。
+
+Docker 只作为可选开发环境保留：
+
+```powershell
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 访问：
@@ -194,6 +212,8 @@ Swagger: http://127.0.0.1:8012/docs
 ## 验证命令
 
 ```powershell
+py -3.13 scripts\check_local_services.py
+py -3.13 scripts\check_local_services.py 10001
 py -3.13 scripts\agent_routing_test.py
 py -3.13 scripts\multi_agent_workflow_test.py
 py -3.13 scripts\tool_permission_test.py

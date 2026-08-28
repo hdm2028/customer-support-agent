@@ -10,7 +10,7 @@ REFUND_CREATED_TOPIC = "refund.created"
 
 
 def publish_message(topic: str, payload: dict) -> dict:
-    """发布业务消息。本地用 SQLite 模拟 MQ，生产可替换 RabbitMQ/Kafka。"""
+    """发布业务消息，当前落业务数据库，后续可替换 RabbitMQ/Kafka。"""
 
     return enqueue_mq_message_to_db(topic=topic, payload=payload)
 

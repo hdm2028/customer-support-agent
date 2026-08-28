@@ -260,8 +260,10 @@ def init_mysql_database() -> None:
                 cursor.execute(statement)
             apply_mysql_migrations(cursor)
 
-    seed_customer_profiles_to_mysql()
-    seed_orders_to_mysql()
+    if get_settings().seed_demo_data:
+        seed_customer_profiles_to_mysql()
+        seed_orders_to_mysql()
+
     _MYSQL_INITIALIZED = True
 
 
