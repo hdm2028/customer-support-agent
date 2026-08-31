@@ -13,20 +13,14 @@ ADDRESS_CHANGE_KEYWORDS = [
 
 
 def is_order_id_only_message(user_message: str) -> bool:
-    """判断用户本轮是否基本只补充了订单号。"""
-
     return extract_order_id(user_message) is not None and len(user_message.strip()) <= 12
 
 
 def is_address_change_request(user_message: str) -> bool:
-    """判断用户诉求是否是修改收货地址。"""
-
     return any(keyword in user_message for keyword in ADDRESS_CHANGE_KEYWORDS)
 
 
 def clean_slot_value(value: str) -> str:
-    """清理槽位值两侧多余符号。"""
-
     return value.strip().strip("。；;，,：: ")
 
 
@@ -34,12 +28,6 @@ def extract_new_address(
     user_message: str,
     pending_task: dict | None = None,
 ) -> str | None:
-    """从用户输入里提取新收货地址。
-
-    教学版先用规则抽取：如果用户明确说“新地址是...”，就取后面的内容；
-    如果上一轮 pending task 正在等待 new_address，则把本轮非订单号文本视为地址。
-    """
-
     address_prefixes = [
         "新地址是",
         "新地址为",
@@ -76,8 +64,6 @@ def extract_new_address(
 
 
 def infer_required_slots(user_message: str, pending_task: dict | None = None) -> list[str]:
-    """根据用户诉求判断任务需要哪些槽位。"""
-
     if pending_task:
         return list(pending_task.get("required_slots", pending_task.get("missing_slots", [])))
 
@@ -88,8 +74,6 @@ def infer_required_slots(user_message: str, pending_task: dict | None = None) ->
 
 
 def collect_slots(user_message: str, pending_task: dict | None = None) -> dict:
-    """合并历史 pending task 里已有槽位和本轮用户补充的新槽位。"""
-
     slots = dict(pending_task.get("slots", {})) if pending_task else {}
     order_id = extract_order_id(user_message)
     new_address = extract_new_address(user_message, pending_task)
@@ -108,8 +92,6 @@ def build_effective_user_message(
     pending_task: dict | None,
     slots: dict,
 ) -> tuple[str, bool]:
-    """把上一轮待补全任务和当前槽位合并成完整用户请求。"""
-
     if not pending_task:
         return user_message, False
 
@@ -129,8 +111,6 @@ def prepare_pending_task_context(
     user_message: str,
     pending_task: dict | None,
 ) -> tuple[str, bool, dict, list[str]]:
-    """读取 pending task，并合并本轮用户补充的槽位。"""
-
     slots = collect_slots(user_message, pending_task)
     required_slots = infer_required_slots(user_message, pending_task)
     effective_user_message, used_pending_task = build_effective_user_message(
@@ -143,8 +123,6 @@ def prepare_pending_task_context(
 
 
 def get_missing_slots(required_slots: list[str], slots: dict) -> list[str]:
-    """计算当前任务还缺哪些槽位。"""
-
     return [
         slot for slot in required_slots
         if not slots.get(slot)
@@ -152,8 +130,6 @@ def get_missing_slots(required_slots: list[str], slots: dict) -> list[str]:
 
 
 def build_clarification_question(missing_slots: list[str], slots: dict) -> str:
-    """根据缺失槽位生成追问话术。"""
-
     if missing_slots == ["order_id"]:
         return "请您提供订单号，我才能继续查询订单状态并判断售后方案。"
 
@@ -172,8 +148,6 @@ def apply_slot_requirements(
     required_slots: list[str],
     slots: dict,
 ) -> tuple[RouteDecision, list[str]]:
-    """把多槽位缺失情况应用到路由结果上。"""
-
     if route.blocked_by_guardrail:
         return route, []
 
@@ -193,8 +167,6 @@ def apply_slot_requirements(
 
 
 def should_store_pending_task(route: RouteDecision, missing_slots: list[str]) -> bool:
-    """判断本轮是否需要记录待补全任务，等待用户下一轮补充信息。"""
-
     return route.need_clarification and bool(missing_slots)
 
 
@@ -205,8 +177,6 @@ def build_pending_task(
     required_slots: list[str],
     missing_slots: list[str],
 ) -> dict:
-    """构造待补全任务，保存原始诉求、已有槽位、缺失槽位和风险边界。"""
-
     return {
         "user_request": user_message,
         "slots": slots,

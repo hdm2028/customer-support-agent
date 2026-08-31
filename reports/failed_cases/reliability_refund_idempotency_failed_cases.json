@@ -1,0 +1,17 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "refund_idempotency",
+      "failure_stage": "REFUND_FAILURE",
+      "expected": "one active refund and zero duplicate side effects",
+      "actual": {
+        "refund_records": 3,
+        "duplicate_refunds": 2,
+        "new_refund_rows": 0,
+        "new_mq_messages": 0,
+        "failed": []
+      },
+      "reason": "same business refund was not idempotent"
+    }
+  ]
+}

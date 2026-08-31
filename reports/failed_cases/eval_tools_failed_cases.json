@@ -1,0 +1,19 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "tool_refund_004",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [],
+        "tool_calls": [],
+        "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。"
+      },
+      "reason": "tools expected=['policy_search'], actual=[]; tool arguments unavailable; execute the case to collect trace tool_call events; expected tool execution did not succeed"
+    }
+  ]
+}

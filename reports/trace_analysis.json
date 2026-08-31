@@ -1,0 +1,378 @@
+{
+  "side_effects": [
+    "[READ ONLY]"
+  ],
+  "trace_path": "D:\\python-project\\客服agent\\data\\traces\\agent_trace.jsonl",
+  "basic": {
+    "total": 12,
+    "success_count": 12,
+    "failed_count": 0,
+    "success_rate": 1.0,
+    "avg_duration_ms": 411.07
+  },
+  "routes": {
+    "intents": {
+      "return_refund": 11,
+      "unsafe_request": 1
+    },
+    "flags": {
+      "need_order": 9,
+      "need_policy": 11,
+      "need_refund_request": 8,
+      "need_risk_check": 8,
+      "need_ticket": 9,
+      "need_clarification": 1,
+      "handoff_required": 1,
+      "blocked_by_guardrail": 1
+    }
+  },
+  "agents": {
+    "dispatch": {
+      "after_sales_agent": 23,
+      "customer_agent": 9,
+      "risk_agent": 7
+    },
+    "results": {
+      "after_sales_agent": 23,
+      "customer_agent": 9,
+      "risk_agent": 7
+    }
+  },
+  "tools": {
+    "calls": {
+      "order_lookup": 9,
+      "policy_search": 9,
+      "risk_check": 7,
+      "refund_apply": 6,
+      "create_ticket": 4,
+      "create_manual_review": 3,
+      "transfer_to_human": 1
+    },
+    "success": {
+      "order_lookup": 8,
+      "policy_search": 9,
+      "risk_check": 7,
+      "refund_apply": 3,
+      "create_ticket": 4,
+      "create_manual_review": 3,
+      "transfer_to_human": 1
+    },
+    "failures": {
+      "order_lookup": 1,
+      "refund_apply": 3
+    }
+  },
+  "timings": {
+    "agent.1.after_sales_agent": {
+      "count": 9,
+      "avg_ms": 0.48,
+      "max_ms": 0.58
+    },
+    "agent.1.customer_agent": {
+      "count": 1,
+      "avg_ms": 8.66,
+      "max_ms": 8.66
+    },
+    "agent.2.customer_agent": {
+      "count": 8,
+      "avg_ms": 17.1,
+      "max_ms": 64.94
+    },
+    "agent.3.after_sales_agent": {
+      "count": 1,
+      "avg_ms": 107.52,
+      "max_ms": 107.52
+    },
+    "agent.3.risk_agent": {
+      "count": 7,
+      "avg_ms": 0.76,
+      "max_ms": 1.12
+    },
+    "agent.4.after_sales_agent": {
+      "count": 7,
+      "avg_ms": 102.3,
+      "max_ms": 224.0
+    },
+    "agent.5.after_sales_agent": {
+      "count": 5,
+      "avg_ms": 48.56,
+      "max_ms": 102.95
+    },
+    "agent.6.after_sales_agent": {
+      "count": 1,
+      "avg_ms": 33.63,
+      "max_ms": 33.63
+    },
+    "node.build_model_context": {
+      "count": 12,
+      "avg_ms": 0.6,
+      "max_ms": 1.1
+    },
+    "node.generate_reply": {
+      "count": 12,
+      "avg_ms": 0.48,
+      "max_ms": 0.81
+    },
+    "node.load_context": {
+      "count": 12,
+      "avg_ms": 177.21,
+      "max_ms": 2110.28
+    },
+    "node.orchestrate_agents": {
+      "count": 12,
+      "avg_ms": 105.44,
+      "max_ms": 350.13
+    },
+    "node.persist_result": {
+      "count": 12,
+      "avg_ms": 117.83,
+      "max_ms": 169.82
+    },
+    "node.route": {
+      "count": 12,
+      "avg_ms": 6.86,
+      "max_ms": 71.75
+    },
+    "tool.create_manual_review": {
+      "count": 3,
+      "avg_ms": 75.67,
+      "max_ms": 102.89
+    },
+    "tool.create_ticket": {
+      "count": 4,
+      "avg_ms": 62.03,
+      "max_ms": 107.47
+    },
+    "tool.order_lookup": {
+      "count": 9,
+      "avg_ms": 0.46,
+      "max_ms": 0.56
+    },
+    "tool.policy_search": {
+      "count": 9,
+      "avg_ms": 16.1,
+      "max_ms": 64.86
+    },
+    "tool.refund_apply": {
+      "count": 6,
+      "avg_ms": 104.05,
+      "max_ms": 223.97
+    },
+    "tool.risk_check": {
+      "count": 7,
+      "avg_ms": 0.74,
+      "max_ms": 1.1
+    },
+    "tool.transfer_to_human": {
+      "count": 1,
+      "avg_ms": 0.01,
+      "max_ms": 0.01
+    }
+  },
+  "failures": [
+    {
+      "trace_id": "b481f7e1-e65c-4f8a-a836-f75d51e85d44",
+      "conversation_id": "e2e-eval-e2e_refund_006-d6d7526a68b44a37b7ab7c250c4ac8a2",
+      "user_message": "订单10025我要退款。",
+      "tool_failures": [
+        {
+          "tool_name": "order_lookup",
+          "result": "未找到订单号 10025，请核对订单号是否正确。"
+        }
+      ],
+      "execution_blocks": [
+        {
+          "reason": "order_lookup_failed",
+          "state": {
+            "conversation_id": "e2e-eval-e2e_refund_006-d6d7526a68b44a37b7ab7c250c4ac8a2",
+            "intent": "return_refund",
+            "order_id": "10025",
+            "current_agent": "after_sales_agent",
+            "next_agent": null,
+            "blocked": true,
+            "block_reason": "order_lookup_failed",
+            "agent_steps": [
+              {
+                "agent_key": "after_sales_agent",
+                "success": false,
+                "tool_names": [
+                  "order_lookup"
+                ],
+                "next_hint": null,
+                "error": "未找到订单号 10025，请核对订单号是否正确。"
+              }
+            ],
+            "tool_names": [
+              "order_lookup"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "30c909b9-874d-488b-8a03-c075c1a243e1",
+      "conversation_id": "e2e-eval-e2e_refund_007-775d6edd7b8b4accadf158497563f329",
+      "user_message": "订单10005我要退款。",
+      "tool_failures": [
+        {
+          "tool_name": "refund_apply",
+          "result": {
+            "reason": "订单尚未支付，不会产生退款；用户可自行取消待支付订单。",
+            "refund_reason": "refund_request",
+            "review_required": false,
+            "fallback_action": "create_manual_review_or_explain_policy"
+          }
+        }
+      ],
+      "execution_blocks": [
+        {
+          "reason": "refund_apply_failed",
+          "state": {
+            "conversation_id": "e2e-eval-e2e_refund_007-775d6edd7b8b4accadf158497563f329",
+            "intent": "return_refund",
+            "order_id": "10005",
+            "current_agent": "after_sales_agent",
+            "next_agent": null,
+            "blocked": true,
+            "block_reason": "refund_apply_failed",
+            "agent_steps": [
+              {
+                "agent_key": "after_sales_agent",
+                "success": true,
+                "tool_names": [
+                  "order_lookup"
+                ],
+                "next_hint": null,
+                "error": null
+              },
+              {
+                "agent_key": "customer_agent",
+                "success": true,
+                "tool_names": [
+                  "policy_search"
+                ],
+                "next_hint": null,
+                "error": null
+              },
+              {
+                "agent_key": "risk_agent",
+                "success": true,
+                "tool_names": [
+                  "risk_check"
+                ],
+                "next_hint": null,
+                "error": null
+              },
+              {
+                "agent_key": "after_sales_agent",
+                "success": false,
+                "tool_names": [
+                  "refund_apply"
+                ],
+                "next_hint": null,
+                "error": "{'reason': '订单尚未支付，不会产生退款；用户可自行取消待支付订单。', 'refund_reason': 'refund_request', 'review_required': False, 'fallback_action': 'create_manual_review_or_explain_policy'}"
+              }
+            ],
+            "tool_names": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "705af1a8-543d-43b2-8cff-e2844034e8e5",
+      "conversation_id": "e2e-eval-e2e_refund_008-940d3ddcab2a465780beda42c466c8a7",
+      "user_message": "订单10006我要退款。",
+      "tool_failures": [
+        {
+          "tool_name": "refund_apply",
+          "result": {
+            "reason": "订单已有售后或退款流程在处理中，不能重复创建退款申请。",
+            "refund_reason": "refund_request",
+            "review_required": false,
+            "fallback_action": "create_manual_review_or_explain_policy"
+          }
+        }
+      ],
+      "execution_blocks": [
+        {
+          "reason": "refund_apply_failed",
+          "state": {
+            "conversation_id": "e2e-eval-e2e_refund_008-940d3ddcab2a465780beda42c466c8a7",
+            "intent": "return_refund",
+            "order_id": "10006",
+            "current_agent": "after_sales_agent",
+            "next_agent": null,
+            "blocked": true,
+            "block_reason": "refund_apply_failed",
+            "agent_steps": [
+              {
+                "agent_key": "after_sales_agent",
+                "success": true,
+                "tool_names": [
+                  "order_lookup"
+                ],
+                "next_hint": null,
+                "error": null
+              },
+              {
+                "agent_key": "customer_agent",
+                "success": true,
+                "tool_names": [
+                  "policy_search"
+                ],
+                "next_hint": null,
+                "error": null
+              },
+              {
+                "agent_key": "risk_agent",
+                "success": true,
+                "tool_names": [
+                  "risk_check"
+                ],
+                "next_hint": null,
+                "error": null
+              },
+              {
+                "agent_key": "after_sales_agent",
+                "success": false,
+                "tool_names": [
+                  "refund_apply"
+                ],
+                "next_hint": null,
+                "error": "{'reason': '订单已有售后或退款流程在处理中，不能重复创建退款申请。', 'refund_reason': 'refund_request', 'review_required': False, 'fallback_action': 'create_manual_review_or_explain_policy'}"
+              }
+            ],
+            "tool_names": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "e008ad8f-a1ad-4a44-b527-3e8ae3f3c36d",
+      "conversation_id": "e2e-eval-e2e_refund_009-d33da1778d1f482fa57f5b86e829e5c7",
+      "user_message": "订单10003定制杯子不要了。",
+      "tool_failures": [
+        {
+          "tool_name": "refund_apply",
+          "result": {
+            "reason": "定制商品通常不支持七天无理由退款，质量问题除外。",
+            "refund_reason": "no_reason_return",
+            "review_required": true,
+            "fallback_action": "create_manual_review_or_explain_policy"
+          }
+        }
+      ],
+      "execution_blocks": []
+    }
+  ]
+}

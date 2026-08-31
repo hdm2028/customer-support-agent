@@ -54,10 +54,7 @@ def evaluate_ticket_creation(
     issue_type: str,
     user_message: str,
 ) -> dict:
-    """创建工单前的业务资格判断。
-
-    Router 只负责判断“用户可能需要工单”，这里负责判断“当前订单状态是否允许创建这种工单”。
-    """
+    """创建工单前的业务资格判断。"""
 
     if not route.need_ticket:
         return {

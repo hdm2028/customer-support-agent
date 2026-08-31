@@ -156,8 +156,6 @@ def should_handoff_to_human(message: str) -> tuple[bool, str | None]:
 
 
 def build_fallback_answer(route, tool_results: list) -> str:
-    """不调用大模型时的确定性回复，保证 demo 离线也能稳定运行。"""
-
     if route.need_clarification:
         reply = route.clarification_question or "请您补充订单号后，我再帮您继续处理。"
 

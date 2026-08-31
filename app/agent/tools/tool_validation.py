@@ -2,8 +2,6 @@ from app.core.schemas import RouteDecision, ToolResult
 
 
 def validate_tool_plan(route: RouteDecision) -> tuple[bool, list[str]]:
-    """执行工具前校验路由计划，防止明显不合法的工具链继续执行。"""
-
     errors = []
 
     if route.need_order and not route.order_id:
@@ -28,8 +26,6 @@ def validate_tool_plan(route: RouteDecision) -> tuple[bool, list[str]]:
 
 
 def validate_tool_chain(route: RouteDecision, tool_results: list[ToolResult]) -> tuple[bool, list[str]]:
-    """执行工具后校验工具链，防止少调、多调或下游越权执行。"""
-
     errors = []
     tool_names = [
         item.tool_name

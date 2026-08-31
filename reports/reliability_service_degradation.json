@@ -1,0 +1,75 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]"
+  ],
+  "total_cases": 2,
+  "passed_count": 2,
+  "failed_count": 0,
+  "skipped_checks": [
+    {
+      "dependency": "Redis unavailable",
+      "status": "SKIPPED",
+      "reason": "Current cache layer automatically falls back to memory and has no safe fault-injection switch for a single test run."
+    },
+    {
+      "dependency": "MQ unavailable",
+      "status": "SKIPPED",
+      "reason": "Current refund_apply writes DB before publish_message; a safe MQ-failure test needs test-only cleanup or transactional outbox support."
+    }
+  ],
+  "failed_cases": [],
+  "results": [
+    {
+      "case_id": "rag_unavailable",
+      "dependency": "policy_search",
+      "passed": true,
+      "actual_tools": [
+        "order_lookup",
+        "policy_search"
+      ],
+      "failed_tool_result": {
+        "tool_name": "policy_search",
+        "success": false,
+        "result": {
+          "error_type": "RuntimeError",
+          "error_message": "mock policy_search dependency unavailable",
+          "fallback_action": "handoff_to_human",
+          "reason": "policy_search 工具调用失败，已进入降级处理。"
+        }
+      },
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+      "trace_id": "96b69581-dc6c-4ff4-8f59-08671c5d8b61",
+      "refund_rows_delta": 0,
+      "mq_messages_delta": 0,
+      "reason": "passed"
+    },
+    {
+      "case_id": "risk_service_unavailable",
+      "dependency": "risk_check",
+      "passed": true,
+      "actual_tools": [
+        "order_lookup",
+        "policy_search",
+        "risk_check"
+      ],
+      "failed_tool_result": {
+        "tool_name": "risk_check",
+        "success": false,
+        "result": {
+          "error_type": "RuntimeError",
+          "error_message": "mock risk_check dependency unavailable",
+          "fallback_action": "handoff_to_human",
+          "reason": "risk_check 工具调用失败，已进入降级处理。"
+        }
+      },
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。",
+      "trace_id": "8aa1bd6c-58c7-49a9-90a8-00d6d20d870d",
+      "refund_rows_delta": 0,
+      "mq_messages_delta": 0,
+      "reason": "passed"
+    }
+  ],
+  "report_name": "reliability_service_degradation",
+  "created_at": "2026-08-30T14:13:29"
+}

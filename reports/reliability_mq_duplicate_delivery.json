@@ -1,0 +1,119 @@
+{
+  "side_effects": [
+    "[DELETES ORDER-SCOPED EVAL SIDE EFFECTS BEFORE RUN]",
+    "[WRITES DATABASE]",
+    "[PUBLISHES MQ]",
+    "[UPDATES REFUND STATUS]",
+    "[CREATES NOTIFICATIONS]"
+  ],
+  "order_id": "10009",
+  "event_id": "refund.created:R-c8b5c0614913",
+  "message_id": "MQ-85f0bf2037c4",
+  "received_events": 2,
+  "processed_events": 1,
+  "ignored_duplicate_events": 1,
+  "first_result": {
+    "success": true,
+    "action": "refund_processing",
+    "event_id": "refund.created:R-c8b5c0614913",
+    "refund_request": {
+      "amount": 899.0,
+      "reason": "refund_request",
+      "status": "refund_processing",
+      "user_id": "u009",
+      "order_id": "10009",
+      "next_step": "等待退款处理服务消费 MQ 消息。",
+      "refund_id": "R-c8b5c0614913",
+      "created_at": "2026-08-30T14:12:02",
+      "risk_level": "low",
+      "updated_at": "2026-08-30T14:12:03",
+      "eligibility": {
+        "reason": "订单满足进入退款申请流程的基础条件。",
+        "eligible": true,
+        "refund_reason": "refund_request",
+        "review_required": false
+      },
+      "user_request": "订单 10009 我要退款。",
+      "mq_message_id": "MQ-04359e006036",
+      "idempotency_key": "refund_apply:10009",
+      "risk_assessment": {
+        "profile": {
+          "user_id": "u009",
+          "account_status": "normal",
+          "refund_count_30d": 0,
+          "complaint_count_30d": 0
+        },
+        "risk_flags": [
+          "中额退款"
+        ],
+        "risk_level": "low",
+        "risk_score": 15,
+        "review_reason": "中额退款",
+        "review_required": false
+      },
+      "processor_note": "退款任务已被业务处理服务消费，订单状态已更新为退款处理中。",
+      "last_processed_event_id": "refund.created:R-c8b5c0614913",
+      "processed_event_ids": [
+        "refund.created:R-c8b5c0614913"
+      ]
+    },
+    "order": {
+      "notes": "待发货订单可能支持修改收货地址，但必须在仓库出库前由人工确认。",
+      "amount": 899.0,
+      "user_id": "u009",
+      "category": "母婴用品",
+      "order_id": "10009",
+      "user_name": "郑楠",
+      "signed_date": null,
+      "order_status": "退款处理中",
+      "product_name": "儿童安全座椅 B6",
+      "payment_status": "paid",
+      "shipping_status": "仓库正在拣货",
+      "warranty_months": 6,
+      "after_sales_status": "refund_processing",
+      "return_window_days": 7,
+      "can_refund_directly": false,
+      "last_refund_id": "R-c8b5c0614913"
+    },
+    "notification": {
+      "notification_id": "N-97ee098e96d6",
+      "status": "sent",
+      "created_at": "2026-08-30T14:12:03",
+      "user_id": "u009",
+      "channel": "system",
+      "content": "退款申请 R-c8b5c0614913 已受理，订单进入退款处理中。",
+      "refund_id": "R-c8b5c0614913"
+    }
+  },
+  "second_result": {
+    "success": true,
+    "action": "duplicate_ignored",
+    "event_id": "refund.created:R-c8b5c0614913",
+    "refund_id": "R-c8b5c0614913",
+    "refund_status": "refund_processing"
+  },
+  "refund_status_after_first": "refund_processing",
+  "refund_status_after_second": "refund_processing",
+  "cleanup": {
+    "performed": true,
+    "scope": "order_eval_side_effects",
+    "order_id": "10009",
+    "deleted": {
+      "mq_messages": 0,
+      "refund_requests": 0,
+      "manual_reviews": 0,
+      "tickets": 0
+    },
+    "demo_orders_reset": true,
+    "cache_deleted": [
+      "idempotency:refund_apply:10009",
+      "lock:refund_apply:10009",
+      "business:order:10009"
+    ]
+  },
+  "passed_count": 1,
+  "failed_count": 0,
+  "failed_cases": [],
+  "report_name": "reliability_mq_duplicate_delivery",
+  "created_at": "2026-08-30T14:12:04"
+}

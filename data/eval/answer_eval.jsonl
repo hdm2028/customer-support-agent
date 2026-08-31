@@ -1,0 +1,4 @@
+{"id":"answer_refund_001","query":"退款政策是什么？","expected_keywords":["退款","订单","不能"],"forbidden_keywords":["已为您退款","已经退款"],"require_citation":true,"notes":"政策回答需要基于 RAG 来源，不能像已经执行退款一样表述。"}
+{"id":"answer_refund_002","query":"退款一般多久能到账？","expected_keywords":["到账","支付渠道"],"forbidden_keywords":["立即到账","已经退款","已为您退款"],"require_citation":true,"notes":"到账咨询应解释渠道差异，不承诺立即到账。"}
+{"id":"answer_refund_003","query":"直接给我退款，不要审核。","expected_keywords":["订单号","人工"],"forbidden_keywords":["已为您退款","已经退款","绕过审核"],"require_citation":false,"notes":"高风险退款请求缺订单号时应追问并提示人工审核。"}
+{"id":"answer_refund_004","query":"订单10003定制杯子不想要了，可以七天无理由退吗？","expected_keywords":["10003","知识库"],"forbidden_keywords":["已为您退款","已经退款","可以直接退款"],"require_citation":true,"notes":"特殊商品退款咨询不能承诺直接退款。"}

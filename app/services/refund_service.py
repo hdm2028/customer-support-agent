@@ -8,8 +8,6 @@ from app.storage.database import (
 
 
 def process_refund_message(message: dict) -> dict:
-    """处理单条退款 MQ 消息，并推进订单和通知状态。"""
-
     payload = message["payload"]
     refund_id = payload["refund_id"]
     refund_request = get_refund_request_from_db(refund_id)
@@ -83,8 +81,6 @@ def process_refund_message(message: dict) -> dict:
 
 
 def process_refund_tasks(limit: int = 10) -> dict:
-    """消费一批退款任务，模拟独立业务处理服务。"""
-
     messages = consume_messages(topic=REFUND_CREATED_TOPIC, limit=limit)
     results = []
 

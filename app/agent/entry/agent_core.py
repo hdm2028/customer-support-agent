@@ -12,8 +12,6 @@ def run_customer_support_agent(
     conversation_id: str | None = None,
     use_llm: bool = False,
 ) -> dict:
-    """非流式 Agent 入口。"""
-
     return DEFAULT_ORCHESTRATOR.run(
         user_message=user_message,
         conversation_id=conversation_id,
@@ -27,8 +25,6 @@ async def stream_customer_support_agent(
     use_llm: bool = False,
     stream_tokens: bool = True,
 ) -> AsyncGenerator[dict, None]:
-    """流式 Agent 入口。"""
-
     async for event in DEFAULT_ORCHESTRATOR.stream(
         user_message=user_message,
         conversation_id=conversation_id,

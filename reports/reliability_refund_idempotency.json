@@ -1,0 +1,42 @@
+{
+  "side_effects": [
+    "[DELETES ORDER-SCOPED EVAL SIDE EFFECTS BEFORE RUN]",
+    "[WRITES DATABASE]",
+    "[USES REDIS OR MEMORY CACHE]",
+    "[PUBLISHES MQ WHEN REFUND IS FIRST CREATED]"
+  ],
+  "order_id": "10009",
+  "requests": 10,
+  "successful_responses": 10,
+  "failed_responses": 0,
+  "created_by_first_request": 1,
+  "idempotent_replayed": 9,
+  "refund_records": 1,
+  "duplicate_refunds": 0,
+  "unique_refund_ids": [
+    "R-7edba97530d4"
+  ],
+  "new_refund_rows": 1,
+  "new_mq_messages": 1,
+  "refund_status": "queued",
+  "cleanup": {
+    "performed": true,
+    "scope": "order_eval_side_effects",
+    "order_id": "10009",
+    "deleted": {
+      "mq_messages": 1,
+      "refund_requests": 1,
+      "manual_reviews": 0,
+      "tickets": 1
+    },
+    "cache_deleted": [
+      "idempotency:refund_apply:10009",
+      "lock:refund_apply:10009"
+    ]
+  },
+  "passed_count": 1,
+  "failed_count": 0,
+  "failed_cases": [],
+  "report_name": "reliability_refund_idempotency",
+  "created_at": "2026-08-30T14:09:00"
+}

@@ -1,8 +1,8 @@
-{"id":"rag_001","query":"定制杯子可以七天无理由退货吗？","expected_sources":["退换货政策.md"],"expected_keywords":["定制","不支持","七天无理由"],"notes":"定制商品退货规则应命中退换货政策。"}
-{"id":"rag_002","query":"耳机坏了还在保修期内，应该怎么处理？","expected_sources":["保修政策.md","售后FAQ.md"],"expected_keywords":["12 个月","保修","检测工单"],"notes":"保修维修场景应召回保修范围或售后FAQ。"}
-{"id":"rag_003","query":"物流超过48小时没有更新怎么办？","expected_sources":["物流配送政策.md","售后FAQ.md"],"expected_keywords":["48 小时","物流异常","工单"],"notes":"物流长时间不更新应召回物流政策。"}
-{"id":"rag_004","query":"银行卡已经扣款了，但是订单还是未支付怎么办？","expected_sources":["支付与发票政策.md"],"expected_keywords":["扣款","30 分钟","支付异常工单"],"notes":"支付扣款不同步应召回支付失败政策。"}
-{"id":"rag_005","query":"订单完成后可以开电子发票吗？","expected_sources":["支付与发票政策.md"],"expected_keywords":["电子发票","发票抬头","税号","邮箱"],"notes":"发票问题应召回支付与发票政策。"}
-{"id":"rag_006","query":"黑金会员能不能跳过售后检测直接换新？","expected_sources":["会员权益政策.md"],"expected_keywords":["不能","绕过","质量检测"],"notes":"会员权益限制应召回会员权益政策。"}
-{"id":"rag_007","query":"订单还没发货，我想修改收货地址。","expected_sources":["订单取消与修改政策.md"],"expected_keywords":["修改收货地址","出库前","地址修改工单"],"notes":"待发货改地址应召回订单取消与修改政策。"}
-{"id":"rag_008","query":"退款申请进入 MQ 后会怎么处理？","expected_sources":["退款政策.md"],"expected_keywords":["MQ","异步处理","更新退款申请状态"],"notes":"退款异步处理问题应召回退款政策。"}
+{"id":"rag_refund_001","query":"待发货订单可以申请退款吗？","expected_sources":["退款政策.md","退换货政策.md","订单取消与修改政策.md"],"expected_keywords":["退款申请","订单","状态"],"notes":"正常退款：需要召回退款申请前置条件或退款流程。"}
+{"id":"rag_refund_002","query":"定制杯子可以七天无理由退货吗？","expected_sources":["退换货政策.md","商品售后规则.md"],"expected_keywords":["定制","不支持","七天无理由"],"notes":"特殊商品退款限制：定制商品不应按普通七天无理由处理。"}
+{"id":"rag_refund_003","query":"商品质量问题可以退款吗？","expected_sources":["退换货政策.md","商品售后规则.md"],"expected_keywords":["质量问题","检测","退货退款"],"notes":"质量问题：不能只凭描述直接退款，需要售后检测依据。"}
+{"id":"rag_refund_004","query":"签收超过七天还能无理由退货吗？","expected_sources":["退换货政策.md","历史问题案例.md"],"expected_keywords":["超过七天","不支持","质量问题"],"notes":"超过退款期限：无质量问题时不能自动走七天无理由。"}
+{"id":"rag_refund_005","query":"商品已经明显使用影响二次销售还能七天无理由退吗？","expected_sources":["退换货政策.md"],"expected_keywords":["影响商品二次销售","不支持","七天无理由"],"notes":"商品已使用：应命中不支持七天无理由的限制条款。"}
+{"id":"rag_refund_006","query":"已发货订单退款需要先做什么？","expected_sources":["退换货政策.md","物流配送政策.md"],"expected_keywords":["物流拦截","等待商品送达","拒收"],"notes":"物流状态相关退款：已发货不能直接取消，需要结合物流拦截或收退货流程。"}
+{"id":"rag_refund_007","query":"退款一般多久能到账？","expected_sources":["退款政策.md","退换货政策.md"],"expected_keywords":["到账","支付渠道","立即"],"notes":"退款到账时间：不能承诺立即到账。"}
+{"id":"rag_refund_008","query":"退款申请进入 MQ 后会怎么处理？","expected_sources":["退款政策.md"],"expected_keywords":["MQ","异步处理","幂等"],"notes":"退款异步处理：退款事件进入 MQ 后仍要保证幂等。"}

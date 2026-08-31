@@ -237,8 +237,6 @@ def load_pdf_file(file_path: Path) -> list[RawDocument]:
 
 
 def load_image_file(file_path: Path) -> list[RawDocument]:
-    """图片 OCR 预留入口，后续可以接 PaddleOCR、Tesseract 或多模态模型。"""
-
     return [
         RawDocument(
             source=file_path.name,

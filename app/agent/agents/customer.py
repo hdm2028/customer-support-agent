@@ -7,8 +7,6 @@ from app.tools.executor import execute_agent_tool
 
 
 class CustomerAgent:
-    """客服 Agent：负责普通咨询、政策问答、客服 SOP 和知识库检索。"""
-
     key = "customer_agent"
     name = "客服 Agent"
     responsibility = "普通咨询、意图识别、知识库检索和回复生成"
@@ -63,7 +61,3 @@ class CustomerAgent:
             tool_results=[result],
             error=None if result.success else str(result.result),
         )
-
-
-# Backward-compatible alias used by older scripts and trace wording.
-CustomerQAAgent = CustomerAgent

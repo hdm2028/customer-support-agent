@@ -1,0 +1,52 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "routing_refund_003",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "intent": "return_refund",
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        },
+        "agents": [
+          "客服 Agent"
+        ]
+      },
+      "actual": {
+        "intent": "return_refund",
+        "route": {
+          "intent": "return_refund",
+          "confidence": 0.67,
+          "routing_reason": "命中退货退款意图关键词：退款。",
+          "agent_plan": [
+            "客服 Agent"
+          ],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": true,
+          "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        },
+        "agents": [
+          "客服 Agent"
+        ]
+      },
+      "reason": "route.need_clarification expected=False, actual=True"
+    }
+  ]
+}

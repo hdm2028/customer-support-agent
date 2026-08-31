@@ -1,0 +1,58 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": [
+          "退款政策.md - 重要限制",
+          "退款政策.md - 退款人工审核"
+        ]
+      },
+      "actual": {
+        "reply": "根据知识库来源《退款政策.md - 重要限制》，本问题需要结合售后政策进一步判断。",
+        "matched_citations": [
+          "退款政策.md - 重要限制"
+        ]
+      },
+      "trace_id": "9eca2f5e-c0c3-4b1b-9565-4418679ab331",
+      "reason": "missing_expected_keywords=['订单', '不能']"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "退款政策.md - 重要限制"
+        ]
+      },
+      "actual": {
+        "reply": "根据知识库来源《退款政策.md - 退款人工审核》，本问题需要结合售后政策进一步判断。",
+        "matched_citations": [
+          "退款政策.md - 退款人工审核"
+        ]
+      },
+      "trace_id": "2551c4eb-cee3-42a1-9de6-4694905e24f0",
+      "reason": "missing_expected_keywords=['到账', '支付渠道']"
+    }
+  ]
+}

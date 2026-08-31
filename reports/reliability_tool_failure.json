@@ -1,0 +1,117 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "total_cases": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "failed_cases": [],
+  "results": [
+    {
+      "case_id": "order_lookup_failure",
+      "tool_name": "order_lookup",
+      "query": "订单10009我要退款",
+      "passed": true,
+      "actual_tools": [
+        "order_lookup"
+      ],
+      "failed_tool_result": {
+        "tool_name": "order_lookup",
+        "success": false,
+        "result": {
+          "error_type": "RuntimeError",
+          "error_message": "mock order_lookup unavailable",
+          "fallback_action": "ask_user_to_retry_or_handoff",
+          "reason": "order_lookup 工具调用失败，已进入降级处理。"
+        }
+      },
+      "reply": "{'error_type': 'RuntimeError', 'error_message': 'mock order_lookup unavailable', 'fallback_action': 'ask_user_to_retry_or_handoff', 'reason': 'order_lookup 工具调用失败，已进入降级处理。'} 请您核对订单号后重新提供，我再继续查询售后政策并判断是否需要创建工单。",
+      "trace_id": "1522c5e0-8327-4402-891d-93fd2f97d06a",
+      "refund_rows_delta": 0,
+      "mq_messages_delta": 0,
+      "reason": "passed"
+    },
+    {
+      "case_id": "policy_search_failure",
+      "tool_name": "policy_search",
+      "query": "订单10009我要退款",
+      "passed": true,
+      "actual_tools": [
+        "order_lookup",
+        "policy_search"
+      ],
+      "failed_tool_result": {
+        "tool_name": "policy_search",
+        "success": false,
+        "result": {
+          "error_type": "RuntimeError",
+          "error_message": "mock policy_search unavailable",
+          "fallback_action": "handoff_to_human",
+          "reason": "policy_search 工具调用失败，已进入降级处理。"
+        }
+      },
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+      "trace_id": "ddb50997-22e7-4846-bdf2-5aa835fcf655",
+      "refund_rows_delta": 0,
+      "mq_messages_delta": 0,
+      "reason": "passed"
+    },
+    {
+      "case_id": "risk_check_failure",
+      "tool_name": "risk_check",
+      "query": "订单10009我要退款",
+      "passed": true,
+      "actual_tools": [
+        "order_lookup",
+        "policy_search",
+        "risk_check"
+      ],
+      "failed_tool_result": {
+        "tool_name": "risk_check",
+        "success": false,
+        "result": {
+          "error_type": "RuntimeError",
+          "error_message": "mock risk_check unavailable",
+          "fallback_action": "handoff_to_human",
+          "reason": "risk_check 工具调用失败，已进入降级处理。"
+        }
+      },
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。",
+      "trace_id": "fb0ea412-4165-4fc4-8bd8-37e57f48eb9f",
+      "refund_rows_delta": 0,
+      "mq_messages_delta": 0,
+      "reason": "passed"
+    },
+    {
+      "case_id": "refund_apply_failure",
+      "tool_name": "refund_apply",
+      "query": "订单10009我要退款",
+      "passed": true,
+      "actual_tools": [
+        "order_lookup",
+        "policy_search",
+        "risk_check",
+        "refund_apply"
+      ],
+      "failed_tool_result": {
+        "tool_name": "refund_apply",
+        "success": false,
+        "result": {
+          "error_type": "RuntimeError",
+          "error_message": "mock refund_apply unavailable",
+          "fallback_action": "create_manual_review_or_explain_policy",
+          "reason": "refund_apply 工具调用失败，已进入降级处理。"
+        }
+      },
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。退款申请暂未创建成功：refund_apply 工具调用失败，已进入降级处理。",
+      "trace_id": "663a6409-60b0-4d3b-b2be-44d3570fe659",
+      "refund_rows_delta": 0,
+      "mq_messages_delta": 0,
+      "reason": "passed"
+    }
+  ],
+  "report_name": "reliability_tool_failure",
+  "created_at": "2026-08-30T14:13:20"
+}

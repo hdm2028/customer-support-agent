@@ -1,0 +1,274 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]",
+    "[WRITES REFUND DATABASE AND PUBLISHES MQ WHEN --execute-writes IS USED]"
+  ],
+  "dataset": "D:\\python-project\\客服agent\\data\\eval\\tool_eval.jsonl",
+  "execute_writes": false,
+  "total_cases": 5,
+  "passed_count": 5,
+  "failed_count": 0,
+  "tool_selection_accuracy": 1.0,
+  "tool_argument_accuracy": 1.0,
+  "tool_execution_success_rate": 1.0,
+  "dangerous_tool_misuse_count": 0,
+  "failed_cases": [],
+  "results": [
+    {
+      "case_id": "tool_refund_001",
+      "query": "退款政策是什么？",
+      "mode": "execute",
+      "passed": true,
+      "selection_pass": true,
+      "argument_pass": true,
+      "execution_pass": true,
+      "dangerous_misuse": [],
+      "actual_tools": [
+        "policy_search"
+      ],
+      "expected_tools": [
+        "policy_search"
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "policy_search",
+          "arguments": {
+            "query": "退款政策是什么？\n用户意图：退货退款 退款申请 七天无理由 质检 审核 人工审核 MQ"
+          }
+        }
+      ],
+      "trace_id": "b3090ce2-405d-4068-9eb4-f91c6846c91a",
+      "route": {
+        "intent": "return_refund",
+        "confidence": 0.67,
+        "routing_reason": "命中退货退款意图关键词：退款。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "reply": "根据知识库来源《退款政策.md - 重要限制》，本问题需要结合售后政策进一步判断。",
+      "reason": "passed",
+      "notes": "政策咨询只能检索政策，不能执行退款。"
+    },
+    {
+      "case_id": "tool_refund_002",
+      "query": "帮我查订单10001",
+      "mode": "execute",
+      "passed": true,
+      "selection_pass": true,
+      "argument_pass": true,
+      "execution_pass": true,
+      "dangerous_misuse": [],
+      "actual_tools": [
+        "order_lookup"
+      ],
+      "expected_tools": [
+        "order_lookup"
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "order_lookup",
+          "arguments": {
+            "order_id": "10001"
+          }
+        }
+      ],
+      "trace_id": "92ca8934-cb52-4336-9d47-deb933921c62",
+      "route": {
+        "intent": "order_lookup",
+        "confidence": 0.62,
+        "routing_reason": "识别到订单号，按订单查询意图处理。",
+        "agent_plan": [
+          "售后 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup"
+        ],
+        "order_id": "10001",
+        "need_order": true,
+        "need_policy": false,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "reply": "已查询到订单 10001，商品是 蓝牙降噪耳机 A1，当前订单状态为已签收。",
+      "reason": "passed",
+      "notes": "订单查询只应调用 order_lookup。"
+    },
+    {
+      "case_id": "tool_refund_003",
+      "query": "帮我退款订单10009",
+      "mode": "plan_only",
+      "passed": true,
+      "selection_pass": true,
+      "argument_pass": "N/A",
+      "execution_pass": "N/A",
+      "dangerous_misuse": [],
+      "actual_tools": [
+        "order_lookup",
+        "policy_search",
+        "risk_check",
+        "refund_apply",
+        "create_ticket"
+      ],
+      "expected_tools": [
+        "order_lookup",
+        "policy_search",
+        "risk_check",
+        "refund_apply"
+      ],
+      "tool_calls": [],
+      "route": {
+        "intent": "return_refund",
+        "confidence": 0.75,
+        "routing_reason": "命中退货退款意图关键词：退款。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent",
+          "风控 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "order_id": "10009",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "reason": "execution skipped to avoid refund side effects",
+      "notes": "退款执行链路默认只评估计划和参数，避免 Tool Eval 默认写库；可用 --execute-writes 真实执行。"
+    },
+    {
+      "case_id": "tool_refund_004",
+      "query": "退款一般多久能到账？",
+      "mode": "execute",
+      "passed": true,
+      "selection_pass": true,
+      "argument_pass": true,
+      "execution_pass": true,
+      "dangerous_misuse": [],
+      "actual_tools": [
+        "policy_search"
+      ],
+      "expected_tools": [
+        "policy_search"
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "policy_search",
+          "arguments": {
+            "query": "退款一般多久能到账？\n用户意图：退货退款 退款申请 七天无理由 质检 审核 人工审核 MQ"
+          }
+        }
+      ],
+      "trace_id": "ca11d597-ec72-4706-ab85-6806a4d84b28",
+      "route": {
+        "intent": "return_refund",
+        "confidence": 0.67,
+        "routing_reason": "命中退货退款意图关键词：退款。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "reply": "根据知识库来源《退款政策.md - 退款人工审核》，本问题需要结合售后政策进一步判断。",
+      "reason": "passed",
+      "notes": "退款到账咨询不应误调用 refund_apply。"
+    },
+    {
+      "case_id": "tool_refund_005",
+      "query": "customer_agent -> refund_apply",
+      "mode": "permission",
+      "passed": true,
+      "selection_pass": true,
+      "argument_pass": "N/A",
+      "execution_pass": true,
+      "dangerous_misuse": [],
+      "actual_tools": [
+        "refund_apply"
+      ],
+      "expected_tools": [
+        "refund_apply"
+      ],
+      "tool_calls": [],
+      "tool_result": {
+        "tool_name": "refund_apply",
+        "success": false,
+        "result": {
+          "error_type": "ToolPermissionDenied",
+          "error_message": "customer_agent 无权调用 refund_apply。",
+          "fallback_action": "reject_tool_call"
+        }
+      },
+      "reason": "passed",
+      "notes": "危险工具权限：客服 Agent 不允许直接执行退款。"
+    }
+  ],
+  "report_name": "eval_tools",
+  "created_at": "2026-08-30T14:15:10"
+}

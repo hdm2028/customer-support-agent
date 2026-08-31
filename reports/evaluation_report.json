@@ -1,0 +1,148 @@
+{
+  "title": "Customer Support Agent Evaluation",
+  "created_at": "2026-08-28T21:20:40",
+  "dataset": {
+    "routing_cases": 8,
+    "rag_cases": 8,
+    "tool_cases": 5,
+    "answer_cases": 4,
+    "e2e_cases": 12
+  },
+  "routing": {
+    "accuracy": 0.875,
+    "macro_f1": 1.0
+  },
+  "rag": {
+    "hit_at_1": 0.875,
+    "hit_at_3": 0.875,
+    "hit_at_5": 0.875,
+    "mrr": 0.875
+  },
+  "tool_calling": {
+    "selection_accuracy": "N/A",
+    "argument_accuracy": "N/A",
+    "execution_success_rate": "N/A",
+    "dangerous_tool_misuse": "N/A"
+  },
+  "answer": {
+    "correctness": "N/A",
+    "faithfulness": "N/A",
+    "hallucination_rate": "N/A"
+  },
+  "end_to_end": {
+    "task_success_rate": "N/A",
+    "workflow_success_rate": "N/A",
+    "routing_success_rate": "N/A",
+    "rag_success_rate": "N/A",
+    "tool_success_rate": "N/A",
+    "answer_success_rate": "N/A"
+  },
+  "risk": {
+    "risk_recall": "N/A",
+    "false_negative_count": "N/A",
+    "false_positive_count": "N/A"
+  },
+  "reliability": {
+    "refund_idempotency": {
+      "status": "SKIPPED",
+      "requests": "N/A",
+      "refund_records": "N/A",
+      "duplicate_refunds": "N/A"
+    },
+    "refund_concurrency": {
+      "status": "SKIPPED",
+      "concurrent_requests": "N/A",
+      "refund_records": "N/A",
+      "duplicate_refunds": "N/A"
+    },
+    "mq": {
+      "status": "SKIPPED",
+      "received": "N/A",
+      "processed": "N/A",
+      "duplicates_ignored": "N/A"
+    },
+    "high_risk_review": {
+      "status": "SKIPPED"
+    },
+    "tool_failure": {
+      "status": "SKIPPED"
+    },
+    "service_degradation": {
+      "status": "SKIPPED"
+    }
+  },
+  "failed_cases": [
+    {
+      "source": "routing",
+      "case_id": "routing_refund_003",
+      "failure_stage": "ROUTING",
+      "expected": {
+        "intent": "return_refund",
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        },
+        "agents": [
+          "客服 Agent"
+        ]
+      },
+      "actual": {
+        "intent": "return_refund",
+        "route": {
+          "intent": "return_refund",
+          "confidence": 0.67,
+          "routing_reason": "命中退货退款意图关键词：退款。",
+          "agent_plan": [
+            "客服 Agent"
+          ],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": true,
+          "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        },
+        "agents": [
+          "客服 Agent"
+        ]
+      },
+      "reason": "route.need_clarification expected=False, actual=True",
+      "trace_id": "N/A"
+    },
+    {
+      "source": "rag",
+      "case_id": "rag_refund_006",
+      "failure_stage": "RAG",
+      "expected": "N/A",
+      "actual": "N/A",
+      "reason": "expected_source_miss expected=['退换货政策.md', '物流配送政策.md']; missing_keywords=['物流拦截', '等待商品送达', '拒收']",
+      "trace_id": "N/A"
+    }
+  ],
+  "source_reports": {
+    "routing": "D:\\python-project\\客服agent\\reports\\eval_routing.json",
+    "rag": "D:\\python-project\\客服agent\\reports\\eval_rag.json",
+    "tool_calling": "D:\\python-project\\客服agent\\reports\\eval_tools.json",
+    "answer": "D:\\python-project\\客服agent\\reports\\eval_answer.json",
+    "e2e": "D:\\python-project\\客服agent\\reports\\eval_e2e.json",
+    "refund_idempotency": "D:\\python-project\\客服agent\\reports\\reliability_refund_idempotency.json",
+    "refund_concurrency": "D:\\python-project\\客服agent\\reports\\reliability_refund_concurrency.json",
+    "mq_duplicate_delivery": "D:\\python-project\\客服agent\\reports\\reliability_mq_duplicate_delivery.json",
+    "high_risk_review": "D:\\python-project\\客服agent\\reports\\reliability_high_risk_review.json",
+    "tool_failure": "D:\\python-project\\客服agent\\reports\\reliability_tool_failure.json",
+    "service_degradation": "D:\\python-project\\客服agent\\reports\\reliability_service_degradation.json"
+  }
+}

@@ -168,10 +168,6 @@ INTENT_RULES = [
 
 
 def extract_order_id(user_message: str) -> str | None:
-    """从用户输入中提取订单号。这里先用 4 位以上数字模拟真实订单号。"""
-
-    # 中文客服输入里经常出现“订单10004”这种数字和中文贴在一起的写法。
-    # 不能用 \b 单词边界，否则中文字符和数字相邻时可能无法识别。
     match = re.search(r"(?<!\d)\d{4,}(?!\d)", user_message)
 
     if match:
@@ -181,8 +177,6 @@ def extract_order_id(user_message: str) -> str | None:
 
 
 def infer_route_intent(user_message: str, order_id: str | None) -> tuple[str, float, str]:
-    """规则优先识别售后意图，并返回可解释的置信度。"""
-
     best_rule = None
     best_hits = []
 
@@ -208,8 +202,6 @@ def infer_route_intent(user_message: str, order_id: str | None) -> tuple[str, fl
 
 
 def build_tool_plan(route: RouteDecision) -> list[str]:
-    """把路由决策转换成可展示的受控工具计划。"""
-
     if route.blocked_by_guardrail or route.need_clarification:
         return []
 
@@ -243,8 +235,6 @@ def build_tool_plan(route: RouteDecision) -> list[str]:
 
 
 def is_refund_application(user_message: str, intent: str) -> bool:
-    """区分“问退款政策”和“要发起退款申请”。"""
-
     if intent != "return_refund":
         return False
 
@@ -260,8 +250,6 @@ def is_refund_application(user_message: str, intent: str) -> bool:
 
 
 def route_tools(user_message: str) -> RouteDecision:
-    """根据用户问题判断本轮需要调用哪些工具。"""
-
     passed, reason = check_user_input(user_message)
     if not passed:
         return RouteDecision(
@@ -296,8 +284,6 @@ def route_tools(user_message: str) -> RouteDecision:
         )
     )
 
-    # 工单通常需要订单号承载，避免“会员权益解释”等纯咨询被误建工单。
-    # 高风险动作即使没有订单号，也要进入人工审核链路或被安全策略拦截。
     need_ticket = (
         (need_order and has_ticket_intent)
         or need_refund_request
@@ -331,8 +317,6 @@ def route_tools(user_message: str) -> RouteDecision:
 
 
 def infer_issue_type(user_message: str) -> str:
-    """根据用户问题粗略推断工单类型。"""
-
     if "投诉" in user_message:
         return "投诉升级"
 

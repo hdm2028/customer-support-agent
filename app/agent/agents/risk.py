@@ -3,8 +3,6 @@ from app.tools.executor import execute_agent_tool
 
 
 class RiskAgent:
-    """风控 Agent：检测高频退款、异常账号、恶意投诉和虚假描述。"""
-
     key = "risk_agent"
     name = "风控 Agent"
     responsibility = "售后风险评分、人工审核判断、异常账号与高危话术检测"
@@ -40,6 +38,3 @@ class RiskAgent:
             tool_results=[result],
             error=None if result.success else str(result.result),
         )
-
-
-RiskControlAgent = RiskAgent

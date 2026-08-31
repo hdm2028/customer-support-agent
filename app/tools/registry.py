@@ -252,14 +252,10 @@ def validate_tool_arguments(tool_name: str, arguments: dict[str, Any]) -> tuple[
 
 
 def can_agent_use_tool(agent_key: str, tool_name: str) -> bool:
-    """校验 Agent 是否拥有指定工具的调用权限。"""
-
     return tool_name in AGENT_TOOL_PERMISSIONS.get(agent_key, set())
 
 
 def execute_registered_tool(tool_name: str, arguments: dict[str, Any]) -> ToolResult:
-    """只允许调用注册表中的工具，是本项目的受控 Function Calling 执行层。"""
-
     valid, errors = validate_tool_arguments(tool_name, arguments)
 
     if not valid:

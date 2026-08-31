@@ -32,9 +32,9 @@ from app.storage.database import (
     list_agent_metrics_from_db,
     list_manual_reviews_from_db,
     list_refund_requests_from_db,
+    save_feedback_to_db,
     list_tickets_from_db,
 )
-from app.storage.feedback_store import save_feedback
 from app.storage.store import get_order_by_id
 from app.tools.policy import policy_search
 
@@ -47,15 +47,11 @@ knowledge_retriever = HybridRetriever()
 
 @app.get("/")
 def web_app() -> FileResponse:
-    """返回浏览器聊天页面，复用参考项目的 Chat UI 思路。"""
-
     return FileResponse(BASE_DIR / "web" / "index.html")
 
 
 @app.get("/health")
 def health_check() -> dict:
-    """服务健康检查，前端和部署平台都可以用它判断后端是否存活。"""
-
     return {
         "success": True,
         "app_name": settings.app_name,
@@ -74,8 +70,6 @@ def health_check() -> dict:
 
 @app.get("/info", response_model=ServiceMetadata)
 def service_info() -> ServiceMetadata:
-    """返回服务元数据，前端可以用它渲染标题、Agent 列表和模型状态。"""
-
     return ServiceMetadata(
         app_name=settings.app_name,
         agents=[
@@ -106,8 +100,6 @@ def service_info() -> ServiceMetadata:
 
 @app.post("/agent/chat", response_model=ChatResponse)
 def agent_chat(req: ChatRequest) -> dict:
-    """非流式聊天接口，适合 Swagger 调试和后端自动化测试。"""
-
     return run_customer_support_agent(
         user_message=req.message,
         conversation_id=req.conversation_id,
@@ -117,8 +109,6 @@ def agent_chat(req: ChatRequest) -> dict:
 
 @app.post("/agent/stream")
 async def agent_stream(req: StreamChatRequest) -> StreamingResponse:
-    """流式聊天接口，用 SSE 格式把路由、工具结果和回复片段推给前端。"""
-
     async def event_generator():
         async for event in stream_customer_support_agent(
             user_message=req.message,
@@ -135,8 +125,6 @@ async def agent_stream(req: StreamChatRequest) -> StreamingResponse:
 
 @app.post("/agent/history", response_model=ChatHistoryResponse)
 def agent_history(req: ChatHistoryRequest) -> ChatHistoryResponse:
-    """根据 conversation_id 查询多轮对话历史。"""
-
     return ChatHistoryResponse(
         conversation_id=req.conversation_id,
         messages=get_conversation_history(req.conversation_id),
@@ -145,8 +133,6 @@ def agent_history(req: ChatHistoryRequest) -> ChatHistoryResponse:
 
 @app.get("/agent/state/{conversation_id}")
 def agent_state(conversation_id: str) -> dict:
-    """查看 Redis/内存缓存里的 Agent 当前状态。"""
-
     return {
         "success": True,
         "data": get_agent_state(conversation_id),
@@ -163,9 +149,7 @@ def get_cache_health() -> dict:
 
 @app.post("/feedback", response_model=FeedbackResponse)
 def feedback(req: FeedbackRequest) -> FeedbackResponse:
-    """记录用户对本轮对话的评分，后续可用于评估集和错误案例复盘。"""
-
-    save_feedback(
+    save_feedback_to_db(
         conversation_id=req.conversation_id,
         score=req.score,
         comment=req.comment,
@@ -176,8 +160,6 @@ def feedback(req: FeedbackRequest) -> FeedbackResponse:
 
 @app.get("/tickets")
 def list_tickets(limit: int = 50) -> dict:
-    """查看最近创建的工单草稿，方便演示和排查售后流转。"""
-
     tickets = list_tickets_from_db(limit=limit)
 
     return {
@@ -189,8 +171,6 @@ def list_tickets(limit: int = 50) -> dict:
 
 @app.get("/refunds")
 def list_refunds(limit: int = 50) -> dict:
-    """查看退款申请记录。"""
-
     refunds = list_refund_requests_from_db(limit=limit)
 
     return {
@@ -202,8 +182,6 @@ def list_refunds(limit: int = 50) -> dict:
 
 @app.get("/manual-reviews")
 def list_manual_reviews(limit: int = 50) -> dict:
-    """查看人工审核单。"""
-
     reviews = list_manual_reviews_from_db(limit=limit)
 
     return {
@@ -215,8 +193,6 @@ def list_manual_reviews(limit: int = 50) -> dict:
 
 @app.get("/observability/metrics")
 def observability_metrics(limit: int = 50) -> dict:
-    """查看最近 Agent 可观测指标。"""
-
     metrics = list_agent_metrics_from_db(limit=limit)
 
     return {
@@ -228,8 +204,6 @@ def observability_metrics(limit: int = 50) -> dict:
 
 @app.get("/mq/messages")
 def mq_messages(limit: int = 50) -> dict:
-    """查看 MQ 消息。"""
-
     messages = list_messages(limit=limit)
 
     return {
@@ -241,15 +215,11 @@ def mq_messages(limit: int = 50) -> dict:
 
 @app.post("/refund-tasks/process")
 def process_refund_task_batch(limit: int = 10) -> dict:
-    """手动触发退款处理服务消费 MQ。"""
-
     return process_refund_tasks(limit=limit)
 
 
 @app.get("/orders/{order_id}")
 def get_order(order_id: str) -> dict:
-    """订单查询调试接口。"""
-
     order = get_order_by_id(order_id)
 
     if not order:
@@ -266,8 +236,6 @@ def get_order(order_id: str) -> dict:
 
 @app.get("/knowledge/search")
 def search_knowledge(query: str, top_k: int = 2) -> dict:
-    """知识库检索调试接口。"""
-
     result = policy_search(query=query, top_k=top_k)
 
     return {
@@ -288,8 +256,6 @@ def knowledge_catalog() -> dict:
 
 @app.get("/tools")
 def list_function_tools() -> dict:
-    """查看当前受控 Function Calling 工具 schema。"""
-
     tools = get_function_tool_specs()
 
     return {
@@ -301,8 +267,6 @@ def list_function_tools() -> dict:
 
 @app.get("/knowledge/chunks")
 def get_knowledge_chunks() -> dict:
-    """查看当前知识库切分结果，方便调试 RAG chunk 是否合理。"""
-
     chunks = knowledge_retriever.list_chunks()
 
     return {

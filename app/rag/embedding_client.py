@@ -65,8 +65,7 @@ CUSTOMER_KEYWORDS = [
 ]
 
 
-# 把文本拆成可检索 token。这里不是生产级分词器，而是一个稳定可运行的教学版本：
-# 关键词 + 英文数字 + 中文单字 + 中文二字组合，能覆盖中文客服常见问题。
+# Keyword, alphanumeric, unigram and bigram tokens for Chinese support queries.
 def tokenize(text: str) -> list[str]:
     tokens = []
     text = text.strip()
@@ -87,8 +86,7 @@ def tokenize(text: str) -> list[str]:
     return tokens
 
 
-# 本地 hash embedding：当没有开启真实 Embedding 时使用。
-# 它的作用是保证项目离线也能完整跑通 RAG 流程。
+# Local embedding fallback when remote embeddings are disabled.
 def local_hash_embedding(text: str, dimensions: int = LOCAL_VECTOR_DIM) -> list[float]:
     vector = [0.0] * dimensions
 
@@ -105,8 +103,7 @@ def local_hash_embedding(text: str, dimensions: int = LOCAL_VECTOR_DIM) -> list[
     return [value / norm for value in vector]
 
 
-# 关键词分数用于和向量分数混合排序。
-# 好处是：用户输入“保修”“退款”这种明确业务词时，检索结果更稳定。
+# Keyword score is combined with vector and BM25 scores.
 def keyword_score(query: str, source: str, text: str) -> int:
     score = 0
     source_lower = source.lower()
@@ -128,8 +125,6 @@ def keyword_score(query: str, source: str, text: str) -> int:
 
 
 class EmbeddingCache:
-    """把 Embedding 缓存在本地，避免同一段文档反复请求模型接口。"""
-
     def __init__(self, path: Path = CACHE_PATH) -> None:
         self.path = path
         self.data = self._load()
@@ -202,8 +197,6 @@ class EmbeddingCache:
 
 
 class EmbeddingProvider:
-    """统一封装 Embedding 来源：本地 hash 或智谱 Embedding。"""
-
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()
         self.cache = EmbeddingCache()

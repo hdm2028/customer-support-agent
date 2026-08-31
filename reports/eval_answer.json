@@ -1,0 +1,220 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "D:\\python-project\\客服agent\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 4,
+  "passed_count": 2,
+  "failed_count": 2,
+  "deterministic_metrics": {
+    "correctness": 0.5,
+    "relevance": 1.0,
+    "completeness": 0.5,
+    "faithfulness_groundedness": 1.0,
+    "hallucination_rate": 0.0
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": [
+          "退款政策.md - 重要限制",
+          "退款政策.md - 退款人工审核"
+        ]
+      },
+      "actual": {
+        "reply": "根据知识库来源《退款政策.md - 重要限制》，本问题需要结合售后政策进一步判断。",
+        "matched_citations": [
+          "退款政策.md - 重要限制"
+        ]
+      },
+      "trace_id": "9eca2f5e-c0c3-4b1b-9565-4418679ab331",
+      "reason": "missing_expected_keywords=['订单', '不能']"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "退款政策.md - 重要限制"
+        ]
+      },
+      "actual": {
+        "reply": "根据知识库来源《退款政策.md - 退款人工审核》，本问题需要结合售后政策进一步判断。",
+        "matched_citations": [
+          "退款政策.md - 退款人工审核"
+        ]
+      },
+      "trace_id": "2551c4eb-cee3-42a1-9de6-4694905e24f0",
+      "reason": "missing_expected_keywords=['到账', '支付渠道']"
+    }
+  ],
+  "results": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "退款",
+        "订单",
+        "不能"
+      ],
+      "missing_keywords": [
+        "订单",
+        "不能"
+      ],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 重要限制",
+        "退款政策.md - 退款人工审核"
+      ],
+      "matched_citations": [
+        "退款政策.md - 重要限制"
+      ],
+      "trace_id": "9eca2f5e-c0c3-4b1b-9565-4418679ab331",
+      "reply": "根据知识库来源《退款政策.md - 重要限制》，本问题需要结合售后政策进一步判断。",
+      "reason": "missing_expected_keywords=['订单', '不能']",
+      "notes": "政策回答需要基于 RAG 来源，不能像已经执行退款一样表述。"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "到账",
+        "支付渠道"
+      ],
+      "missing_keywords": [
+        "到账",
+        "支付渠道"
+      ],
+      "forbidden_keywords": [
+        "立即到账",
+        "已经退款",
+        "已为您退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "退款政策.md - 重要限制"
+      ],
+      "matched_citations": [
+        "退款政策.md - 退款人工审核"
+      ],
+      "trace_id": "2551c4eb-cee3-42a1-9de6-4694905e24f0",
+      "reply": "根据知识库来源《退款政策.md - 退款人工审核》，本问题需要结合售后政策进一步判断。",
+      "reason": "missing_expected_keywords=['到账', '支付渠道']",
+      "notes": "到账咨询应解释渠道差异，不承诺立即到账。"
+    },
+    {
+      "case_id": "answer_refund_003",
+      "query": "直接给我退款，不要审核。",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": "N/A",
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "订单号",
+        "人工"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "绕过审核"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [],
+      "matched_citations": [],
+      "trace_id": "d1b440f0-900b-48cb-a69f-7981764e1cda",
+      "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。该请求涉及退款、赔付、取消订单、修改地址等高风险操作，需要人工客服审核。",
+      "reason": "passed",
+      "notes": "高风险退款请求缺订单号时应追问并提示人工审核。"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "10003",
+        "知识库"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "可以直接退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退换货政策.md - 七天无理由退货",
+        "退换货政策.md - 不支持七天无理由退货的情况"
+      ],
+      "matched_citations": [
+        "退换货政策.md - 七天无理由退货"
+      ],
+      "trace_id": "34bc5cd0-82ce-4f00-ae68-0896d4232a4a",
+      "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。",
+      "reason": "passed",
+      "notes": "特殊商品退款咨询不能承诺直接退款。"
+    }
+  ],
+  "report_name": "eval_answer",
+  "created_at": "2026-08-30T14:15:20"
+}

@@ -8,8 +8,6 @@ def safe_tool_call(
     callback,
     fallback_action: str = "handoff_to_human",
 ) -> ToolResult:
-    """执行工具并把异常统一转成 ToolResult。"""
-
     try:
         result = callback()
     except Exception as error:
@@ -36,8 +34,6 @@ def execute_tool(
     trace: dict | None = None,
     fallback_action: str = "handoff_to_human",
 ) -> ToolResult:
-    """Tool Executor 只做查找、参数校验、异常捕获、执行和 tracing。"""
-
     def callback() -> ToolResult:
         return safe_tool_call(
             tool_name,
@@ -63,8 +59,6 @@ def execute_agent_tool(
     trace: dict | None = None,
     fallback_action: str = "handoff_to_human",
 ) -> ToolResult:
-    """按 Agent 权限执行工具，防止越权调用。"""
-
     if not can_agent_use_tool(agent_key, tool_name):
         result = ToolResult(
             tool_name=tool_name,

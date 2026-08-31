@@ -1,0 +1,122 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "rag_refund_006",
+      "query": "已发货订单退款需要先做什么？",
+      "expected_document": [
+        "退换货政策.md",
+        "物流配送政策.md"
+      ],
+      "retrieved_documents": [
+        "退款政策.md",
+        "退款政策.md",
+        "退款政策.md",
+        "退款政策.md",
+        "退款政策.md"
+      ],
+      "expected_rank": "N/A",
+      "retrieval_scores": [
+        {
+          "source": "退款政策.md",
+          "section": "退款申请前置条件",
+          "citation": "退款政策.md - 退款申请前置条件",
+          "score": 1.2852,
+          "hybrid_score": 0.8802,
+          "vector_score": 0.5349,
+          "bm25_score": 23.043,
+          "keyword_score": null,
+          "retrieval_score": 0.8802,
+          "rerank_bonus": 0.405,
+          "rerank_score": 1.2852,
+          "rerank_reasons": [
+            "source_match: return_refund",
+            "section_match: 退款申请前置条件",
+            "phrase_match: 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "text_preview": "退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情况下承诺退款已经完成。"
+        },
+        {
+          "source": "退款政策.md",
+          "section": "退款资格判断",
+          "citation": "退款政策.md - 退款资格判断",
+          "score": 1.2241,
+          "hybrid_score": 0.8541,
+          "vector_score": 0.4715,
+          "bm25_score": 25.5565,
+          "keyword_score": null,
+          "retrieval_score": 0.8541,
+          "rerank_bonus": 0.37,
+          "rerank_score": 1.2241,
+          "rerank_reasons": [
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款, 发货",
+            "order_state_match: 已发货"
+          ],
+          "text_preview": "创建退款申请前，需要先确认用户是否满足对应的退款条件。\n\n退款资格本身不由本政策决定，应根据具体业务场景查询对应规则，例如：\n\n- 七天无理由退货按照《退换货政策》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货商品需要结合物流和退货状态判断。\n\n只有满足对应退款条件后，才能继续进入退款申请流程。"
+        },
+        {
+          "source": "退款政策.md",
+          "section": "重要限制",
+          "citation": "退款政策.md - 重要限制",
+          "score": 1.1713,
+          "hybrid_score": 0.7263,
+          "vector_score": 0.5119,
+          "bm25_score": 9.2062,
+          "keyword_score": null,
+          "retrieval_score": 0.7263,
+          "rerank_bonus": 0.445,
+          "rerank_score": 1.1713,
+          "rerank_reasons": [
+            "source_match: return_refund",
+            "section_match: 重要限制",
+            "phrase_match: 退款, 退款申请, 人工审核",
+            "keyword_coverage: 退款"
+          ],
+          "text_preview": "客服 Agent 可以查询退款政策、解释退款流程以及发起符合权限的退款申请。\n\n客服 Agent 不能：\n\n- 绕过退款资格判断；\n- 绕过风险检查；\n- 绕过人工审核；\n- 在状态未知时重复执行退款；\n- 将退款申请创建成功描述为退款到账成功。\n\n具体退款结果必须以退款系统和实际业务执行结果为准。"
+        },
+        {
+          "source": "退款政策.md",
+          "section": "退款申请",
+          "citation": "退款政策.md - 退款申请",
+          "score": 1.1487,
+          "hybrid_score": 0.7437,
+          "vector_score": 0.5056,
+          "bm25_score": 11.8268,
+          "keyword_score": null,
+          "retrieval_score": 0.7437,
+          "rerank_bonus": 0.405,
+          "rerank_score": 1.1487,
+          "rerank_reasons": [
+            "source_match: return_refund",
+            "section_match: 退款申请",
+            "phrase_match: 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "text_preview": "满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请的当前状态。\n\n退款申请创建后进入异步退款处理流程。"
+        },
+        {
+          "source": "退款政策.md",
+          "section": "退款处理状态",
+          "citation": "退款政策.md - 退款处理状态",
+          "score": 1.076,
+          "hybrid_score": 0.811,
+          "vector_score": 0.5662,
+          "bm25_score": 11.9252,
+          "keyword_score": null,
+          "retrieval_score": 0.811,
+          "rerank_bonus": 0.265,
+          "rerank_score": 1.076,
+          "rerank_reasons": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请, 人工审核",
+            "keyword_coverage: 退款"
+          ],
+          "text_preview": "退款申请可能处于以下状态：\n\n- `PENDING`：退款申请已创建，等待处理；\n- `PROCESSING`：退款任务正在处理；\n- `SUCCEEDED`：退款已经成功完成；\n- `FAILED`：退款处理失败；\n- `MANUAL_REVIEW`：需要人工审核。\n\n用户查询退款进度时，应以退款系统中的最新状态为准。"
+        }
+      ],
+      "reason": "expected_source_miss expected=['退换货政策.md', '物流配送政策.md']; missing_keywords=['物流拦截', '等待商品送达', '拒收']"
+    }
+  ]
+}

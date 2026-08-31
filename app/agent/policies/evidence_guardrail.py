@@ -78,8 +78,6 @@ def detect_policy_profile(query: str) -> dict | None:
 
 
 def simplify_evidence(results: list[dict], limit: int = 3) -> list[dict]:
-    """保留最关键的证据字段，写入失败原因和 trace 时更容易读。"""
-
     simplified = []
 
     for item in results[:limit]:
@@ -98,11 +96,6 @@ def simplify_evidence(results: list[dict], limit: int = 3) -> list[dict]:
 
 
 def validate_policy_evidence(query: str, policy_result: ToolResult) -> tuple[bool, dict]:
-    """校验 RAG 证据是否足够支撑本轮售后回答。
-
-    这里不只看有没有召回结果，还会看 top1 分数、来源文档和关键政策词。
-    """
-
     if not policy_result.success:
         return False, {
             "reason": "policy_search_failed",
@@ -173,8 +166,6 @@ def validate_policy_evidence(query: str, policy_result: ToolResult) -> tuple[boo
 
 
 def apply_policy_evidence_guardrail(query: str, policy_result: ToolResult) -> ToolResult:
-    """把低置信或不匹配的 RAG 结果转换成失败 ToolResult，阻止下游自动行动。"""
-
     if not policy_result.success:
         return policy_result
 
