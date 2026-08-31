@@ -34,7 +34,14 @@ def start_trace(user_message: str, conversation_id: str | None = None) -> dict:
 # 往trace里追加事件
 def add_trace_event(trace: dict, event_type: str, data: dict) -> None:
     """往 trace 中追加事件，比如 route、agent_dispatch、tool_result 和 reply。"""
-    trace["events"].append({"event_type": event_type, "message": data, "timestamp": now_iso()})
+    trace["events"].append(
+        {
+            "trace_id": trace.get("trace_id"),
+            "event_type": event_type,
+            "message": data,
+            "timestamp": now_iso(),
+        }
+    )
 
 
 def add_trace_timing(trace: dict, step_name: str, duration_ms: float, data: dict | None = None) -> None:

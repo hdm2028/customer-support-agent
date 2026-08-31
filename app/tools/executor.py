@@ -3,6 +3,87 @@ from app.observability.tracing import add_trace_event, timed_step
 from app.tools.registry import can_agent_use_tool, execute_registered_tool
 
 
+SENSITIVE_FIELD_MARKERS = (
+    "password",
+    "passwd",
+    "token",
+    "secret",
+    "authorization",
+    "api_key",
+    "apikey",
+    "credential",
+)
+REDACTED_VALUE = "[REDACTED]"
+
+
+def sanitize_trace_value(value):
+    if isinstance(value, dict):
+        sanitized = {}
+        for key, item in value.items():
+            normalized_key = str(key).lower().replace("-", "_")
+            if any(marker in normalized_key for marker in SENSITIVE_FIELD_MARKERS):
+                sanitized[key] = REDACTED_VALUE
+            else:
+                sanitized[key] = sanitize_trace_value(item)
+        return sanitized
+
+    if isinstance(value, list):
+        return [sanitize_trace_value(item) for item in value]
+
+    if isinstance(value, tuple):
+        return [sanitize_trace_value(item) for item in value]
+
+    return value
+
+
+def add_tool_call_trace(trace: dict | None, tool_name: str, arguments: dict) -> None:
+    if not trace:
+        return
+
+    add_trace_event(
+        trace,
+        event_type="tool_call",
+        data={
+            "trace_id": trace.get("trace_id"),
+            "tool_name": tool_name,
+            "arguments": sanitize_trace_value(arguments),
+        },
+    )
+
+
+def add_tool_result_trace(trace: dict | None, tool_result: ToolResult) -> None:
+    if not trace:
+        return
+
+    sanitized_result = sanitize_trace_value(tool_result.result)
+    event_data = {
+        "trace_id": trace.get("trace_id"),
+        "tool_name": tool_result.tool_name,
+        "success": tool_result.success,
+        "status": "success" if tool_result.success else "failure",
+        "result": sanitized_result,
+    }
+
+    if not tool_result.success:
+        if isinstance(sanitized_result, dict):
+            error = {
+                key: sanitized_result[key]
+                for key in (
+                    "error_type",
+                    "error_message",
+                    "errors",
+                    "reason",
+                    "fallback_action",
+                )
+                if sanitized_result.get(key) is not None
+            }
+            event_data["error"] = error or sanitized_result
+        else:
+            event_data["error"] = str(sanitized_result)
+
+    add_trace_event(trace, event_type="tool_result", data=event_data)
+
+
 def safe_tool_call(
     tool_name: str,
     callback,
@@ -41,15 +122,20 @@ def execute_tool(
             fallback_action=fallback_action,
         )
 
+    add_tool_call_trace(trace, tool_name, arguments)
+
     if trace:
-        return timed_step(
+        result = timed_step(
             trace,
             f"tool.{tool_name}",
             callback,
             {"tool_name": tool_name},
         )
+    else:
+        result = callback()
 
-    return callback()
+    add_tool_result_trace(trace, result)
+    return result
 
 
 def execute_agent_tool(
@@ -60,6 +146,7 @@ def execute_agent_tool(
     fallback_action: str = "handoff_to_human",
 ) -> ToolResult:
     if not can_agent_use_tool(agent_key, tool_name):
+        add_tool_call_trace(trace, tool_name, arguments)
         result = ToolResult(
             tool_name=tool_name,
             success=False,
@@ -69,6 +156,7 @@ def execute_agent_tool(
                 "fallback_action": "reject_tool_call",
             },
         )
+        add_tool_result_trace(trace, result)
         add_tool_failure_trace(trace, result)
         return result
 
