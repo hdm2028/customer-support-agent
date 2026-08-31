@@ -1,14 +1,10 @@
 import hashlib
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
+from app.core.config import BASE_DIR, KNOWLEDGE_DIR
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from app.core.config import BASE_DIR
 from app.rag.document_loader import (
     SUPPORTED_IMAGE_SUFFIXES,
     SUPPORTED_PDF_SUFFIXES,
@@ -17,7 +13,6 @@ from app.rag.document_loader import (
 )
 from app.rag.embedding_client import EmbeddingProvider
 from app.rag.hybrid_index import HybridRAGIndex
-from app.storage.store import KNOWLEDGE_DIR
 
 
 CACHE_DIR = BASE_DIR / "data" / "cache"

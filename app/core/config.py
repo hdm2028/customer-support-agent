@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 ENV_PATH = BASE_DIR / ".env"
+KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
 
 
 def load_env_file(path: Path = ENV_PATH) -> None:

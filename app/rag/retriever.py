@@ -2,12 +2,11 @@ from pathlib import Path
 import hashlib
 import json
 
-from app.core.config import get_settings
+from app.core.config import KNOWLEDGE_DIR, get_settings
 from app.rag.document_loader import DocumentChunk, build_chunks_from_dir
 from app.rag.enterprise_knowledge import build_enterprise_catalog
 from app.rag.hybrid_index import HybridRAGIndex
 from app.storage.cache import get_json_cache, set_json_cache
-from app.storage.store import KNOWLEDGE_DIR
 
 
 class HybridRetriever:

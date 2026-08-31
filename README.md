@@ -105,8 +105,8 @@ MQ_BACKEND=database
 
 ```powershell
 py -3.13 -m pip install -r requirements.txt
-py -3.13 scripts\setup\check_local_services.py
-py -3.13 scripts\setup\ingest_knowledge.py
+py -3.13 -m scripts.setup.check_local_services
+py -3.13 -m scripts.setup.ingest_knowledge
 py -3.13 -m uvicorn main:app --host 127.0.0.1 --port 8012
 ```
 
@@ -127,12 +127,12 @@ Swagger: http://127.0.0.1:8012/docs
 ## Evaluation
 
 ```powershell
-py -3.13 scripts\eval\eval_routing.py
-py -3.13 scripts\eval\eval_rag.py
-py -3.13 scripts\eval\eval_tools.py
-py -3.13 scripts\eval\eval_answer.py
-py -3.13 scripts\eval\eval_e2e.py
-py -3.13 scripts\eval\generate_report.py
+py -3.13 -m scripts.eval.eval_routing
+py -3.13 -m scripts.eval.eval_rag
+py -3.13 -m scripts.eval.eval_tools
+py -3.13 -m scripts.eval.eval_answer
+py -3.13 -m scripts.eval.eval_e2e
+py -3.13 -m scripts.eval.generate_report
 ```
 
 `eval_e2e.py` 会写入数据库、缓存、trace，并可能发布退款 MQ 消息。
@@ -140,12 +140,12 @@ py -3.13 scripts\eval\generate_report.py
 ## Reliability
 
 ```powershell
-py -3.13 scripts\reliability\test_refund_idempotency.py
-py -3.13 scripts\reliability\test_refund_concurrency.py
-py -3.13 scripts\reliability\test_mq_duplicate_delivery.py
-py -3.13 scripts\reliability\test_high_risk_review.py
-py -3.13 scripts\reliability\test_tool_failure.py
-py -3.13 scripts\reliability\test_service_degradation.py
+py -3.13 -m scripts.reliability.test_refund_idempotency
+py -3.13 -m scripts.reliability.test_refund_concurrency
+py -3.13 -m scripts.reliability.test_mq_duplicate_delivery
+py -3.13 -m scripts.reliability.test_high_risk_review
+py -3.13 -m scripts.reliability.test_tool_failure
+py -3.13 -m scripts.reliability.test_service_degradation
 ```
 
 退款相关可靠性脚本会写入业务库并发布或消费 MQ 消息。
@@ -153,8 +153,8 @@ py -3.13 scripts\reliability\test_service_degradation.py
 ## Observability
 
 ```powershell
-py -3.13 scripts\observability\analyze_traces.py
-py -3.13 scripts\observability\inspect_failed_cases.py
+py -3.13 -m scripts.observability.analyze_traces
+py -3.13 -m scripts.observability.inspect_failed_cases
 ```
 
 API：
