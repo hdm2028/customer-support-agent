@@ -1,10 +1,22 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 
 from app.agent.policies.evidence_guardrail import validate_policy_evidence
 from app.core.config import BASE_DIR
 from app.core.schemas import ToolResult
+from app.rag.index_manager import RAGIndexManager
+from app.rag.query_context import RetrievalQuery
+from app.rag.ranking import (
+    HYBRID_MODE,
+    RANKING_MODES,
+    RULE_RERANK_MODE,
+    SEMANTIC_CONSTRAINT_MODE,
+    EvidenceConstraint,
+    evaluate_evidence_constraint,
+    rank_candidates,
+)
 from app.rag.retriever import HybridRetriever
 from scripts.eval.common import (
     NA,
@@ -19,11 +31,13 @@ from scripts.eval.common import (
 
 EVAL_PATH = BASE_DIR / "data" / "eval" / "rag_eval.jsonl"
 DEFAULT_TOP_K = 5
-SIDE_EFFECTS = ["[READ ONLY BUSINESS DATA]", "[WRITES CACHE]", "[CALLS EMBEDDING IF CONFIGURED]"]
-
-
-def normalize_text(text: str) -> str:
-    return text.lower().replace(" ", "")
+BASELINE_MODE = RULE_RERANK_MODE
+SIDE_EFFECTS = [
+    "[READ ONLY BUSINESS DATA]",
+    "[REFRESHES IN-MEMORY RAG INDEX]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]",
+]
 
 
 def expected_sources(case: dict) -> list[str]:
@@ -32,21 +46,11 @@ def expected_sources(case: dict) -> list[str]:
     return list(case.get("expected_sources", []))
 
 
-def keyword_hit(results: list[dict], expected_keywords: list[str]) -> tuple[bool, list[str]]:
-    if not expected_keywords:
-        return True, []
-
-    combined = "\n".join(
-        f"{item.get('source', '')}\n{item.get('section', '')}\n{item.get('text', '')}"
-        for item in results
+def evidence_constraint(case: dict) -> EvidenceConstraint:
+    return EvidenceConstraint(
+        required_sources=tuple(expected_sources(case)),
+        required_terms=tuple(case.get("expected_keywords", [])),
     )
-    normalized = normalize_text(combined)
-    missing = [
-        keyword
-        for keyword in expected_keywords
-        if normalize_text(keyword) not in normalized
-    ]
-    return len(missing) == 0, missing
 
 
 def first_expected_rank(results: list[dict], sources: list[str]) -> int | None:
@@ -56,8 +60,16 @@ def first_expected_rank(results: list[dict], sources: list[str]) -> int | None:
     return None
 
 
+def source_concentration(results: list[dict]) -> float:
+    sources = [item.get("source") for item in results if item.get("source")]
+    if not sources:
+        return 0.0
+    return round(max(Counter(sources).values()) / len(sources), 4)
+
+
 def simplify_result(result: dict) -> dict:
     return {
+        "chunk_id": result.get("chunk_id"),
         "source": result.get("source"),
         "section": result.get("section"),
         "citation": result.get("citation"),
@@ -66,118 +78,190 @@ def simplify_result(result: dict) -> dict:
         "vector_score": result.get("vector_score"),
         "bm25_score": result.get("bm25_score"),
         "keyword_score": result.get("keyword_score"),
-        "retrieval_score": result.get("retrieval_score"),
         "rerank_bonus": result.get("rerank_bonus"),
         "rerank_score": result.get("rerank_score"),
+        "semantic_rerank_score": result.get("semantic_rerank_score"),
+        "constraint_original_rank": result.get("constraint_original_rank"),
         "rerank_reasons": result.get("rerank_reasons", []),
         "text_preview": result.get("text", "")[:180],
     }
 
 
-def run_single_case(case: dict, retriever: HybridRetriever, top_k: int) -> dict:
-    query = case["query"]
-    results = retriever.retrieve(query, top_k=top_k)
-    sources = expected_sources(case)
-    source_metric_supported = bool(sources)
-    rank = first_expected_rank(results, sources) if source_metric_supported else None
-    expected_keywords = list(case.get("expected_keywords", []))
-    keywords_pass, missing_keywords = keyword_hit(results, expected_keywords)
-    evidence_guardrail_pass, evidence_guardrail_report = validate_policy_evidence(
+def classify_failure(
+    *,
+    mode: str,
+    pool_rank: int | None,
+    result_rank: int | None,
+    pool_constraint: dict,
+    result_constraint: dict,
+    evidence_guardrail_pass: bool,
+) -> str | None:
+    if pool_rank is None or not pool_constraint["constraint_satisfied"]:
+        return "retrieval_failure"
+
+    if result_rank is None or not result_constraint["constraint_satisfied"]:
+        if mode == SEMANTIC_CONSTRAINT_MODE:
+            return "constraint_failure"
+        return "rerank_failure"
+
+    if not evidence_guardrail_pass:
+        return "evidence_guardrail_failure"
+
+    return None
+
+
+def score_mode(
+    case: dict,
+    query: RetrievalQuery,
+    candidates: list[dict],
+    *,
+    mode: str,
+    top_k: int,
+) -> dict:
+    constraint = evidence_constraint(case)
+    ranked = rank_candidates(
         query,
+        candidates,
+        mode=mode,
+        top_k=top_k,
+        evidence_constraint=constraint,
+    )
+    results = ranked[:top_k]
+    sources = list(constraint.required_sources)
+    pool_rank = first_expected_rank(candidates, sources) if sources else None
+    result_rank = first_expected_rank(results, sources) if sources else None
+    pool_constraint = evaluate_evidence_constraint(candidates, constraint)
+    result_constraint = evaluate_evidence_constraint(results, constraint)
+    guardrail_pass, guardrail_report = validate_policy_evidence(
+        case["query"],
         ToolResult(
             tool_name="policy_search",
             success=bool(results),
             result=results if results else "RAG 没有返回任何政策证据。",
         ),
     )
-
-    errors = []
-    if not source_metric_supported:
-        errors.append("missing expected_document or expected_sources; Hit/MRR metrics are N/A for this case")
-    elif rank is None or rank > top_k:
-        errors.append(f"expected_source_miss expected={sources}")
-    if missing_keywords:
-        errors.append(f"missing_keywords={missing_keywords}")
-    if not evidence_guardrail_pass:
-        errors.append(f"evidence_guardrail_failed={evidence_guardrail_report}")
-
-    passed = bool(
-        source_metric_supported
-        and rank is not None
-        and rank <= top_k
-        and keywords_pass
-        and evidence_guardrail_pass
+    failure_type = classify_failure(
+        mode=mode,
+        pool_rank=pool_rank,
+        result_rank=result_rank,
+        pool_constraint=pool_constraint,
+        result_constraint=result_constraint,
+        evidence_guardrail_pass=guardrail_pass,
     )
 
     return {
-        "case_id": case["id"],
-        "query": query,
-        "passed": passed,
-        "source_metric_supported": source_metric_supported,
+        "case_id": case["case_id"],
+        "query": case["query"],
+        "mode": mode,
+        "passed": failure_type is None,
+        "failure_type": failure_type or "passed",
+        "failure_stage": failure_type or "passed",
+        "reason": failure_type or "passed",
+        "source_metric_supported": bool(sources),
         "expected_document": sources if sources else NA,
+        "expected_sources": sources if sources else NA,
         "retrieved_documents": [item.get("source") for item in results],
-        "expected_rank": rank if rank is not None else NA,
-        "hit_at_1": bool(rank is not None and rank <= 1) if source_metric_supported else NA,
-        "hit_at_3": bool(rank is not None and rank <= 3) if source_metric_supported else NA,
-        "hit_at_5": bool(rank is not None and rank <= 5) if source_metric_supported else NA,
-        "reciprocal_rank": round(1 / rank, 4) if rank else 0.0 if source_metric_supported else NA,
-        "keywords_pass": keywords_pass,
-        "missing_keywords": missing_keywords,
-        "evidence_guardrail_pass": evidence_guardrail_pass,
-        "evidence_guardrail_report": evidence_guardrail_report,
+        "expected_rank": result_rank if result_rank is not None else NA,
+        "candidate_expected_rank": pool_rank if pool_rank is not None else NA,
+        "hit_at_1": bool(result_rank is not None and result_rank <= 1),
+        "hit_at_3": bool(result_rank is not None and result_rank <= 3),
+        "hit_at_5": bool(result_rank is not None and result_rank <= 5),
+        "reciprocal_rank": round(1 / result_rank, 4) if result_rank else 0.0,
+        "required_evidence_coverage": result_constraint[
+            "required_evidence_coverage"
+        ],
+        "keywords_pass": not result_constraint["missing_terms"],
+        "missing_keywords": result_constraint["missing_terms"],
+        "source_concentration": source_concentration(results),
+        "constraint_satisfied": result_constraint["constraint_satisfied"],
+        "constraint_report": result_constraint,
+        "candidate_constraint_report": pool_constraint,
+        "evidence_guardrail_pass": guardrail_pass,
+        "evidence_guardrail_report": guardrail_report,
+        "candidate_chunk_ids": [item.get("chunk_id") for item in candidates],
         "retrieval_scores": [simplify_result(item) for item in results],
-        "reason": "; ".join(errors) if errors else "passed",
         "notes": case.get("notes", ""),
     }
 
 
-def build_report(results: list[dict], top_k: int) -> dict:
+def build_mode_report(results: list[dict], *, mode: str, top_k: int) -> dict:
     total = len(results)
-    supported = [item for item in results if item["source_metric_supported"]]
-    supported_count = len(supported)
-    passed_count = sum(1 for item in results if item["passed"])
-    failed_cases = [
-        {
-            "case_id": item["case_id"],
-            "query": item["query"],
-            "expected_document": item["expected_document"],
-            "retrieved_documents": item["retrieved_documents"],
-            "expected_rank": item["expected_rank"],
-            "retrieval_scores": item["retrieval_scores"],
-            "reason": item["reason"],
-        }
+    failures = Counter(
+        item["failure_type"]
         for item in results
-        if not item["passed"]
-    ]
+        if item["failure_type"] != "passed"
+    )
+    failed_cases = [item for item in results if not item["passed"]]
 
     return {
-        "side_effects": SIDE_EFFECTS,
-        "dataset": str(EVAL_PATH),
+        "mode": mode,
         "total_cases": total,
-        "metric_supported_cases": supported_count,
-        "passed_count": passed_count,
-        "failed_count": total - passed_count,
+        "metric_supported_cases": total,
+        "passed_count": total - len(failed_cases),
+        "failed_count": len(failed_cases),
         "top_k": top_k,
-        "hit_at_1": rate(sum(1 for item in supported if item["hit_at_1"] is True), supported_count),
-        "hit_at_3": rate(sum(1 for item in supported if item["hit_at_3"] is True), supported_count),
-        "hit_at_5": rate(sum(1 for item in supported if item["hit_at_5"] is True), supported_count),
-        "mrr": average([
-            item["reciprocal_rank"]
-            for item in supported
-            if isinstance(item["reciprocal_rank"], int | float)
-        ]),
-        "keyword_pass_rate": rate(sum(1 for item in results if item["keywords_pass"]), total),
-        "evidence_guardrail_pass_rate": rate(
-            sum(1 for item in results if item["evidence_guardrail_pass"]),
+        "hit_at_1": rate(sum(item["hit_at_1"] for item in results), total),
+        "hit_at_3": rate(sum(item["hit_at_3"] for item in results), total),
+        "hit_at_5": rate(sum(item["hit_at_5"] for item in results), total),
+        "mrr": average([item["reciprocal_rank"] for item in results]),
+        "required_evidence_coverage": average(
+            [item["required_evidence_coverage"] for item in results]
+        ),
+        "source_concentration": average(
+            [item["source_concentration"] for item in results]
+        ),
+        "constraint_satisfaction": rate(
+            sum(item["constraint_satisfied"] for item in results),
             total,
         ),
+        "keyword_pass_rate": rate(
+            sum(item["keywords_pass"] for item in results),
+            total,
+        ),
+        "evidence_guardrail_pass_rate": rate(
+            sum(item["evidence_guardrail_pass"] for item in results),
+            total,
+        ),
+        "failure_counts": dict(failures),
         "failed_cases": failed_cases,
         "results": results,
     }
 
 
+def run_ablation(
+    cases: list[dict],
+    retriever: HybridRetriever,
+    *,
+    top_k: int,
+) -> tuple[dict[str, dict], int]:
+    candidate_k = retriever.resolve_candidate_k(top_k)
+    mode_results: dict[str, list[dict]] = {mode: [] for mode in RANKING_MODES}
+
+    for case in cases:
+        query = RetrievalQuery(case["query"], case["query"])
+        candidates = retriever.retrieve_candidates(
+            query,
+            candidate_k=candidate_k,
+        )
+        for mode in RANKING_MODES:
+            mode_results[mode].append(
+                score_mode(
+                    case,
+                    query,
+                    candidates,
+                    mode=mode,
+                    top_k=top_k,
+                )
+            )
+
+    return {
+        mode: build_mode_report(results, mode=mode, top_k=top_k)
+        for mode, results in mode_results.items()
+    }, candidate_k
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate refund-policy RAG retrieval quality.")
+    parser = argparse.ArgumentParser(description="Evaluate RAG retrieval ablations.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     return parser.parse_args()
 
@@ -185,16 +269,34 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     try:
-        retriever = HybridRetriever()
+        manager = RAGIndexManager()
+        refresh = manager.refresh()
+        retriever = HybridRetriever(manager)
         cases = load_jsonl(EVAL_PATH)
-        results = [run_single_case(case, retriever, top_k=args.top_k) for case in cases]
-        report = build_report(results, top_k=args.top_k)
+        mode_reports, candidate_k = run_ablation(
+            cases,
+            retriever,
+            top_k=args.top_k,
+        )
+        baseline = mode_reports[BASELINE_MODE]
+        report = {
+            **baseline,
+            "side_effects": SIDE_EFFECTS,
+            "dataset": str(EVAL_PATH),
+            "dev_set": True,
+            "baseline_mode": BASELINE_MODE,
+            "candidate_k": candidate_k,
+            "kb_version": refresh.kb_version,
+            "constraint_input": "dev_case_evidence_annotations",
+            "ablation": mode_reports,
+        }
     except Exception as error:
         report = build_skipped_report(
             reason=f"{type(error).__name__}: {error}",
             side_effects=SIDE_EFFECTS,
             dataset=str(EVAL_PATH),
         )
+
     report_path = save_report("eval_rag", report)
     print_json_report("RAG Evaluation", report, report_path)
     if report.get("failed_count"):

@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 
-from app.rag.document_loader import DocumentChunk
+from app.rag.models import DocumentChunk
+from app.rag.ranking import RANKING_MODES
 
 
 def build_enterprise_catalog(chunks: list[DocumentChunk]) -> dict:
@@ -55,8 +56,8 @@ def build_enterprise_catalog(chunks: list[DocumentChunk]) -> dict:
                 "semantic_vector_recall",
                 "bm25_text_recall",
                 "business_keyword_recall",
-                "business_rerank",
             ],
+            "ranking_modes": list(RANKING_MODES),
             "cache_layers": [
                 "rag_search_cache",
                 "embedding_cache",

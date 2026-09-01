@@ -36,6 +36,9 @@ class ToolResult(BaseModel):
 
 class RouteDecision(BaseModel):
     intent: str = "general_support"
+    action_type: str = "unknown"
+    topic: str | None = None
+    related_topics: list[str] = Field(default_factory=list)
     confidence: float = 0.0
     routing_reason: str | None = None
     agent_plan: list[str] = Field(default_factory=list)

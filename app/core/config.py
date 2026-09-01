@@ -7,6 +7,7 @@ from urllib.parse import quote
 BASE_DIR = Path(__file__).resolve().parents[2]
 ENV_PATH = BASE_DIR / ".env"
 KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
+KNOWLEDGE_MANIFEST_PATH = BASE_DIR / "data" / "cache" / "knowledge_manifest.json"
 
 
 def load_env_file(path: Path = ENV_PATH) -> None:
@@ -94,6 +95,7 @@ class Settings:
     rag_bm25_weight: float
     rag_keyword_weight: float
     rag_candidate_multiplier: int
+    rag_ranking_mode: str
     embedding_cache_ttl_seconds: int
     refund_lock_ttl_seconds: int
     refund_lock_wait_seconds: float
@@ -145,6 +147,7 @@ def get_settings() -> Settings:
         rag_bm25_weight=float(os.getenv("RAG_BM25_WEIGHT", "0.28")),
         rag_keyword_weight=float(os.getenv("RAG_KEYWORD_WEIGHT", "0.10")),
         rag_candidate_multiplier=int(os.getenv("RAG_CANDIDATE_MULTIPLIER", "4")),
+        rag_ranking_mode=os.getenv("RAG_RANKING_MODE", "hybrid_rule").lower(),
         embedding_cache_ttl_seconds=int(os.getenv("EMBEDDING_CACHE_TTL_SECONDS", "86400")),
         refund_lock_ttl_seconds=int(os.getenv("REFUND_LOCK_TTL_SECONDS", "15")),
         refund_lock_wait_seconds=float(os.getenv("REFUND_LOCK_WAIT_SECONDS", "3")),

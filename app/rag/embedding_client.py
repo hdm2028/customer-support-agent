@@ -202,22 +202,53 @@ class EmbeddingProvider:
         self.cache = EmbeddingCache()
 
     def embed_text(self, text: str) -> list[float]:
+        """通用 Embedding 入口，保留原有行为。"""
         if self.settings.rag_embedding_provider == "zhipu":
             return self._embed_with_zhipu(text)
 
         return local_hash_embedding(text)
+
+    def embed_query(self, text: str) -> list[float]:
+        """为在线用户检索 Query 生成向量。"""
+        return self.embed_text(text)
+
+    def embed_document(self, text: str) -> list[float]:
+        """为知识库 DocumentChunk 的检索文本生成向量。"""
+        return self.embed_text(text)
+
+    def document_embedding_identity(self) -> str:
+        """Return the provider/model/dimension identity for stored vectors."""
+
+        if self.settings.rag_embedding_provider == "zhipu":
+            provider = "zhipu"
+            model = self.settings.zhipu_embedding_model
+            dimensions = self.settings.embedding_dimensions
+        else:
+            provider = "local"
+            model = "local_hash_v1"
+            dimensions = LOCAL_VECTOR_DIM
+
+        return f"{provider}|{model}|{dimensions}|document"
 
     def _embed_with_zhipu(self, text: str) -> list[float]:
         provider = "zhipu"
         model = self.settings.zhipu_embedding_model
         dimensions = self.settings.embedding_dimensions
 
-        cached = self.cache.get(provider, model, dimensions, text)
+        cached = self.cache.get(
+            provider,
+            model,
+            dimensions,
+            text,
+        )
+
         if cached is not None:
             return cached
 
         if not self.settings.has_llm_key:
-            raise RuntimeError("没有读取到智谱 API Key，无法调用真实 Embedding。")
+            raise RuntimeError(
+                "没有读取到智谱 API Key，无法调用真实 Embedding。"
+            )
 
         payload = {
             "model": model,
@@ -241,14 +272,30 @@ class EmbeddingProvider:
                 timeout=self.settings.llm_timeout_seconds,
             ) as response:
                 data = json.loads(response.read().decode("utf-8"))
+
         except urllib.error.HTTPError as error:
-            body = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"智谱 Embedding 请求失败：HTTP {error.code} {body}") from error
+            body = error.read().decode(
+                "utf-8",
+                errors="replace",
+            )
+            raise RuntimeError(
+                f"智谱 Embedding 请求失败：HTTP {error.code} {body}"
+            ) from error
+
         except urllib.error.URLError as error:
-            raise RuntimeError(f"智谱 Embedding 连接失败：{error}") from error
+            raise RuntimeError(
+                f"智谱 Embedding 连接失败：{error}"
+            ) from error
 
         vector = data["data"][0]["embedding"]
-        self.cache.set(provider, model, dimensions, text, vector)
+
+        self.cache.set(
+            provider,
+            model,
+            dimensions,
+            text,
+            vector,
+        )
 
         return vector
 

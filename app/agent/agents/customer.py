@@ -32,7 +32,10 @@ class CustomerAgent:
         result = execute_agent_tool(
             agent_key=self.key,
             tool_name="policy_search",
-            arguments={"query": query},
+            arguments={
+                "semantic_query": query.semantic_query,
+                "lexical_query": query.lexical_query,
+            },
             trace=state.trace,
             fallback_action="handoff_to_human",
         )

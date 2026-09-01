@@ -36,9 +36,13 @@ FUNCTION_TOOL_SPECS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {
+                    "semantic_query": {
                         "type": "string",
-                        "description": "融合用户问题和订单上下文后的检索问题。",
+                        "description": "保留自然语言语义并附加结构化事实的向量检索问题。",
+                    },
+                    "lexical_query": {
+                        "type": "string",
+                        "description": "由上游语义标签确定性扩展的 BM25 检索问题。",
                     },
                     "top_k": {
                         "type": "integer",
@@ -46,7 +50,7 @@ FUNCTION_TOOL_SPECS = [
                         "default": 2,
                     },
                 },
-                "required": ["query"],
+                "required": ["semantic_query", "lexical_query"],
             },
         },
     },

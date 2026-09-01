@@ -21,6 +21,7 @@ from app.core.schemas import (
     ServiceMetadata,
     StreamChatRequest,
 )
+from app.rag.index_manager import get_rag_index_manager
 from app.rag.retriever import HybridRetriever
 from app.mq.queue import list_messages
 from app.services.refund_service import process_refund_tasks
@@ -43,6 +44,11 @@ settings = get_settings()
 app = FastAPI(title=settings.app_name)
 init_database()
 knowledge_retriever = HybridRetriever()
+
+
+@app.on_event("startup")
+def refresh_knowledge_index() -> None:
+    get_rag_index_manager().refresh()
 
 
 @app.get("/")
@@ -236,7 +242,11 @@ def get_order(order_id: str) -> dict:
 
 @app.get("/knowledge/search")
 def search_knowledge(query: str, top_k: int = 2) -> dict:
-    result = policy_search(query=query, top_k=top_k)
+    result = policy_search(
+        semantic_query=query,
+        lexical_query=query,
+        top_k=top_k,
+    )
 
     return {
         "success": result.success,
