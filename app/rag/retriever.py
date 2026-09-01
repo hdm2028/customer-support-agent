@@ -5,15 +5,26 @@ from app.core.config import get_settings
 from app.rag.enterprise_knowledge import build_enterprise_catalog
 from app.rag.index_manager import RAGIndexManager, get_rag_index_manager
 from app.rag.query_context import RetrievalQuery
-from app.rag.ranking import EvidenceConstraint, rank_candidates
+from app.rag.ranking import (
+    SEMANTIC_CONSTRAINT_MODE,
+    SEMANTIC_RERANK_MODE,
+    EvidenceConstraint,
+    rank_candidates,
+)
+from app.rag.semantic_reranker import SemanticReranker, build_semantic_reranker
 from app.storage.cache import get_json_cache, set_json_cache
 
 
 class HybridRetriever:
     """Online RAG entry point backed only by the active in-memory index."""
 
-    def __init__(self, index_manager: RAGIndexManager | None = None) -> None:
+    def __init__(
+        self,
+        index_manager: RAGIndexManager | None = None,
+        semantic_reranker: SemanticReranker | None = None,
+    ) -> None:
         self.index_manager = index_manager or get_rag_index_manager()
+        self.semantic_reranker = semantic_reranker
 
     def candidate_cache_key(
         self,
@@ -95,12 +106,19 @@ class HybridRetriever:
             query,
             candidate_k=resolved_candidate_k,
         )
+        resolved_mode = mode or get_settings().rag_ranking_mode
+        if (
+            resolved_mode in {SEMANTIC_RERANK_MODE, SEMANTIC_CONSTRAINT_MODE}
+            and self.semantic_reranker is None
+        ):
+            self.semantic_reranker = build_semantic_reranker()
         ranked = rank_candidates(
             query,
             candidates,
-            mode=mode or get_settings().rag_ranking_mode,
+            mode=resolved_mode,
             top_k=top_k,
             evidence_constraint=evidence_constraint,
+            semantic_reranker=self.semantic_reranker,
         )
         return ranked[:top_k]
 

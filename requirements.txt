@@ -5,3 +5,4 @@ pymupdf
 langgraph
 redis
 pymysql
+sentence-transformers==6.0.1

@@ -1,6 +1,9 @@
 from app.rag.embedding_client import CUSTOMER_KEYWORDS
 
 
+RULE_RERANKER_VERSION = "legacy-business-rules-v1"
+
+
 BUSINESS_RERANK_RULES = [
     {
         "name": "address_change",

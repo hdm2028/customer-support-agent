@@ -96,6 +96,12 @@ class Settings:
     rag_keyword_weight: float
     rag_candidate_multiplier: int
     rag_ranking_mode: str
+    rag_semantic_reranker_provider: str
+    rag_semantic_reranker_model: str
+    rag_semantic_reranker_revision: str
+    rag_semantic_reranker_device: str
+    rag_semantic_reranker_batch_size: int
+    rag_semantic_reranker_max_length: int
     embedding_cache_ttl_seconds: int
     refund_lock_ttl_seconds: int
     refund_lock_wait_seconds: float
@@ -148,6 +154,28 @@ def get_settings() -> Settings:
         rag_keyword_weight=float(os.getenv("RAG_KEYWORD_WEIGHT", "0.10")),
         rag_candidate_multiplier=int(os.getenv("RAG_CANDIDATE_MULTIPLIER", "4")),
         rag_ranking_mode=os.getenv("RAG_RANKING_MODE", "hybrid_rule").lower(),
+        rag_semantic_reranker_provider=os.getenv(
+            "RAG_SEMANTIC_RERANKER_PROVIDER",
+            "cross_encoder",
+        ).lower(),
+        rag_semantic_reranker_model=os.getenv(
+            "RAG_SEMANTIC_RERANKER_MODEL",
+            "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+        ),
+        rag_semantic_reranker_revision=os.getenv(
+            "RAG_SEMANTIC_RERANKER_REVISION",
+            "1427fd652930e4ba29e8149678df786c240d8825",
+        ),
+        rag_semantic_reranker_device=os.getenv(
+            "RAG_SEMANTIC_RERANKER_DEVICE",
+            "cpu",
+        ).lower(),
+        rag_semantic_reranker_batch_size=int(
+            os.getenv("RAG_SEMANTIC_RERANKER_BATCH_SIZE", "8")
+        ),
+        rag_semantic_reranker_max_length=int(
+            os.getenv("RAG_SEMANTIC_RERANKER_MAX_LENGTH", "512")
+        ),
         embedding_cache_ttl_seconds=int(os.getenv("EMBEDDING_CACHE_TTL_SECONDS", "86400")),
         refund_lock_ttl_seconds=int(os.getenv("REFUND_LOCK_TTL_SECONDS", "15")),
         refund_lock_wait_seconds=float(os.getenv("REFUND_LOCK_WAIT_SECONDS", "3")),
