@@ -1,0 +1,11 @@
+{
+  "experiment": "chunk_b_fixed_512",
+  "chunk_strategy": "fixed_512",
+  "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+  "chunk_count": 37,
+  "average_token_count": 418.8108,
+  "min_token_count": 87,
+  "max_token_count": 512,
+  "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_b_fixed_512\\chunks.jsonl",
+  "chunker_version": "token-strategy-v3"
+}

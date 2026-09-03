@@ -40,10 +40,10 @@
         }
       },
       "manual_review": {
-        "review_id": "H-06355d9fe78e",
+        "review_id": "H-1e99c35f9d68",
         "status": "pending_review",
-        "created_at": "2026-08-30T14:13:07",
-        "updated_at": "2026-08-30T14:13:07",
+        "created_at": "2026-08-31T16:46:59",
+        "updated_at": "2026-08-31T16:46:59",
         "order_id": "10004",
         "user_id": "u004",
         "review_type": "refund",
@@ -58,7 +58,7 @@
         "related_id": null,
         "next_step": "由人工客服复核订单、用户凭证、风控原因和政策依据后处理。"
       },
-      "trace_id": "2bcad054-de72-453d-9dd1-8f9a5f080db3",
+      "trace_id": "eebf4b18-eabc-4e71-b589-327b94c51e6e",
       "reason": "passed"
     },
     {
@@ -88,10 +88,10 @@
         }
       },
       "manual_review": {
-        "review_id": "H-45e6dd2a172f",
+        "review_id": "H-33062e707173",
         "status": "pending_review",
-        "created_at": "2026-08-30T14:13:08",
-        "updated_at": "2026-08-30T14:13:08",
+        "created_at": "2026-08-31T16:47:00",
+        "updated_at": "2026-08-31T16:47:00",
         "order_id": "10003",
         "user_id": "u003",
         "review_type": "refund",
@@ -104,7 +104,7 @@
         "related_id": null,
         "next_step": "由人工客服复核订单、用户凭证、风控原因和政策依据后处理。"
       },
-      "trace_id": "25dd34df-d50a-454d-bf8e-b6b5e8b63a3a",
+      "trace_id": "4d6c5424-1221-461f-8680-0e7203fde3cf",
       "reason": "passed"
     },
     {
@@ -139,10 +139,10 @@
         }
       },
       "manual_review": {
-        "review_id": "H-d6e0694d36c3",
+        "review_id": "H-e7e93b55d695",
         "status": "pending_review",
-        "created_at": "2026-08-30T14:13:09",
-        "updated_at": "2026-08-30T14:13:09",
+        "created_at": "2026-08-31T16:47:01",
+        "updated_at": "2026-08-31T16:47:01",
         "order_id": "10004",
         "user_id": "u004",
         "review_type": "refund",
@@ -159,10 +159,10 @@
         "related_id": null,
         "next_step": "由人工客服复核订单、用户凭证、风控原因和政策依据后处理。"
       },
-      "trace_id": "52c56003-0131-439d-8e1a-a251811032d9",
+      "trace_id": "3ced8d34-31c5-463a-bd41-5733279d8112",
       "reason": "passed"
     }
   ],
   "report_name": "reliability_high_risk_review",
-  "created_at": "2026-08-30T14:13:10"
+  "created_at": "2026-08-31T16:47:01"
 }

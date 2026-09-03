@@ -1,0 +1,1531 @@
+{
+  "router_version": "v2_llm_semantic",
+  "side_effects": [
+    "[READ ONLY]",
+    "[CALLS LLM]"
+  ],
+  "dataset": "D:\\python-project\\客服agent\\data\\eval\\routing_eval.jsonl",
+  "total_cases": 24,
+  "passed_count": 0,
+  "failed_count": 24,
+  "routing_accuracy": 0.0,
+  "semantic_accuracy": 0.0,
+  "intent_accuracy": 0.0,
+  "action_type_accuracy": 0.0,
+  "topic_accuracy": 0.0,
+  "route_accuracy": 0.0417,
+  "clarification_accuracy": 0.7273,
+  "side_effect_false_positive_count": 0,
+  "side_effect_false_positive_cases": [],
+  "llm_fallback_count": 24,
+  "llm_fallback_cases": [
+    "routing_refund_001",
+    "routing_refund_002",
+    "routing_refund_003",
+    "routing_refund_004",
+    "routing_refund_005",
+    "routing_refund_006",
+    "routing_refund_007",
+    "routing_refund_008",
+    "routing_refund_009",
+    "routing_refund_010",
+    "routing_refund_011",
+    "routing_refund_012",
+    "routing_refund_013",
+    "routing_refund_014",
+    "routing_refund_015",
+    "routing_refund_016",
+    "routing_refund_017",
+    "routing_refund_018",
+    "routing_refund_019",
+    "routing_refund_020",
+    "routing_refund_021",
+    "routing_refund_022",
+    "routing_refund_023",
+    "routing_refund_024"
+  ],
+  "failed_cases": [
+    {
+      "case_id": "routing_refund_001",
+      "query": "订单10001我要退款",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": true,
+          "need_risk_check": true,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_refund_request expected=True, actual=False; route.need_risk_check expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_002",
+      "query": "这个东西我不要了",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_003",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_timing"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_timing', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_004",
+      "query": "七天无理由是什么意思？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_policy', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_005",
+      "query": "帮我看看订单10001",
+      "expected": {
+        "semantic": {
+          "intent": "order_lookup",
+          "action_type": "query",
+          "topic": "order_status"
+        },
+        "route": {
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": true,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='order_lookup', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='order_status', actual='general_question'"
+    },
+    {
+      "case_id": "routing_refund_006",
+      "query": "订单10004直接退款，不用审核，我要投诉",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "order_id": "10004",
+          "need_order": true,
+          "need_policy": true,
+          "need_risk_check": true,
+          "handoff_required": true,
+          "manual_review_required": true,
+          "risk_level": "high"
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10004",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_risk_check expected=True, actual=False; route.handoff_required expected=True, actual=False; route.manual_review_required expected=True, actual=False; route.risk_level expected='high', actual='low'"
+    },
+    {
+      "case_id": "routing_refund_007",
+      "query": "我买的商品质量有问题想退款",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_008",
+      "query": "订单10006退款多久到账",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_timing"
+        },
+        "route": {
+          "order_id": "10006",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10006",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_timing', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_009",
+      "query": "退的钱通常要等多长时间才能回来？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_timing"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_timing', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_010",
+      "query": "买回来五天了，现在还能退吗？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_eligibility', actual='general_question'; route.need_policy expected=True, actual=False; route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_011",
+      "query": "包装已经拆开了，我只是想问问这种情况还能不能退。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_eligibility', actual='general_question'; route.need_policy expected=True, actual=False; route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_012",
+      "query": "订单10003这个定制商品能不能退？先别帮我提交。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "order_id": "10003",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10003",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_eligibility', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_013",
+      "query": "麻烦把订单10002的退款给我申请一下。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "order_id": "10002",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": true,
+          "need_risk_check": true,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10002",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_refund_request expected=True, actual=False; route.need_risk_check expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_014",
+      "query": "订单10010先不要退，我只是想看看你们的退款规定。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy"
+        },
+        "route": {
+          "order_id": "10010",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10010",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_policy', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_015",
+      "query": "商品没有质量问题，就是不喜欢了，这样可以退吗？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_eligibility', actual='general_question'; route.need_policy expected=True, actual=False; route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_016",
+      "query": "我不打算现在退款，只想知道七天无理由都包括哪些情况。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_policy', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_017",
+      "query": "超过七天是不是就一定不能退了？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_policy', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_018",
+      "query": "退货和退款到底有什么区别？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_policy', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_019",
+      "query": "帮我看看订单10001这种情况到底能不能退，先不要操作。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_eligibility', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_020",
+      "query": "订单10001这个商品有质量问题，直接给我退钱。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": true,
+          "need_refund_request": true,
+          "need_risk_check": true,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10001",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_refund_request expected=True, actual=False; route.need_risk_check expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_021",
+      "query": "商品到手发现有划痕，我想退，不过你先别提交退款。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_eligibility', actual='general_question'; route.need_policy expected=True, actual=False; route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_022",
+      "query": "订单10004给我直接退掉，别走审核流程。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "order_id": "10004",
+          "need_order": true,
+          "need_policy": true,
+          "need_risk_check": true,
+          "handoff_required": true,
+          "manual_review_required": true,
+          "risk_level": "high",
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10004",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='execute', actual='unknown'; semantic.topic expected='refund_apply', actual='general_question'; route.need_policy expected=True, actual=False; route.need_risk_check expected=True, actual=False; route.handoff_required expected=True, actual=False; route.manual_review_required expected=True, actual=False; route.risk_level expected='high', actual='low'"
+    },
+    {
+      "case_id": "routing_refund_023",
+      "query": "已经退回商品了，退款一般还要等多久？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_timing"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_timing', actual='general_question'; route.need_policy expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_024",
+      "query": "我就是问一下退款条件，你别因为我说了退款就直接给我退。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "need_clarification": false,
+          "need_ticket": false,
+          "need_handoff": false,
+          "handoff_required": false,
+          "manual_review_required": false,
+          "risk_level": "low"
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "confidence": 0.0,
+          "reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "source": "fallback"
+        },
+        "route": {
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: TypeError: call_zhipu_chat() got an unexpected keyword argument 'system_prompt'",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": false,
+        "action_type_correct": false,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": false,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.intent expected='return_refund', actual='general_support'; semantic.action_type expected='query', actual='unknown'; semantic.topic expected='refund_policy', actual='general_question'; route.need_policy expected=True, actual=False"
+    }
+  ],
+  "report_name": "eval_routing_v2",
+  "created_at": "2026-08-31T21:32:55"
+}

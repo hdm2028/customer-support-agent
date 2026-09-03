@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from threading import RLock
 
@@ -8,6 +10,7 @@ from app.rag.ingestion.service import KnowledgeIngestionService
 from app.rag.models import DocumentChunk
 from app.rag.retrieval_text import build_retrieval_text, retrieval_text_hash
 from app.rag.vector_store import InMemoryVectorStore
+from app.core.config import CHUNK_STRATEGY
 
 
 @dataclass(frozen=True)
@@ -27,8 +30,11 @@ class RAGIndexManager:
         self,
         ingestion: KnowledgeIngestionService | None = None,
         embedding_provider: EmbeddingProvider | None = None,
+        chunk_strategy: str | None = None,
     ) -> None:
-        self.ingestion = ingestion or KnowledgeIngestionService()
+        self.ingestion = ingestion or KnowledgeIngestionService(
+            chunk_strategy=chunk_strategy or CHUNK_STRATEGY
+        )
         self.embedding_provider = embedding_provider or get_embedding_provider()
         self._active_index: HybridRAGIndex | None = None
         self._active_embedding_identity: str | None = None

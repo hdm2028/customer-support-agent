@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -39,12 +41,14 @@ class KnowledgeIngestionService:
         path_metadata: dict[str, dict] | None = None,
         parser_version: str = PARSER_VERSION,
         chunker_version: str = CHUNKER_VERSION,
+        chunk_strategy: str | None = None,
     ) -> None:
         self.knowledge_dir = knowledge_dir
         self.manifest_path = manifest_path
         self.recursive = recursive
         self.parser_version = parser_version
         self.chunker_version = chunker_version
+        self.chunk_strategy = chunk_strategy
         self.metadata_enricher = MetadataEnricher(
             explicit_metadata=explicit_metadata,
             path_metadata=path_metadata,
@@ -74,6 +78,7 @@ class KnowledgeIngestionService:
             source_chunks = chunk_documents(
                 loaded_documents,
                 chunker_version=self.chunker_version,
+                chunk_strategy=self.chunk_strategy,
             )
             documents.extend(loaded_documents)
             chunks.extend(source_chunks)

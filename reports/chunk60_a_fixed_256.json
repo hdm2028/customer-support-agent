@@ -1,0 +1,21 @@
+{
+  "skipped": true,
+  "skip_reason": "FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\python-project\\\\客服agent\\\\data\\\\eval\\\\rag_eval_60.jsonl'",
+  "side_effects": [
+    "[READ ONLY BUSINESS DATA]",
+    "[REFRESHES IN-MEMORY RAG INDEX]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]",
+    "[LOADS LOCAL CROSS-ENCODER]"
+  ],
+  "total_cases": 0,
+  "passed_count": 0,
+  "failed_count": 1,
+  "failed_cases": [],
+  "results": [],
+  "dataset": "D:\\python-project\\客服agent\\data\\eval\\rag_eval_60.jsonl",
+  "execution_error": "FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\python-project\\\\客服agent\\\\data\\\\eval\\\\rag_eval_60.jsonl'",
+  "chunk_strategy": "fixed_256",
+  "report_name": "chunk60_a_fixed_256",
+  "created_at": "2026-09-02T17:01:48"
+}

@@ -1,0 +1,960 @@
+{
+  "schema_version": "rag-chunk-strategy-ablation-summary-v1",
+  "created_at": "2026-09-02T12:35:33+00:00",
+  "dataset_validation": {
+    "report_type": "rag_dataset_validation",
+    "passed": true,
+    "dataset": "D:\\python-project\\客服agent\\data\\eval\\rag_eval_holdout.jsonl",
+    "dataset_sha256": "sha256:1734f22a5a5b6c06af5116ac6f3958f3ab8c02226105404564c353b23daec591",
+    "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+    "dataset_cases": 60,
+    "v2_cases": 60,
+    "knowledge_markdown_files": 15,
+    "schema_validation": {
+      "passed": true,
+      "duplicate_case_ids": 0
+    },
+    "ground_truth_validation": {
+      "passed": true,
+      "error_count": 0,
+      "error_counts": {},
+      "errors": []
+    },
+    "dataset_distribution": {
+      "scenario_type": {
+        "authority_conflict": 5,
+        "cross_policy": 16,
+        "exception_override": 8,
+        "insufficient_information": 5,
+        "semantic_confusion": 8,
+        "single_policy": 8,
+        "state_conditioned": 10
+      },
+      "difficulty": {
+        "easy": 8,
+        "hard": 36,
+        "medium": 16
+      },
+      "context_mode": {
+        "explicit": 17,
+        "fact_enriched": 15,
+        "minimal": 28
+      },
+      "evidence_type": {
+        "address_change": 3,
+        "complaint_escalation": 2,
+        "custom_product": 4,
+        "human_review": 3,
+        "invoice": 1,
+        "membership_restriction": 4,
+        "order_cancel": 6,
+        "payment_exception": 1,
+        "product_quality": 16,
+        "refund_application": 1,
+        "refund_eligibility": 13,
+        "refund_idempotency": 4,
+        "refund_risk_review": 5,
+        "refund_state": 6,
+        "refund_timing": 3,
+        "replacement": 3,
+        "shipping_delay": 4,
+        "shipping_intercept": 3,
+        "shipping_status": 3,
+        "signed_not_received": 4,
+        "warranty": 6
+      }
+    },
+    "knowledge_reference_index": {
+      "ambiguous_basenames": {}
+    },
+    "created_at": "2026-09-02T20:35:32"
+  },
+  "experiment": {
+    "chunk_strategies": [
+      "fixed_128",
+      "fixed_256",
+      "fixed_512",
+      "markdown",
+      "type_aware"
+    ],
+    "ranking_modes": {
+      "hybrid": "A",
+      "hybrid_rule": "B",
+      "hybrid_semantic": "C",
+      "hybrid_semantic_constraint": "D",
+      "hybrid_semantic_fusion": "E"
+    },
+    "candidate_k": 20,
+    "top_k": 5,
+    "semantic_query_mode": "semantic",
+    "semantic_fusion": {
+      "retrieval_weight": 0.5,
+      "semantic_weight": 0.5
+    }
+  },
+  "chunk_strategy_definitions": [
+    {
+      "chunk_strategy": "fixed_128",
+      "registry": "app/rag/ingestion/chunker.py:CHUNK_STRATEGIES",
+      "call": "KnowledgeIngestionService(chunk_strategy=<name>) -> chunk_documents(..., chunk_strategy=<name>)",
+      "registered_limit": 128,
+      "registered_overlap": 16,
+      "limit_unit": "tokens",
+      "method": "section-aware fixed token windows",
+      "behavior": "128-token windows with 16-token overlap within each source section",
+      "section_behavior": "preserves RawDocument.section or uses each Markdown heading title as chunk.section",
+      "implementation": "app/rag/ingestion/chunker.py:_fixed_token_chunks"
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "registry": "app/rag/ingestion/chunker.py:CHUNK_STRATEGIES",
+      "call": "KnowledgeIngestionService(chunk_strategy=<name>) -> chunk_documents(..., chunk_strategy=<name>)",
+      "registered_limit": 256,
+      "registered_overlap": 32,
+      "limit_unit": "tokens",
+      "method": "section-aware fixed token windows",
+      "behavior": "256-token windows with 32-token overlap within each source section",
+      "section_behavior": "preserves RawDocument.section or uses each Markdown heading title as chunk.section",
+      "implementation": "app/rag/ingestion/chunker.py:_fixed_token_chunks"
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "registry": "app/rag/ingestion/chunker.py:CHUNK_STRATEGIES",
+      "call": "KnowledgeIngestionService(chunk_strategy=<name>) -> chunk_documents(..., chunk_strategy=<name>)",
+      "registered_limit": 512,
+      "registered_overlap": 64,
+      "limit_unit": "tokens",
+      "method": "section-aware fixed token windows",
+      "behavior": "512-token windows with 64-token overlap within each source section",
+      "section_behavior": "preserves RawDocument.section or uses each Markdown heading title as chunk.section",
+      "implementation": "app/rag/ingestion/chunker.py:_fixed_token_chunks"
+    },
+    {
+      "chunk_strategy": "markdown",
+      "registry": "app/rag/ingestion/chunker.py:CHUNK_STRATEGIES",
+      "call": "KnowledgeIngestionService(chunk_strategy=<name>) -> chunk_documents(..., chunk_strategy=<name>)",
+      "registered_limit": 700,
+      "registered_overlap": 0,
+      "limit_unit": "tokens",
+      "method": "Markdown heading sections",
+      "behavior": "split on Markdown headings at all levels; oversized sections split by paragraph/sentence up to 700 tokens",
+      "section_behavior": "uses each Markdown heading title as chunk.section",
+      "implementation": "app/rag/ingestion/chunker.py:_section_blocks",
+      "oversized_section_limit_tokens": 700
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "registry": "app/rag/ingestion/chunker.py:CHUNK_STRATEGIES",
+      "call": "KnowledgeIngestionService(chunk_strategy=<name>) -> chunk_documents(..., chunk_strategy=<name>)",
+      "registered_limit": 700,
+      "registered_overlap": 0,
+      "limit_unit": "tokens",
+      "method": "top-level structured sections",
+      "behavior": "split on level-2 Markdown headings; oversized sections split by paragraph/sentence up to 700 tokens",
+      "section_behavior": "uses each level-2 Markdown heading title as chunk.section",
+      "implementation": "app/rag/ingestion/chunker.py:_section_blocks",
+      "oversized_section_limit_tokens": 700
+    }
+  ],
+  "chunk_strategy_summary_a_hybrid": [
+    {
+      "chunk_strategy": "fixed_128",
+      "chunk_count": 179,
+      "kb_version": "kb_3f628b720862cd75e096f5a6",
+      "candidate_primary_target_hits_at_20": 57,
+      "overall_pass": "37/60",
+      "passed_count": 37,
+      "total_cases": 60,
+      "hit_at_1": 0.3167,
+      "hit_at_3": 0.6167,
+      "hit_at_5": 0.7833,
+      "mrr": 0.4967,
+      "candidate_evidence_recall_at_20": 0.9667,
+      "evidence_coverage_rate": 0.8111
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "chunk_count": 158,
+      "kb_version": "kb_de1f1100df9492311b410b45",
+      "candidate_primary_target_hits_at_20": 57,
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.8,
+      "mrr": 0.5333,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8528
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "chunk_count": 158,
+      "kb_version": "kb_250adc39590135bd83cfe5d9",
+      "candidate_primary_target_hits_at_20": 57,
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.8,
+      "mrr": 0.5333,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8528
+    },
+    {
+      "chunk_strategy": "markdown",
+      "chunk_count": 158,
+      "kb_version": "kb_4ff960fe7a31f3e16f573991",
+      "candidate_primary_target_hits_at_20": 57,
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.8,
+      "mrr": 0.5333,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8528
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "chunk_count": 144,
+      "kb_version": "kb_c80034f2450c8bb237f05286",
+      "candidate_primary_target_hits_at_20": 57,
+      "overall_pass": "40/60",
+      "passed_count": 40,
+      "total_cases": 60,
+      "hit_at_1": 0.3,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.7833,
+      "mrr": 0.4931,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8194
+    }
+  ],
+  "ranking_summary": [
+    {
+      "chunk_strategy": "fixed_128",
+      "mode": "A",
+      "mode_name": "hybrid",
+      "overall_pass": "37/60",
+      "passed_count": 37,
+      "total_cases": 60,
+      "hit_at_1": 0.3167,
+      "hit_at_3": 0.6167,
+      "hit_at_5": 0.7833,
+      "mrr": 0.4967,
+      "candidate_evidence_recall_at_20": 0.9667,
+      "evidence_coverage_rate": 0.8111
+    },
+    {
+      "chunk_strategy": "fixed_128",
+      "mode": "B",
+      "mode_name": "hybrid_rule",
+      "overall_pass": "38/60",
+      "passed_count": 38,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.7,
+      "hit_at_5": 0.75,
+      "mrr": 0.5172,
+      "candidate_evidence_recall_at_20": 0.9667,
+      "evidence_coverage_rate": 0.7583
+    },
+    {
+      "chunk_strategy": "fixed_128",
+      "mode": "C",
+      "mode_name": "hybrid_semantic",
+      "overall_pass": "34/60",
+      "passed_count": 34,
+      "total_cases": 60,
+      "hit_at_1": 0.2333,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.75,
+      "mrr": 0.4131,
+      "candidate_evidence_recall_at_20": 0.9667,
+      "evidence_coverage_rate": 0.7944
+    },
+    {
+      "chunk_strategy": "fixed_128",
+      "mode": "D",
+      "mode_name": "hybrid_semantic_constraint",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.2333,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7833,
+      "mrr": 0.4206,
+      "candidate_evidence_recall_at_20": 0.9667,
+      "evidence_coverage_rate": 0.8111
+    },
+    {
+      "chunk_strategy": "fixed_128",
+      "mode": "E",
+      "mode_name": "hybrid_semantic_fusion",
+      "overall_pass": "35/60",
+      "passed_count": 35,
+      "total_cases": 60,
+      "hit_at_1": 0.2833,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.75,
+      "mrr": 0.465,
+      "candidate_evidence_recall_at_20": 0.9667,
+      "evidence_coverage_rate": 0.8222
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "mode": "A",
+      "mode_name": "hybrid",
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.8,
+      "mrr": 0.5333,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8528
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "mode": "B",
+      "mode_name": "hybrid_rule",
+      "overall_pass": "40/60",
+      "passed_count": 40,
+      "total_cases": 60,
+      "hit_at_1": 0.35,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.75,
+      "mrr": 0.5039,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8111
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "mode": "C",
+      "mode_name": "hybrid_semantic",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.25,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4331,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8306
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "mode": "D",
+      "mode_name": "hybrid_semantic_constraint",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.25,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4331,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8389
+    },
+    {
+      "chunk_strategy": "fixed_256",
+      "mode": "E",
+      "mode_name": "hybrid_semantic_fusion",
+      "overall_pass": "37/60",
+      "passed_count": 37,
+      "total_cases": 60,
+      "hit_at_1": 0.3333,
+      "hit_at_3": 0.6667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.5075,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8222
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "mode": "A",
+      "mode_name": "hybrid",
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.8,
+      "mrr": 0.5333,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8528
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "mode": "B",
+      "mode_name": "hybrid_rule",
+      "overall_pass": "40/60",
+      "passed_count": 40,
+      "total_cases": 60,
+      "hit_at_1": 0.35,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.75,
+      "mrr": 0.5039,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8111
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "mode": "C",
+      "mode_name": "hybrid_semantic",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.25,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4331,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8306
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "mode": "D",
+      "mode_name": "hybrid_semantic_constraint",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.25,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4331,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8389
+    },
+    {
+      "chunk_strategy": "fixed_512",
+      "mode": "E",
+      "mode_name": "hybrid_semantic_fusion",
+      "overall_pass": "37/60",
+      "passed_count": 37,
+      "total_cases": 60,
+      "hit_at_1": 0.3333,
+      "hit_at_3": 0.6667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.5075,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8222
+    },
+    {
+      "chunk_strategy": "markdown",
+      "mode": "A",
+      "mode_name": "hybrid",
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.3667,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.8,
+      "mrr": 0.5333,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8528
+    },
+    {
+      "chunk_strategy": "markdown",
+      "mode": "B",
+      "mode_name": "hybrid_rule",
+      "overall_pass": "40/60",
+      "passed_count": 40,
+      "total_cases": 60,
+      "hit_at_1": 0.35,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.75,
+      "mrr": 0.5039,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8111
+    },
+    {
+      "chunk_strategy": "markdown",
+      "mode": "C",
+      "mode_name": "hybrid_semantic",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.25,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4331,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8306
+    },
+    {
+      "chunk_strategy": "markdown",
+      "mode": "D",
+      "mode_name": "hybrid_semantic_constraint",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.25,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4331,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8389
+    },
+    {
+      "chunk_strategy": "markdown",
+      "mode": "E",
+      "mode_name": "hybrid_semantic_fusion",
+      "overall_pass": "37/60",
+      "passed_count": 37,
+      "total_cases": 60,
+      "hit_at_1": 0.3333,
+      "hit_at_3": 0.6667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.5075,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8222
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "mode": "A",
+      "mode_name": "hybrid",
+      "overall_pass": "40/60",
+      "passed_count": 40,
+      "total_cases": 60,
+      "hit_at_1": 0.3,
+      "hit_at_3": 0.65,
+      "hit_at_5": 0.7833,
+      "mrr": 0.4931,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8194
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "mode": "B",
+      "mode_name": "hybrid_rule",
+      "overall_pass": "39/60",
+      "passed_count": 39,
+      "total_cases": 60,
+      "hit_at_1": 0.35,
+      "hit_at_3": 0.6333,
+      "hit_at_5": 0.75,
+      "mrr": 0.5025,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.7944
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "mode": "C",
+      "mode_name": "hybrid_semantic",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.2667,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4406,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8306
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "mode": "D",
+      "mode_name": "hybrid_semantic_constraint",
+      "overall_pass": "36/60",
+      "passed_count": 36,
+      "total_cases": 60,
+      "hit_at_1": 0.2667,
+      "hit_at_3": 0.5667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4406,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8389
+    },
+    {
+      "chunk_strategy": "type_aware",
+      "mode": "E",
+      "mode_name": "hybrid_semantic_fusion",
+      "overall_pass": "37/60",
+      "passed_count": 37,
+      "total_cases": 60,
+      "hit_at_1": 0.3,
+      "hit_at_3": 0.6667,
+      "hit_at_5": 0.7667,
+      "mrr": 0.4908,
+      "candidate_evidence_recall_at_20": 0.975,
+      "evidence_coverage_rate": 0.8222
+    }
+  ],
+  "rank_movement": {
+    "fixed_128": {
+      "A_to_B": {
+        "promoted": 19,
+        "unchanged": 13,
+        "demoted": 9,
+        "recovered_to_top5": 4,
+        "dropped_from_top5": 6,
+        "outside_top5_both": 9,
+        "net_top5": -2
+      },
+      "A_to_C": {
+        "promoted": 7,
+        "unchanged": 15,
+        "demoted": 19,
+        "recovered_to_top5": 4,
+        "dropped_from_top5": 6,
+        "outside_top5_both": 9,
+        "net_top5": -2
+      },
+      "C_to_D": {
+        "promoted": 0,
+        "unchanged": 45,
+        "demoted": 0,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 0,
+        "outside_top5_both": 13,
+        "net_top5": 2
+      },
+      "A_to_E": {
+        "promoted": 7,
+        "unchanged": 23,
+        "demoted": 12,
+        "recovered_to_top5": 3,
+        "dropped_from_top5": 5,
+        "outside_top5_both": 10,
+        "net_top5": -2
+      },
+      "C_to_E": {
+        "promoted": 17,
+        "unchanged": 22,
+        "demoted": 3,
+        "recovered_to_top5": 3,
+        "dropped_from_top5": 3,
+        "outside_top5_both": 12,
+        "net_top5": 0
+      }
+    },
+    "fixed_256": {
+      "A_to_B": {
+        "promoted": 17,
+        "unchanged": 15,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 5,
+        "outside_top5_both": 10,
+        "net_top5": -3
+      },
+      "A_to_C": {
+        "promoted": 5,
+        "unchanged": 16,
+        "demoted": 21,
+        "recovered_to_top5": 4,
+        "dropped_from_top5": 6,
+        "outside_top5_both": 8,
+        "net_top5": -2
+      },
+      "C_to_D": {
+        "promoted": 0,
+        "unchanged": 45,
+        "demoted": 0,
+        "recovered_to_top5": 1,
+        "dropped_from_top5": 1,
+        "outside_top5_both": 13,
+        "net_top5": 0
+      },
+      "A_to_E": {
+        "promoted": 5,
+        "unchanged": 28,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 4,
+        "outside_top5_both": 10,
+        "net_top5": -2
+      },
+      "C_to_E": {
+        "promoted": 21,
+        "unchanged": 20,
+        "demoted": 3,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 2,
+        "outside_top5_both": 12,
+        "net_top5": 0
+      }
+    },
+    "fixed_512": {
+      "A_to_B": {
+        "promoted": 17,
+        "unchanged": 15,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 5,
+        "outside_top5_both": 10,
+        "net_top5": -3
+      },
+      "A_to_C": {
+        "promoted": 5,
+        "unchanged": 16,
+        "demoted": 21,
+        "recovered_to_top5": 4,
+        "dropped_from_top5": 6,
+        "outside_top5_both": 8,
+        "net_top5": -2
+      },
+      "C_to_D": {
+        "promoted": 0,
+        "unchanged": 45,
+        "demoted": 0,
+        "recovered_to_top5": 1,
+        "dropped_from_top5": 1,
+        "outside_top5_both": 13,
+        "net_top5": 0
+      },
+      "A_to_E": {
+        "promoted": 5,
+        "unchanged": 28,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 4,
+        "outside_top5_both": 10,
+        "net_top5": -2
+      },
+      "C_to_E": {
+        "promoted": 21,
+        "unchanged": 20,
+        "demoted": 3,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 2,
+        "outside_top5_both": 12,
+        "net_top5": 0
+      }
+    },
+    "markdown": {
+      "A_to_B": {
+        "promoted": 17,
+        "unchanged": 15,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 5,
+        "outside_top5_both": 10,
+        "net_top5": -3
+      },
+      "A_to_C": {
+        "promoted": 5,
+        "unchanged": 16,
+        "demoted": 21,
+        "recovered_to_top5": 4,
+        "dropped_from_top5": 6,
+        "outside_top5_both": 8,
+        "net_top5": -2
+      },
+      "C_to_D": {
+        "promoted": 0,
+        "unchanged": 45,
+        "demoted": 0,
+        "recovered_to_top5": 1,
+        "dropped_from_top5": 1,
+        "outside_top5_both": 13,
+        "net_top5": 0
+      },
+      "A_to_E": {
+        "promoted": 5,
+        "unchanged": 28,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 4,
+        "outside_top5_both": 10,
+        "net_top5": -2
+      },
+      "C_to_E": {
+        "promoted": 21,
+        "unchanged": 20,
+        "demoted": 3,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 2,
+        "outside_top5_both": 12,
+        "net_top5": 0
+      }
+    },
+    "type_aware": {
+      "A_to_B": {
+        "promoted": 20,
+        "unchanged": 11,
+        "demoted": 12,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 4,
+        "outside_top5_both": 11,
+        "net_top5": -2
+      },
+      "A_to_C": {
+        "promoted": 8,
+        "unchanged": 15,
+        "demoted": 19,
+        "recovered_to_top5": 4,
+        "dropped_from_top5": 5,
+        "outside_top5_both": 9,
+        "net_top5": -1
+      },
+      "C_to_D": {
+        "promoted": 0,
+        "unchanged": 45,
+        "demoted": 0,
+        "recovered_to_top5": 1,
+        "dropped_from_top5": 1,
+        "outside_top5_both": 13,
+        "net_top5": 0
+      },
+      "A_to_E": {
+        "promoted": 8,
+        "unchanged": 25,
+        "demoted": 11,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 3,
+        "outside_top5_both": 11,
+        "net_top5": -1
+      },
+      "C_to_E": {
+        "promoted": 19,
+        "unchanged": 21,
+        "demoted": 4,
+        "recovered_to_top5": 2,
+        "dropped_from_top5": 2,
+        "outside_top5_both": 12,
+        "net_top5": 0
+      }
+    }
+  },
+  "objective_analysis": {
+    "a_hybrid_metric_leaders": {
+      "candidate_evidence_recall_at_20": [
+        "fixed_256",
+        "fixed_512",
+        "markdown",
+        "type_aware"
+      ],
+      "hit_at_1": [
+        "fixed_256",
+        "fixed_512",
+        "markdown"
+      ],
+      "hit_at_3": [
+        "fixed_256",
+        "fixed_512",
+        "markdown",
+        "type_aware"
+      ],
+      "hit_at_5": [
+        "fixed_256",
+        "fixed_512",
+        "markdown"
+      ],
+      "mrr": [
+        "fixed_256",
+        "fixed_512",
+        "markdown"
+      ],
+      "evidence_coverage_rate": [
+        "fixed_256",
+        "fixed_512",
+        "markdown"
+      ],
+      "passed_count": [
+        "type_aware"
+      ]
+    },
+    "one_strategy_leads_all_a_metrics": [],
+    "recall_ranking_coverage_tradeoff": true,
+    "cross_encoder_metric_ranges_across_chunk_strategies": {
+      "hit_at_1": 0.0334,
+      "hit_at_3": 0.0,
+      "hit_at_5": 0.0167,
+      "mrr": 0.0275,
+      "candidate_evidence_recall_at_20": 0.0083,
+      "evidence_coverage_rate": 0.0362
+    },
+    "section_aware_ground_truth_compatibility": {
+      "fixed_128": {
+        "status": "compatible",
+        "candidate_primary_target_hits_at_20": 57,
+        "reason": "The strategy emits named source sections used by Holdout v2 targets; candidate misses are measured retrieval outcomes."
+      },
+      "fixed_256": {
+        "status": "compatible",
+        "candidate_primary_target_hits_at_20": 57,
+        "reason": "The strategy emits named source sections used by Holdout v2 targets; candidate misses are measured retrieval outcomes."
+      },
+      "fixed_512": {
+        "status": "compatible",
+        "candidate_primary_target_hits_at_20": 57,
+        "reason": "The strategy emits named source sections used by Holdout v2 targets; candidate misses are measured retrieval outcomes."
+      },
+      "markdown": {
+        "status": "compatible",
+        "candidate_primary_target_hits_at_20": 57,
+        "reason": "The strategy emits named source sections used by Holdout v2 targets; candidate misses are measured retrieval outcomes."
+      },
+      "type_aware": {
+        "status": "compatible",
+        "candidate_primary_target_hits_at_20": 57,
+        "reason": "The strategy emits named source sections used by Holdout v2 targets; candidate misses are measured retrieval outcomes."
+      }
+    },
+    "evaluable_strategies": [
+      "fixed_128",
+      "fixed_256",
+      "fixed_512",
+      "markdown",
+      "type_aware"
+    ],
+    "cross_encoder_metric_ranges_across_evaluable_strategies": {
+      "hit_at_1": 0.0334,
+      "hit_at_3": 0.0,
+      "hit_at_5": 0.0167,
+      "mrr": 0.0275,
+      "candidate_evidence_recall_at_20": 0.0083,
+      "evidence_coverage_rate": 0.0362
+    },
+    "fusion_consistency": {
+      "fixed_128": {
+        "a_to_c_negative_movements": 25,
+        "a_to_e_negative_movements": 17,
+        "negative_movement_reduction": 8,
+        "reduces_negative_movements": true,
+        "e_minus_c_mrr": 0.0519,
+        "e_minus_c_hit_at_5": 0.0
+      },
+      "fixed_256": {
+        "a_to_c_negative_movements": 27,
+        "a_to_e_negative_movements": 15,
+        "negative_movement_reduction": 12,
+        "reduces_negative_movements": true,
+        "e_minus_c_mrr": 0.0744,
+        "e_minus_c_hit_at_5": 0.0
+      },
+      "fixed_512": {
+        "a_to_c_negative_movements": 27,
+        "a_to_e_negative_movements": 15,
+        "negative_movement_reduction": 12,
+        "reduces_negative_movements": true,
+        "e_minus_c_mrr": 0.0744,
+        "e_minus_c_hit_at_5": 0.0
+      },
+      "markdown": {
+        "a_to_c_negative_movements": 27,
+        "a_to_e_negative_movements": 15,
+        "negative_movement_reduction": 12,
+        "reduces_negative_movements": true,
+        "e_minus_c_mrr": 0.0744,
+        "e_minus_c_hit_at_5": 0.0
+      },
+      "type_aware": {
+        "a_to_c_negative_movements": 24,
+        "a_to_e_negative_movements": 14,
+        "negative_movement_reduction": 10,
+        "reduces_negative_movements": true,
+        "e_minus_c_mrr": 0.0502,
+        "e_minus_c_hit_at_5": 0.0
+      }
+    },
+    "fusion_reduces_negative_movements_for_all_evaluable_strategies": true,
+    "fusion_reduces_negative_movements_for_all_registered_strategies": true
+  }
+}

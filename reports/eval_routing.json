@@ -1,20 +1,23 @@
 {
-  "created_at": "2026-08-30T14:15:01",
+  "created_at": "2026-08-31T22:20:07",
+  "router_version": "v1",
   "side_effects": [
     "[READ ONLY]"
   ],
   "dataset": "D:\\python-project\\客服agent\\data\\eval\\routing_eval.jsonl",
-  "total_cases": 8,
-  "correct_cases": 8,
-  "passed_count": 8,
+  "total_cases": 24,
+  "correct_cases": 24,
+  "passed_count": 24,
   "failed_count": 0,
   "routing_accuracy": 1.0,
+  "intent_accuracy": 1.0,
+  "route_accuracy": 1.0,
   "agent_precision": 1.0,
   "agent_recall": 1.0,
   "agent_f1": 1.0,
   "agent_metrics_by_agent": {
     "售后 Agent": {
-      "tp": 4,
+      "tp": 10,
       "fp": 0,
       "fn": 0,
       "precision": 1.0,
@@ -22,7 +25,7 @@
       "f1": 1.0
     },
     "客服 Agent": {
-      "tp": 7,
+      "tp": 23,
       "fp": 0,
       "fn": 0,
       "precision": 1.0,
@@ -30,7 +33,7 @@
       "f1": 1.0
     },
     "风控 Agent": {
-      "tp": 2,
+      "tp": 5,
       "fp": 0,
       "fn": 0,
       "precision": 1.0,
@@ -59,8 +62,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.75,
-        "routing_reason": "命中退货退款意图关键词：退款。",
+        "confidence": 0.95,
+        "routing_reason": "用户明确表示要退款，且提供了订单号，表明有具体的退款需求。",
         "agent_plan": [
           "客服 Agent",
           "售后 Agent",
@@ -101,7 +104,7 @@
         "风控 Agent"
       ],
       "reason": "passed",
-      "notes": "明确退款：必须识别为退款申请，并规划订单、政策、风控和退款工具。"
+      "notes": "明确退款：用户明确要求执行退款。订单号已提供，应进入订单、政策、风控和退款执行链路。"
     },
     {
       "case_id": "routing_refund_002",
@@ -119,8 +122,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.67,
-        "routing_reason": "命中退货退款意图关键词：不要了。",
+        "confidence": 0.85,
+        "routing_reason": "用户表达了对商品的否定态度，通常意味着想要退货。",
         "agent_plan": [
           "客服 Agent"
         ],
@@ -149,7 +152,7 @@
         "客服 Agent"
       ],
       "reason": "passed",
-      "notes": "模糊退款：缺订单号时不能执行退款，只能追问。"
+      "notes": "退款诉求但缺少订单号：语义上属于退款执行，业务层必须阻止直接执行并追问订单号。"
     },
     {
       "case_id": "routing_refund_003",
@@ -168,8 +171,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.67,
-        "routing_reason": "命中退货退款意图关键词：退款。",
+        "confidence": 0.95,
+        "routing_reason": "用户询问退款到账时间，属于退款进度相关查询。",
         "agent_plan": [
           "客服 Agent"
         ],
@@ -200,7 +203,7 @@
         "客服 Agent"
       ],
       "reason": "passed",
-      "notes": "退款咨询不是执行退款，不应要求具体订单才能解释一般到账规则。"
+      "notes": "退款时效咨询：属于通用退款政策查询，不要求具体订单，也不能触发退款执行。"
     },
     {
       "case_id": "routing_refund_004",
@@ -219,8 +222,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.67,
-        "routing_reason": "命中退货退款意图关键词：七天无理由。",
+        "confidence": 0.95,
+        "routing_reason": "用户询问七天无理由的具体含义，属于退款政策范畴。",
         "agent_plan": [
           "客服 Agent"
         ],
@@ -251,7 +254,7 @@
         "客服 Agent"
       ],
       "reason": "passed",
-      "notes": "普通政策咨询：应只进入知识库问答。"
+      "notes": "退换货政策咨询：七天无理由属于退款退货政策，应进入知识库查询。"
     },
     {
       "case_id": "routing_refund_005",
@@ -272,8 +275,8 @@
       },
       "actual_route": {
         "intent": "order_lookup",
-        "confidence": 0.62,
-        "routing_reason": "识别到订单号，按订单查询意图处理。",
+        "confidence": 0.95,
+        "routing_reason": "用户明确要求查看订单10001的状态，属于查询订单信息的行为。",
         "agent_plan": [
           "售后 Agent"
         ],
@@ -304,7 +307,7 @@
         "售后 Agent"
       ],
       "reason": "passed",
-      "notes": "订单查询：只需要订单事实，不应触发政策、风控或退款。"
+      "notes": "订单查询：只查询订单事实，不应触发政策、风控或退款副作用。"
     },
     {
       "case_id": "routing_refund_006",
@@ -326,8 +329,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.75,
-        "routing_reason": "命中退货退款意图关键词：退款。",
+        "confidence": 0.95,
+        "routing_reason": "用户明确要求直接退款，且表达了投诉意愿，但投诉不是主要动作，因此优先处理退款请求。",
         "agent_plan": [
           "客服 Agent",
           "售后 Agent",
@@ -355,9 +358,12 @@
         "need_clarification": false,
         "clarification_question": null,
         "handoff_required": true,
-        "handoff_reason": "该请求涉及退款、赔付、取消订单、修改地址等高风险操作，需要人工客服审核。",
+        "handoff_reason": "用户要求绕过正常审核流程，需要人工审核。",
         "risk_level": "high",
-        "risk_flags": []
+        "risk_flags": [
+          "review_bypass",
+          "risky_action"
+        ]
       },
       "expected_agents": [
         "客服 Agent",
@@ -370,7 +376,7 @@
         "风控 Agent"
       ],
       "reason": "passed",
-      "notes": "风险相关：绕过审核和投诉话术必须进入风控/人工审核边界。"
+      "notes": "高风险退款执行：主要业务目标仍是退款；绕过审核和投诉信息交给确定性风控和人工审核逻辑处理。"
     },
     {
       "case_id": "routing_refund_007",
@@ -388,8 +394,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.67,
-        "routing_reason": "命中退货退款意图关键词：退款。",
+        "confidence": 0.95,
+        "routing_reason": "用户明确表示商品质量有问题，希望退款，属于执行退款流程。",
         "agent_plan": [
           "客服 Agent"
         ],
@@ -418,7 +424,7 @@
         "客服 Agent"
       ],
       "reason": "passed",
-      "notes": "质量问题退款但缺订单号：不能直接发起退款。"
+      "notes": "用户明确表达退款执行意图，但缺少订单号，因此必须追问且不能直接退款。"
     },
     {
       "case_id": "routing_refund_008",
@@ -438,8 +444,8 @@
       },
       "actual_route": {
         "intent": "return_refund",
-        "confidence": 0.75,
-        "routing_reason": "命中退货退款意图关键词：退款。",
+        "confidence": 0.95,
+        "routing_reason": "用户询问退款到账时间，属于退款进度查询范畴。",
         "agent_plan": [
           "客服 Agent",
           "售后 Agent"
@@ -474,7 +480,875 @@
         "售后 Agent"
       ],
       "reason": "passed",
-      "notes": "退款进度/到账咨询：查询订单和政策，但不创建退款。"
+      "notes": "具体订单退款到账咨询：查询订单事实和退款政策，但不能创建新的退款申请。"
+    },
+    {
+      "case_id": "routing_refund_009",
+      "query": "退的钱通常要等多长时间才能回来？",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问退款到账时间，属于退款进度查询。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "退款到账时间的同义表达，测试模型是否能脱离“多久到账”关键词进行泛化。"
+    },
+    {
+      "case_id": "routing_refund_010",
+      "query": "买回来五天了，现在还能退吗？",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_clarification": true
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问购买后五天是否还能退货，属于判断具体订单是否符合退款条件。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": true,
+        "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "针对具体已购买商品询问退款资格，但没有订单号，应查询政策并追问订单。"
+    },
+    {
+      "case_id": "routing_refund_011",
+      "query": "包装已经拆开了，我只是想问问这种情况还能不能退。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_clarification": true
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问包装已拆开的情况是否还能退款，属于判断具体商品是否符合退款条件。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": true,
+        "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "明确只是咨询，不能因为出现“退”而触发退款执行。"
+    },
+    {
+      "case_id": "routing_refund_012",
+      "query": "订单10003这个定制商品能不能退？先别帮我提交。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "order_id": "10003",
+        "need_order": true,
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问定制商品是否可以退款，属于判断具体商品是否符合退款条件。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "order_id": "10003",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent",
+        "售后 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent",
+        "售后 Agent"
+      ],
+      "reason": "passed",
+      "notes": "具体订单退款资格咨询并明确禁止执行，应该查询订单和政策，但绝不能创建退款。"
+    },
+    {
+      "case_id": "routing_refund_013",
+      "query": "麻烦把订单10002的退款给我申请一下。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "order_id": "10002",
+        "need_order": true,
+        "need_policy": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户明确要求申请退款，并指定了订单号10002。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent",
+          "风控 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "order_id": "10002",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent",
+        "售后 Agent",
+        "风控 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent",
+        "售后 Agent",
+        "风控 Agent"
+      ],
+      "reason": "passed",
+      "notes": "“申请一下”是明确业务执行意图，应进入完整退款链路。"
+    },
+    {
+      "case_id": "routing_refund_014",
+      "query": "订单10010先不要退，我只是想看看你们的退款规定。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "order_id": "10010",
+        "need_order": true,
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户明确表示先不要退款，只是想了解退款规定，属于查询退款政策的意图。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "order_id": "10010",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent",
+        "售后 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent",
+        "售后 Agent"
+      ],
+      "reason": "passed",
+      "notes": "同时存在订单号和退款字样，但有明确否定执行语义，不能触发退款。"
+    },
+    {
+      "case_id": "routing_refund_015",
+      "query": "商品没有质量问题，就是不喜欢了，这样可以退吗？",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_clarification": true
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问是否可以退货，属于判断具体商品是否符合退款条件。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": true,
+        "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "无质量问题退款资格咨询，测试七天无理由相关语义的泛化。"
+    },
+    {
+      "case_id": "routing_refund_016",
+      "query": "我不打算现在退款，只想知道七天无理由都包括哪些情况。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问七天无理由的包含情况，属于退款政策范畴。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "包含退款字样但明确否定执行，属于通用退款政策咨询。"
+    },
+    {
+      "case_id": "routing_refund_017",
+      "query": "超过七天是不是就一定不能退了？",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问关于退款期限的规则，属于退款政策范畴。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "通用退货期限规则咨询，没有针对某个具体订单，不应追问订单号。"
+    },
+    {
+      "case_id": "routing_refund_018",
+      "query": "退货和退款到底有什么区别？",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问退货和退款之间的区别，属于退款政策范畴。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "退货退款概念咨询，应归入退款政策领域，而不是 general_support。"
+    },
+    {
+      "case_id": "routing_refund_019",
+      "query": "帮我看看订单10001这种情况到底能不能退，先不要操作。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "order_id": "10001",
+        "need_order": true,
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问订单10001的退款资格，但没有要求执行退款操作，表明只是进行咨询。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "order_id": "10001",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent",
+        "售后 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent",
+        "售后 Agent"
+      ],
+      "reason": "passed",
+      "notes": "具体订单资格查询，明确禁止执行；需要订单事实和政策，但不能调用退款工具。"
+    },
+    {
+      "case_id": "routing_refund_020",
+      "query": "订单10001这个商品有质量问题，直接给我退钱。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "order_id": "10001",
+        "need_order": true,
+        "need_policy": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户明确表示商品有质量问题，要求直接退钱，符合退款申请的语义。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent",
+          "风控 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "order_id": "10001",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent",
+        "售后 Agent",
+        "风控 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent",
+        "售后 Agent",
+        "风控 Agent"
+      ],
+      "reason": "passed",
+      "notes": "质量问题加明确退款执行指令，应进入完整退款流程。"
+    },
+    {
+      "case_id": "routing_refund_021",
+      "query": "商品到手发现有划痕，我想退，不过你先别提交退款。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_clarification": true
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户表示商品有划痕，询问是否符合退款条件，但没有要求提交退款申请。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": true,
+        "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "虽然出现“我想退”，但后半句明确禁止执行，因此应理解为具体退款资格咨询。"
+    },
+    {
+      "case_id": "routing_refund_022",
+      "query": "订单10004给我直接退掉，别走审核流程。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "order_id": "10004",
+        "need_order": true,
+        "need_policy": true,
+        "need_risk_check": true,
+        "handoff_required": true,
+        "manual_review_required": true,
+        "risk_level": "high",
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户明确要求直接退款，并要求跳过审核流程。",
+        "agent_plan": [
+          "客服 Agent",
+          "售后 Agent",
+          "风控 Agent"
+        ],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review",
+          "transfer_to_human",
+          "create_ticket"
+        ],
+        "order_id": "10004",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "manual_review_required": true,
+        "need_handoff": true,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": true,
+        "handoff_reason": "用户要求绕过正常审核流程，需要人工审核。",
+        "risk_level": "high",
+        "risk_flags": [
+          "review_bypass"
+        ]
+      },
+      "expected_agents": [
+        "客服 Agent",
+        "售后 Agent",
+        "风控 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent",
+        "售后 Agent",
+        "风控 Agent"
+      ],
+      "reason": "passed",
+      "notes": "明确退款并要求绕过审核，应该进入高风险和人工审核边界。"
+    },
+    {
+      "case_id": "routing_refund_023",
+      "query": "已经退回商品了，退款一般还要等多久？",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户询问退款到账时间，属于退款进度查询。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "已有退货背景，但当前问题只是退款到账时效，不应再次创建退款申请。"
+    },
+    {
+      "case_id": "routing_refund_024",
+      "query": "我就是问一下退款条件，你别因为我说了退款就直接给我退。",
+      "passed": true,
+      "intent_pass": true,
+      "route_pass": true,
+      "agent_pass": true,
+      "expected_intent": "return_refund",
+      "actual_intent": "return_refund",
+      "expected_route": {
+        "need_policy": true,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "need_clarification": false,
+        "need_ticket": false,
+        "need_handoff": false,
+        "handoff_required": false,
+        "manual_review_required": false,
+        "risk_level": "low"
+      },
+      "actual_route": {
+        "intent": "return_refund",
+        "confidence": 0.95,
+        "routing_reason": "用户明确表示只是询问退款条件，没有要求执行退款操作。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "expected_agents": [
+        "客服 Agent"
+      ],
+      "actual_agents": [
+        "客服 Agent"
+      ],
+      "reason": "passed",
+      "notes": "强否定副作用案例：用户明确只咨询退款条件。不能因为文本包含“直接给我退”而触发退款、风控、工单、人工审核或转人工。"
     }
   ],
   "report_name": "eval_routing"

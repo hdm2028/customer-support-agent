@@ -1,13 +1,10 @@
-import re
-
 from app.agent.policies.fallback_policy import (
     should_ask_order_id,
     should_handoff_to_human,
 )
 from app.agent.policies.guardrails import check_user_input, contains_risky_action
+from app.agent.routing.parsing import extract_order_id
 from app.core.schemas import RouteDecision
-
-
 POLICY_KEYWORDS = [
     "退货",
     "退款",
@@ -67,8 +64,7 @@ TICKET_KEYWORDS = [
     "差评",
     "起诉",
     "12315",
-    "退款",
-    "退钱",
+
     "赔付",
     "工单",
     "人工",
@@ -167,13 +163,6 @@ INTENT_RULES = [
 ]
 
 
-def extract_order_id(user_message: str) -> str | None:
-    match = re.search(r"(?<!\d)\d{4,}(?!\d)", user_message)
-
-    if match:
-        return match.group(0)
-
-    return None
 
 
 def infer_route_intent(user_message: str, order_id: str | None) -> tuple[str, float, str]:
@@ -316,37 +305,19 @@ def route_tools(user_message: str) -> RouteDecision:
     return route
 
 
-def infer_issue_type(user_message: str) -> str:
-    if "投诉" in user_message:
-        return "投诉升级"
+ISSUE_TYPE_LABELS = {
+    "address_change": "地址修改",
+    "cancel_order": "取消订单",
+    "return_refund": "退货退款",
+    "shipping_exception": "物流异常",
+    "warranty_repair": "保修检测",
+    "payment_invoice": "支付异常",
+    "complaint": "投诉升级",
+    "membership": "会员权益",
+    "order_lookup": "订单查询",
+    "general_support": "售后咨询",
+}
 
-    if "改收货地址" in user_message or "修改地址" in user_message or "改地址" in user_message or "修改为" in user_message:
-        return "地址修改"
 
-    if (
-        "退款" in user_message
-        or "退钱" in user_message
-        or "退货" in user_message
-        or "不想要" in user_message
-        or "不要了" in user_message
-    ):
-        return "退货退款"
-
-    if "支付异常" in user_message or "重复扣款" in user_message or "扣款" in user_message:
-        return "支付异常"
-
-    if "物流" in user_message:
-        return "物流异常"
-
-    if (
-        "维修" in user_message
-        or "检测" in user_message
-        or "保修" in user_message
-        or "坏了" in user_message
-        or "故障" in user_message
-        or "质量问题" in user_message
-        or "换新" in user_message
-    ):
-        return "保修检测"
-
-    return "售后咨询"
+def get_issue_type(intent: str) -> str:
+    return ISSUE_TYPE_LABELS.get(intent, "售后咨询")

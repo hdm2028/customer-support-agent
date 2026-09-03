@@ -1,0 +1,1559 @@
+{
+  "failed_cases": [
+    {
+      "schema_version": "rag-eval-v1",
+      "case_id": "rag_refund_001",
+      "query": "待发货订单可以申请退款吗？",
+      "mode": "hybrid_rule",
+      "passed": false,
+      "failure_type": "evidence_coverage_failure",
+      "failure_stage": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: order_change",
+      "source_metric_supported": true,
+      "expected_sources": [
+        "退款政策.md",
+        "退换货政策.md",
+        "订单取消与修改政策.md"
+      ],
+      "retrieved_documents": [
+        "退款政策.md",
+        "退换货政策.md",
+        "退款政策.md",
+        "历史问题案例.md",
+        "退换货政策.md"
+      ],
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "reciprocal_rank": 1.0,
+      "required_evidence_categories": [
+        "refund",
+        "order_change"
+      ],
+      "evidence_coverage_rate": 0.5,
+      "required_evidence_coverage": 0.5,
+      "candidate_evidence_coverage_rate": 1.0,
+      "keywords_pass": true,
+      "missing_keywords": [],
+      "keyword_report": {
+        "matched_terms": [
+          "退款申请",
+          "订单",
+          "状态"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "candidate_keyword_report": {
+        "matched_terms": [
+          "退款申请",
+          "订单",
+          "状态"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "source_concentration": 0.4,
+      "constraint_satisfied": false,
+      "constraint_report": {
+        "required_categories": [
+          "refund",
+          "order_change"
+        ],
+        "matched_categories": [
+          "refund"
+        ],
+        "missing_categories": [
+          "order_change"
+        ],
+        "evidence_coverage_rate": 0.5,
+        "required_evidence_coverage": 0.5,
+        "constraint_satisfied": false
+      },
+      "candidate_constraint_report": {
+        "required_categories": [
+          "refund",
+          "order_change"
+        ],
+        "matched_categories": [
+          "refund",
+          "order_change"
+        ],
+        "missing_categories": [],
+        "evidence_coverage_rate": 1.0,
+        "required_evidence_coverage": 1.0,
+        "constraint_satisfied": true
+      },
+      "evidence_guardrail_pass": true,
+      "evidence_guardrail_report": {
+        "reason": "evidence_valid",
+        "profile": "return_refund",
+        "top_score": 1.2356,
+        "evidence": [
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.2356,
+            "rerank_score": 1.2356,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 退款申请",
+              "keyword_coverage: 退款"
+            ]
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "正文",
+            "citation": "退换货政策.md - 正文",
+            "score": 1.1789,
+            "rerank_score": 1.1789,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 退款申请",
+              "keyword_coverage: 退款, 发货"
+            ]
+          },
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.1575,
+            "rerank_score": 1.1575,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 退款, 退款申请",
+              "keyword_coverage: 退款, 发货"
+            ]
+          }
+        ]
+      },
+      "supporting_target_hit": false,
+      "candidate_chunk_ids": [
+        "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+        "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+        "doc_41203502602eba8a5ebda54a:chunk:3b7334adda267ca784641f67",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:89d4fb0c0d3458fe6caba8c2",
+        "doc_b1f79b4599410856d608f1ef:chunk:48f14527260e5eaa80c65451",
+        "doc_253629df931f97428ff46d6e:chunk:4f9150b0e3f57f9db816ac6a",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:c3b4dbe304ea3114730775c9",
+        "doc_e624c6825315857037f266a7:chunk:e48dbfd34c10f92e4b39b16b",
+        "doc_253629df931f97428ff46d6e:chunk:0e6cec317fbb7a7cec0e87e6",
+        "doc_19f87b3780f5e4c88f021d90:chunk:dded47c24493484a2b86041d",
+        "doc_253629df931f97428ff46d6e:chunk:22cbd01770beca0f30da91f0",
+        "doc_253629df931f97428ff46d6e:chunk:c6e99e959cb1705fe743beb4",
+        "doc_b1f79b4599410856d608f1ef:chunk:3cf133d284da95d2c8793b77",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:34e1b33a19b38c122c8b0880",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:e613949ebd0c2ad4d359bcdb",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:920d7e250e586233c95d750c",
+        "doc_0106c205c0e3c2267e897ca5:chunk:f1a590a119f9c96b379e0d2e",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:8936796c3a17b641457ece59",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:34ee922db9427ae60768cd49"
+      ],
+      "ranking_trace": [
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 1,
+          "retrieval_score": 0.9706,
+          "hybrid_score": 0.9706,
+          "vector_score": 0.5733,
+          "bm25_score": 63.1727,
+          "keyword_score": null,
+          "rule_score": 1.2356,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 1,
+          "text_preview": "# 退款政策\n\n## 退款申请前置条件\n\n退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情况下承诺退款已经完成。\n\n## 退款资格判断\n\n创建退款申请前，需要先确认用户"
+        },
+        {
+          "chunk_id": "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+          "source": "退换货政策.md",
+          "section": "正文",
+          "citation": "退换货政策.md - 正文",
+          "retrieval_rank": 3,
+          "retrieval_score": 0.8889,
+          "hybrid_score": 0.8889,
+          "vector_score": 0.52,
+          "bm25_score": 65.254,
+          "keyword_score": null,
+          "rule_score": 1.1789,
+          "rule_boost": 0.29,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款, 发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 2,
+          "text_preview": "货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。\n\n## 已发货订单\n\n订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。\n\n## 已签收订单\n\n商品已经签收后，需"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 2,
+          "retrieval_score": 0.9075,
+          "hybrid_score": 0.9075,
+          "vector_score": 0.569,
+          "bm25_score": 45.665,
+          "keyword_score": null,
+          "rule_score": 1.1575,
+          "rule_boost": 0.25,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请",
+            "keyword_coverage: 退款, 发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 3,
+          "text_preview": "》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货商品需要结合物流和退货状态判断。\n\n只有满足对应退款条件后，才能继续进入退款申请流程。\n\n## 退款申请\n\n满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请"
+        },
+        {
+          "chunk_id": "doc_9e26bcd1585c743b0269eb0c:chunk:c3b4dbe304ea3114730775c9",
+          "source": "历史问题案例.md",
+          "section": "正文",
+          "citation": "历史问题案例.md - 正文",
+          "retrieval_rank": 8,
+          "retrieval_score": 0.7541,
+          "hybrid_score": 0.7541,
+          "vector_score": 0.4772,
+          "bm25_score": 44.5644,
+          "keyword_score": null,
+          "rule_score": 1.1091,
+          "rule_boost": 0.355,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 人工审核",
+            "keyword_coverage: 退款, 发货, 待发货",
+            "order_state_match: 待发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 4,
+          "text_preview": "：商品已找到。\n\n## 案例七：待发货订单修改地址\n\n用户下单后发现收货地址填写错误。\n\n客服查询订单后发现订单仍处于待发货状态，并且仓库尚未出库。\n\n客服创建地址修改工单。\n\n处理结果：地址修改成功。\n\n## 案例八：订单已发货无法直接修改地址\n\n用户要求修改收货地址。\n\n客服查询发现订单已经发货。\n\n由于订单已经进入物流流程，平台没有直接修改订单原始地址"
+        },
+        {
+          "chunk_id": "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:89d4fb0c0d3458fe6caba8c2",
+          "source": "退换货政策.md",
+          "section": "正文",
+          "citation": "退换货政策.md - 正文",
+          "retrieval_rank": 5,
+          "retrieval_score": 0.7936,
+          "hybrid_score": 0.7936,
+          "vector_score": 0.5769,
+          "bm25_score": 36.5795,
+          "keyword_score": null,
+          "rule_score": 1.0586,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请, 人工审核",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 5,
+          "text_preview": "售后检测申请。\n\n## 退款申请\n\n满足退款条件后，可以创建退款申请。\n\n退款申请创建后会生成唯一的退款申请记录。\n\n用户重复提交同一订单的相同退款请求时，不应重复创建退款申请。\n\n## 退款处理\n\n退款申请创建成功后，系统会进入退款处理流程。\n\n退款处理过程中可能出现以下状态：\n\n- PENDING：等待处理；\n- PROCESSING：正在处理；\n- S"
+        }
+      ],
+      "notes": "正常退款：需要召回退款申请前置条件或退款流程。",
+      "query_contract": {
+        "raw_query": "待发货订单可以申请退款吗？",
+        "semantic_query": "待发货订单可以申请退款吗？",
+        "lexical_query": "待发货订单可以申请退款吗？ 退款 退货退款 退款条件 退款资格 取消政策 取消条件",
+        "rerank_query": "用户问题：待发货订单可以申请退款吗？\n主要意图：退款\n业务主题：退款条件\n关联主题：取消政策",
+        "semantic_query_mode": "rerank",
+        "semantic_reranker_input": "用户问题：待发货订单可以申请退款吗？\n主要意图：退款\n业务主题：退款条件\n关联主题：取消政策",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [
+            "cancel_policy"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        }
+      }
+    },
+    {
+      "schema_version": "rag-eval-v1",
+      "case_id": "rag_refund_006",
+      "query": "已发货订单退款需要先做什么？",
+      "mode": "hybrid_rule",
+      "passed": false,
+      "failure_type": "evidence_coverage_failure",
+      "failure_stage": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: shipping",
+      "source_metric_supported": true,
+      "expected_sources": [
+        "退换货政策.md",
+        "物流配送政策.md"
+      ],
+      "retrieved_documents": [
+        "退换货政策.md",
+        "退款政策.md",
+        "退款政策.md",
+        "退款政策.md",
+        "历史问题案例.md"
+      ],
+      "expected_rank": 1,
+      "candidate_expected_rank": 3,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "reciprocal_rank": 1.0,
+      "required_evidence_categories": [
+        "refund",
+        "shipping"
+      ],
+      "evidence_coverage_rate": 0.5,
+      "required_evidence_coverage": 0.5,
+      "candidate_evidence_coverage_rate": 1.0,
+      "keywords_pass": true,
+      "missing_keywords": [],
+      "keyword_report": {
+        "matched_terms": [
+          "物流拦截",
+          "等待商品送达",
+          "拒收"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "candidate_keyword_report": {
+        "matched_terms": [
+          "物流拦截",
+          "等待商品送达",
+          "拒收"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "source_concentration": 0.6,
+      "constraint_satisfied": false,
+      "constraint_report": {
+        "required_categories": [
+          "refund",
+          "shipping"
+        ],
+        "matched_categories": [
+          "refund"
+        ],
+        "missing_categories": [
+          "shipping"
+        ],
+        "evidence_coverage_rate": 0.5,
+        "required_evidence_coverage": 0.5,
+        "constraint_satisfied": false
+      },
+      "candidate_constraint_report": {
+        "required_categories": [
+          "refund",
+          "shipping"
+        ],
+        "matched_categories": [
+          "refund",
+          "shipping"
+        ],
+        "missing_categories": [],
+        "evidence_coverage_rate": 1.0,
+        "required_evidence_coverage": 1.0,
+        "constraint_satisfied": true
+      },
+      "evidence_guardrail_pass": true,
+      "evidence_guardrail_report": {
+        "reason": "evidence_valid",
+        "profile": "return_refund",
+        "top_score": 1.2382,
+        "evidence": [
+          {
+            "source": "退换货政策.md",
+            "section": "正文",
+            "citation": "退换货政策.md - 正文",
+            "score": 1.2382,
+            "rerank_score": 1.2382,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 退款申请",
+              "keyword_coverage: 退款, 发货",
+              "order_state_match: 已发货"
+            ]
+          },
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.228,
+            "rerank_score": 1.228,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 退款, 退款申请",
+              "keyword_coverage: 退款, 发货",
+              "order_state_match: 已发货"
+            ]
+          },
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.1902,
+            "rerank_score": 1.1902,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 退款申请",
+              "keyword_coverage: 退款"
+            ]
+          }
+        ]
+      },
+      "supporting_target_hit": false,
+      "candidate_chunk_ids": [
+        "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+        "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+        "doc_253629df931f97428ff46d6e:chunk:22cbd01770beca0f30da91f0",
+        "doc_253629df931f97428ff46d6e:chunk:4f9150b0e3f57f9db816ac6a",
+        "doc_253629df931f97428ff46d6e:chunk:c6e99e959cb1705fe743beb4",
+        "doc_b1f79b4599410856d608f1ef:chunk:48f14527260e5eaa80c65451",
+        "doc_e624c6825315857037f266a7:chunk:e48dbfd34c10f92e4b39b16b",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:c3b4dbe304ea3114730775c9",
+        "doc_19f87b3780f5e4c88f021d90:chunk:c7dbe7fb1a3e5c812ace34df",
+        "doc_b1f79b4599410856d608f1ef:chunk:6f26919dc2e26835544b56db",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:34e1b33a19b38c122c8b0880",
+        "doc_8ae3fda162d548bd3b86efff:chunk:0e02aed7c7df603a677923ae",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:34ee922db9427ae60768cd49",
+        "doc_e624c6825315857037f266a7:chunk:a7e3fb98fc91065a3223925e",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:920d7e250e586233c95d750c",
+        "doc_253629df931f97428ff46d6e:chunk:0e6cec317fbb7a7cec0e87e6",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:89d4fb0c0d3458fe6caba8c2",
+        "doc_19f87b3780f5e4c88f021d90:chunk:dded47c24493484a2b86041d",
+        "doc_e624c6825315857037f266a7:chunk:b1da2b82dafa447060d7a367"
+      ],
+      "ranking_trace": [
+        {
+          "chunk_id": "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+          "source": "退换货政策.md",
+          "section": "正文",
+          "citation": "退换货政策.md - 正文",
+          "retrieval_rank": 3,
+          "retrieval_score": 0.8682,
+          "hybrid_score": 0.8682,
+          "vector_score": 0.4617,
+          "bm25_score": 61.2721,
+          "keyword_score": null,
+          "rule_score": 1.2382,
+          "rule_boost": 0.37,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款, 发货",
+            "order_state_match: 已发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 1,
+          "text_preview": "货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。\n\n## 已发货订单\n\n订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。\n\n## 已签收订单\n\n商品已经签收后，需"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 2,
+          "retrieval_score": 0.898,
+          "hybrid_score": 0.898,
+          "vector_score": 0.5439,
+          "bm25_score": 41.402,
+          "keyword_score": null,
+          "rule_score": 1.228,
+          "rule_boost": 0.33,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请",
+            "keyword_coverage: 退款, 发货",
+            "order_state_match: 已发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 2,
+          "text_preview": "》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货商品需要结合物流和退货状态判断。\n\n只有满足对应退款条件后，才能继续进入退款申请流程。\n\n## 退款申请\n\n满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 1,
+          "retrieval_score": 0.9252,
+          "hybrid_score": 0.9252,
+          "vector_score": 0.5305,
+          "bm25_score": 53.7579,
+          "keyword_score": null,
+          "rule_score": 1.1902,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 3,
+          "text_preview": "# 退款政策\n\n## 退款申请前置条件\n\n退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情况下承诺退款已经完成。\n\n## 退款资格判断\n\n创建退款申请前，需要先确认用户"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:22cbd01770beca0f30da91f0",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 4,
+          "retrieval_score": 0.8092,
+          "hybrid_score": 0.8092,
+          "vector_score": 0.5539,
+          "bm25_score": 28.8885,
+          "keyword_score": null,
+          "rule_score": 1.0742,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请, MQ",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 4,
+          "text_preview": "经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法"
+        },
+        {
+          "chunk_id": "doc_9e26bcd1585c743b0269eb0c:chunk:c3b4dbe304ea3114730775c9",
+          "source": "历史问题案例.md",
+          "section": "正文",
+          "citation": "历史问题案例.md - 正文",
+          "retrieval_rank": 9,
+          "retrieval_score": 0.7177,
+          "hybrid_score": 0.7177,
+          "vector_score": 0.4233,
+          "bm25_score": 43.9987,
+          "keyword_score": null,
+          "rule_score": 1.0477,
+          "rule_boost": 0.33,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 人工审核",
+            "keyword_coverage: 退款, 发货",
+            "order_state_match: 已发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 5,
+          "text_preview": "：商品已找到。\n\n## 案例七：待发货订单修改地址\n\n用户下单后发现收货地址填写错误。\n\n客服查询订单后发现订单仍处于待发货状态，并且仓库尚未出库。\n\n客服创建地址修改工单。\n\n处理结果：地址修改成功。\n\n## 案例八：订单已发货无法直接修改地址\n\n用户要求修改收货地址。\n\n客服查询发现订单已经发货。\n\n由于订单已经进入物流流程，平台没有直接修改订单原始地址"
+        }
+      ],
+      "notes": "物流状态相关退款：已发货不能直接取消，需要结合物流拦截或收退货流程。",
+      "query_contract": {
+        "raw_query": "已发货订单退款需要先做什么？",
+        "semantic_query": "已发货订单退款需要先做什么？",
+        "lexical_query": "已发货订单退款需要先做什么？ 退款 退货退款 退款政策 退货规则 七天无理由 物流异常 运输异常",
+        "rerank_query": "用户问题：已发货订单退款需要先做什么？\n主要意图：退款\n业务主题：退款政策\n关联主题：物流异常",
+        "semantic_query_mode": "rerank",
+        "semantic_reranker_input": "用户问题：已发货订单退款需要先做什么？\n主要意图：退款\n业务主题：退款政策\n关联主题：物流异常",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy",
+          "related_topics": [
+            "shipping_exception"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        }
+      }
+    },
+    {
+      "schema_version": "rag-eval-v1",
+      "case_id": "rag_refund_009",
+      "query": "订单还没有付款，我想退款应该怎么处理？",
+      "mode": "hybrid_rule",
+      "passed": false,
+      "failure_type": "retrieval_failure",
+      "failure_stage": "retrieval_failure",
+      "reason": "required categories absent from Top20: order_change",
+      "source_metric_supported": true,
+      "expected_sources": [
+        "退款政策.md",
+        "订单取消与修改政策.md"
+      ],
+      "retrieved_documents": [
+        "退款政策.md",
+        "退款政策.md",
+        "退款政策.md",
+        "退款政策.md",
+        "商品售后规则.md"
+      ],
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "reciprocal_rank": 1.0,
+      "required_evidence_categories": [
+        "refund",
+        "order_change"
+      ],
+      "evidence_coverage_rate": 0.5,
+      "required_evidence_coverage": 0.5,
+      "candidate_evidence_coverage_rate": 0.5,
+      "keywords_pass": true,
+      "missing_keywords": [],
+      "keyword_report": {
+        "matched_terms": [
+          "待支付",
+          "取消订单",
+          "不创建退款申请"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "candidate_keyword_report": {
+        "matched_terms": [
+          "待支付",
+          "取消订单",
+          "不创建退款申请"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "source_concentration": 0.8,
+      "constraint_satisfied": false,
+      "constraint_report": {
+        "required_categories": [
+          "refund",
+          "order_change"
+        ],
+        "matched_categories": [
+          "refund"
+        ],
+        "missing_categories": [
+          "order_change"
+        ],
+        "evidence_coverage_rate": 0.5,
+        "required_evidence_coverage": 0.5,
+        "constraint_satisfied": false
+      },
+      "candidate_constraint_report": {
+        "required_categories": [
+          "refund",
+          "order_change"
+        ],
+        "matched_categories": [
+          "refund"
+        ],
+        "missing_categories": [
+          "order_change"
+        ],
+        "evidence_coverage_rate": 0.5,
+        "required_evidence_coverage": 0.5,
+        "constraint_satisfied": false
+      },
+      "evidence_guardrail_pass": true,
+      "evidence_guardrail_report": {
+        "reason": "evidence_valid",
+        "profile": "return_refund",
+        "top_score": 1.265,
+        "evidence": [
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.265,
+            "rerank_score": 1.265,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 退款申请",
+              "keyword_coverage: 退款"
+            ]
+          },
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.0997,
+            "rerank_score": 1.0997,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 退款, 退款申请",
+              "keyword_coverage: 退款"
+            ]
+          },
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.0989,
+            "rerank_score": 1.0989,
+            "rerank_reasons": [
+              "source_match: return_refund",
+              "phrase_match: 退款, 退款申请, MQ",
+              "keyword_coverage: 退款"
+            ]
+          }
+        ]
+      },
+      "supporting_target_hit": false,
+      "candidate_chunk_ids": [
+        "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+        "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+        "doc_253629df931f97428ff46d6e:chunk:22cbd01770beca0f30da91f0",
+        "doc_253629df931f97428ff46d6e:chunk:c6e99e959cb1705fe743beb4",
+        "doc_19f87b3780f5e4c88f021d90:chunk:dded47c24493484a2b86041d",
+        "doc_b1f79b4599410856d608f1ef:chunk:48f14527260e5eaa80c65451",
+        "doc_8ae3fda162d548bd3b86efff:chunk:ecd08f6059f44bda917c811f",
+        "doc_253629df931f97428ff46d6e:chunk:4f9150b0e3f57f9db816ac6a",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:89d4fb0c0d3458fe6caba8c2",
+        "doc_b1f79b4599410856d608f1ef:chunk:3cf133d284da95d2c8793b77",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:34ee922db9427ae60768cd49",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:920d7e250e586233c95d750c",
+        "doc_19f87b3780f5e4c88f021d90:chunk:c7dbe7fb1a3e5c812ace34df",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:34e1b33a19b38c122c8b0880",
+        "doc_8ae3fda162d548bd3b86efff:chunk:9d6d6b24c8099feea052cd10",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:0ed68dd2639166d53a33c7f7",
+        "doc_e624c6825315857037f266a7:chunk:e48dbfd34c10f92e4b39b16b",
+        "doc_8ae3fda162d548bd3b86efff:chunk:5fef26e60545127cfcb84c6e",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:8936796c3a17b641457ece59"
+      ],
+      "ranking_trace": [
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 1,
+          "retrieval_score": 1.0,
+          "hybrid_score": 1.0,
+          "vector_score": 0.5398,
+          "bm25_score": 65.6417,
+          "keyword_score": null,
+          "rule_score": 1.265,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 1,
+          "text_preview": "# 退款政策\n\n## 退款申请前置条件\n\n退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情况下承诺退款已经完成。\n\n## 退款资格判断\n\n创建退款申请前，需要先确认用户"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 2,
+          "retrieval_score": 0.8747,
+          "hybrid_score": 0.8747,
+          "vector_score": 0.5254,
+          "bm25_score": 40.1144,
+          "keyword_score": null,
+          "rule_score": 1.0997,
+          "rule_boost": 0.225,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 2,
+          "text_preview": "》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货商品需要结合物流和退货状态判断。\n\n只有满足对应退款条件后，才能继续进入退款申请流程。\n\n## 退款申请\n\n满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:22cbd01770beca0f30da91f0",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 3,
+          "retrieval_score": 0.8339,
+          "hybrid_score": 0.8339,
+          "vector_score": 0.5173,
+          "bm25_score": 37.4396,
+          "keyword_score": null,
+          "rule_score": 1.0989,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请, MQ",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 3,
+          "text_preview": "经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:c6e99e959cb1705fe743beb4",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 4,
+          "retrieval_score": 0.752,
+          "hybrid_score": 0.752,
+          "vector_score": 0.5078,
+          "bm25_score": 20.8059,
+          "keyword_score": null,
+          "rule_score": 1.057,
+          "rule_boost": 0.305,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请, 人工审核",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 4,
+          "text_preview": "待处理；\n- `PROCESSING`：退款任务正在处理；\n- `SUCCEEDED`：退款已经成功完成；\n- `FAILED`：退款处理失败；\n- `MANUAL_REVIEW`：需要人工审核。\n\n用户查询退款进度时，应以退款系统中的最新状态为准。\n\n## 退款人工审核\n\n以下情况可能进入人工审核：\n\n- 大额退款；\n- 高频退款；\n- 账户行为异常；\n-"
+        },
+        {
+          "chunk_id": "doc_8ae3fda162d548bd3b86efff:chunk:ecd08f6059f44bda917c811f",
+          "source": "商品售后规则.md",
+          "section": "正文",
+          "citation": "商品售后规则.md - 正文",
+          "retrieval_rank": 7,
+          "retrieval_score": 0.7126,
+          "hybrid_score": 0.7126,
+          "vector_score": 0.4391,
+          "bm25_score": 39.4334,
+          "keyword_score": null,
+          "rule_score": 0.9776,
+          "rule_boost": 0.265,
+          "rule_reason": [
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请, 人工审核",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 5,
+          "text_preview": "品满足退货条件后，再进入对应退货流程。\n\n## 换新\n\n用户要求换新时，需要判断商品是否符合对应换新条件。\n\n对于需要质量检测的商品，应先完成检测。\n\n不能仅因为商品出现故障、用户是高级会员或者历史上存在类似换新案例，就直接承诺换新。\n\n具体换新条件以当前有效的商品售后政策和检测结果为准。\n\n## 退款\n\n商品售后处理最终涉及退款时，应按照《退款政策》继续执"
+        }
+      ],
+      "notes": "未支付订单：没有实际支付资金，不应创建退款申请，应召回取消订单相关规则。",
+      "query_contract": {
+        "raw_query": "订单还没有付款，我想退款应该怎么处理？",
+        "semantic_query": "订单还没有付款，我想退款应该怎么处理？",
+        "lexical_query": "订单还没有付款，我想退款应该怎么处理？ 退款 退货退款 退款条件 退款资格 取消政策 取消条件",
+        "rerank_query": "用户问题：订单还没有付款，我想退款应该怎么处理？\n主要意图：退款\n业务主题：退款条件\n关联主题：取消政策",
+        "semantic_query_mode": "rerank",
+        "semantic_reranker_input": "用户问题：订单还没有付款，我想退款应该怎么处理？\n主要意图：退款\n业务主题：退款条件\n关联主题：取消政策",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [
+            "cancel_policy"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        }
+      }
+    },
+    {
+      "schema_version": "rag-eval-v1",
+      "case_id": "rag_refund_015",
+      "query": "物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？",
+      "mode": "hybrid_rule",
+      "passed": false,
+      "failure_type": "evidence_coverage_failure",
+      "failure_stage": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: product_after_sales",
+      "source_metric_supported": true,
+      "expected_sources": [
+        "物流配送政策.md",
+        "商品售后规则.md"
+      ],
+      "retrieved_documents": [
+        "物流配送政策.md",
+        "物流规则.md",
+        "历史问题案例.md",
+        "物流规则.md",
+        "物流规则.md"
+      ],
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "reciprocal_rank": 1.0,
+      "required_evidence_categories": [
+        "shipping",
+        "product_after_sales"
+      ],
+      "evidence_coverage_rate": 0.5,
+      "required_evidence_coverage": 0.5,
+      "candidate_evidence_coverage_rate": 1.0,
+      "keywords_pass": true,
+      "missing_keywords": [],
+      "keyword_report": {
+        "matched_terms": [
+          "签收",
+          "未收到",
+          "物流"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "candidate_keyword_report": {
+        "matched_terms": [
+          "签收",
+          "未收到",
+          "物流"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "source_concentration": 0.6,
+      "constraint_satisfied": false,
+      "constraint_report": {
+        "required_categories": [
+          "shipping",
+          "product_after_sales"
+        ],
+        "matched_categories": [
+          "shipping"
+        ],
+        "missing_categories": [
+          "product_after_sales"
+        ],
+        "evidence_coverage_rate": 0.5,
+        "required_evidence_coverage": 0.5,
+        "constraint_satisfied": false
+      },
+      "candidate_constraint_report": {
+        "required_categories": [
+          "shipping",
+          "product_after_sales"
+        ],
+        "matched_categories": [
+          "shipping",
+          "product_after_sales"
+        ],
+        "missing_categories": [],
+        "evidence_coverage_rate": 1.0,
+        "required_evidence_coverage": 1.0,
+        "constraint_satisfied": true
+      },
+      "evidence_guardrail_pass": true,
+      "evidence_guardrail_report": {
+        "reason": "evidence_valid",
+        "profile": "shipping_exception",
+        "top_score": 1.3052,
+        "evidence": [
+          {
+            "source": "物流配送政策.md",
+            "section": "正文",
+            "citation": "物流配送政策.md - 正文",
+            "score": 1.3052,
+            "rerank_score": 1.3052,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "phrase_match: 48 小时, 物流异常, 工单",
+              "keyword_coverage: 物流, 签收"
+            ]
+          },
+          {
+            "source": "物流规则.md",
+            "section": "正文",
+            "citation": "物流规则.md - 正文",
+            "score": 1.2878,
+            "rerank_score": 1.2878,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "phrase_match: 48 小时, 物流异常, 未收到",
+              "keyword_coverage: 物流, 签收"
+            ]
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "正文",
+            "citation": "历史问题案例.md - 正文",
+            "score": 1.1634,
+            "rerank_score": 1.1634,
+            "rerank_reasons": [
+              "phrase_match: 48 小时, 物流异常, 工单",
+              "keyword_coverage: 物流, 签收"
+            ]
+          }
+        ]
+      },
+      "supporting_target_hit": false,
+      "candidate_chunk_ids": [
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:961ab0017a926ece57c1cdbc",
+        "doc_e624c6825315857037f266a7:chunk:99b657fd86a928e315e3434b",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:e0bdb4dcee55f1616cc0b84b",
+        "doc_e624c6825315857037f266a7:chunk:087b0ea63049e734ee75d574",
+        "doc_b1f79b4599410856d608f1ef:chunk:62bb3ebd5b67f693fa4b9007",
+        "doc_e624c6825315857037f266a7:chunk:a7e3fb98fc91065a3223925e",
+        "doc_b1f79b4599410856d608f1ef:chunk:48f14527260e5eaa80c65451",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:7ad4f45582e186aaec446bce",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:34e1b33a19b38c122c8b0880",
+        "doc_e624c6825315857037f266a7:chunk:c26900e9c6b2fcae77aebb94",
+        "doc_e624c6825315857037f266a7:chunk:1b586d85fab6e6338ff9f6cd",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:227701c722ec04594a109fb2",
+        "doc_e624c6825315857037f266a7:chunk:b1da2b82dafa447060d7a367",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+        "doc_e624c6825315857037f266a7:chunk:e48dbfd34c10f92e4b39b16b",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:18b3d9eb274293a579248349",
+        "doc_8ae3fda162d548bd3b86efff:chunk:5fef26e60545127cfcb84c6e",
+        "doc_b1f79b4599410856d608f1ef:chunk:e6ba338b082f2cd3124d5a24",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:a2b69cf1ca32c29836c4e96f",
+        "doc_8ae3fda162d548bd3b86efff:chunk:3c0b4654992dad80a5178e87"
+      ],
+      "ranking_trace": [
+        {
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:961ab0017a926ece57c1cdbc",
+          "source": "物流配送政策.md",
+          "section": "正文",
+          "citation": "物流配送政策.md - 正文",
+          "retrieval_rank": 1,
+          "retrieval_score": 0.9752,
+          "hybrid_score": 0.9752,
+          "vector_score": 0.6173,
+          "bm25_score": 86.9074,
+          "keyword_score": null,
+          "rule_score": 1.3052,
+          "rule_boost": 0.33,
+          "rule_reason": [
+            "source_match: shipping_exception",
+            "phrase_match: 48 小时, 物流异常, 工单",
+            "keyword_coverage: 物流, 签收"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 1,
+          "text_preview": "超过 48 小时没有物流更新；\n- 快递长时间停留在同一节点；\n- 物流信息异常回退；\n- 快递公司反馈包裹异常；\n- 用户长时间未收到商品。\n\n出现物流异常时，应先查询真实物流状态，再决定是否创建异常工单。\n\n## 已签收但用户未收到\n\n如果物流系统显示商品已经签收，但用户表示没有收到商品，应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n"
+        },
+        {
+          "chunk_id": "doc_e624c6825315857037f266a7:chunk:99b657fd86a928e315e3434b",
+          "source": "物流规则.md",
+          "section": "正文",
+          "citation": "物流规则.md - 正文",
+          "retrieval_rank": 2,
+          "retrieval_score": 0.9578,
+          "hybrid_score": 0.9578,
+          "vector_score": 0.5752,
+          "bm25_score": 95.3579,
+          "keyword_score": null,
+          "rule_score": 1.2878,
+          "rule_boost": 0.33,
+          "rule_reason": [
+            "source_match: shipping_exception",
+            "phrase_match: 48 小时, 物流异常, 未收到",
+            "keyword_coverage: 物流, 签收"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 2,
+          "text_preview": "范围，并建议继续关注后续物流更新。\n\n如果物流系统已经明确返回异常状态，则不受 48 小时规则限制，应根据实际异常状态处理。\n\n## 长时间未收到商品\n\n用户表示长时间没有收到商品时，应首先查询实际物流状态。\n\n如果物流仍处于运输中，并且已经超过正常异常判断时间，可以按照物流异常流程处理。\n\n如果物流显示已经签收，则进入已签收争议流程。\n\n不能仅根据“未收到"
+        },
+        {
+          "chunk_id": "doc_9e26bcd1585c743b0269eb0c:chunk:e0bdb4dcee55f1616cc0b84b",
+          "source": "历史问题案例.md",
+          "section": "正文",
+          "citation": "历史问题案例.md - 正文",
+          "retrieval_rank": 3,
+          "retrieval_score": 0.9534,
+          "hybrid_score": 0.9534,
+          "vector_score": 0.6092,
+          "bm25_score": 89.0757,
+          "keyword_score": null,
+          "rule_score": 1.1634,
+          "rule_boost": 0.21,
+          "rule_reason": [
+            "phrase_match: 48 小时, 物流异常, 工单",
+            "keyword_coverage: 物流, 签收"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 3,
+          "text_preview": "并且商品不存在质量问题，没有按照七天无理由退货处理。\n\n处理结果：无理由退货申请未通过。\n\n## 案例五：物流三天没有更新\n\n用户反馈订单发货后三天物流一直停留在同一节点。\n\n客服查询物流状态后确认已经超过 48 小时没有更新。\n\n随后创建物流异常工单。\n\n物流部门进一步联系快递公司处理。\n\n处理结果：物流异常工单处理中。\n\n## 案例六：已签收但用户没有收"
+        },
+        {
+          "chunk_id": "doc_e624c6825315857037f266a7:chunk:a7e3fb98fc91065a3223925e",
+          "source": "物流规则.md",
+          "section": "正文",
+          "citation": "物流规则.md - 正文",
+          "retrieval_rank": 6,
+          "retrieval_score": 0.7205,
+          "hybrid_score": 0.7205,
+          "vector_score": 0.4505,
+          "bm25_score": 57.23,
+          "keyword_score": null,
+          "rule_score": 1.0505,
+          "rule_boost": 0.33,
+          "rule_reason": [
+            "source_match: shipping_exception",
+            "phrase_match: 物流异常, 工单, 未收到",
+            "keyword_coverage: 物流, 签收"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 4,
+          "text_preview": "常仍未解决；\n- 已签收但用户持续表示未收到；\n- 物流信息与订单状态明显冲突；\n- 物流系统无法确认商品实际状态；\n- 涉及赔付或者复杂责任判断；\n- 自动流程无法确定下一步处理方式。\n\n## 重要限制\n\n物流知识库用于提供物流处理规则，不用于保存订单的实时物流状态。\n\n具体订单物流信息必须通过物流查询工具获取。\n\n客服不能：\n\n- 猜测物流状态；\n- 在"
+        },
+        {
+          "chunk_id": "doc_e624c6825315857037f266a7:chunk:087b0ea63049e734ee75d574",
+          "source": "物流规则.md",
+          "section": "正文",
+          "citation": "物流规则.md - 正文",
+          "retrieval_rank": 4,
+          "retrieval_score": 0.7359,
+          "hybrid_score": 0.7359,
+          "vector_score": 0.4564,
+          "bm25_score": 60.4419,
+          "keyword_score": null,
+          "rule_score": 1.0259,
+          "rule_boost": 0.29,
+          "rule_reason": [
+            "source_match: shipping_exception",
+            "phrase_match: 物流异常, 工单, 已签收",
+            "keyword_coverage: 物流, 签收"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 5,
+          "text_preview": "服应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否存在家人代收；\n- 是否由前台、驿站或者其他代收点签收。\n\n如果无法确认实际收货情况，可以创建物流争议工单并转人工进一步核实。\n\n存在明显异常或者风险特征时，可以同时进行风险检查。\n\n不能仅根据物流系统中的“已签收”状态直接认定用户已经实际收到商品。\n\n## 物流异常工单\n\n确认存在"
+        }
+      ],
+      "notes": "物流异常：虽然涉及订单售后，但核心证据应来自物流异常处理规则，而不是普通退款政策。",
+      "query_contract": {
+        "raw_query": "物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？",
+        "semantic_query": "物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？",
+        "lexical_query": "物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？ 物流 物流异常 运输异常 商品故障 质量问题 商品破损",
+        "rerank_query": "用户问题：物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？\n主要意图：物流\n业务主题：物流异常\n关联主题：商品故障",
+        "semantic_query_mode": "rerank",
+        "semantic_reranker_input": "用户问题：物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？\n主要意图：物流\n业务主题：物流异常\n关联主题：商品故障",
+        "input_context": {
+          "primary_intent": "shipping_exception",
+          "action_type": "query",
+          "topic": "shipping_exception",
+          "related_topics": [
+            "product_failure"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        }
+      }
+    },
+    {
+      "schema_version": "rag-eval-v1",
+      "case_id": "rag_refund_016",
+      "query": "快递运输途中把商品弄坏了，我可以申请退款吗？",
+      "mode": "hybrid_rule",
+      "passed": false,
+      "failure_type": "evidence_coverage_failure",
+      "failure_stage": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: shipping",
+      "source_metric_supported": true,
+      "expected_sources": [
+        "物流配送政策.md",
+        "商品售后规则.md",
+        "退换货政策.md"
+      ],
+      "retrieved_documents": [
+        "退款政策.md",
+        "退换货政策.md",
+        "商品售后规则.md",
+        "退款政策.md",
+        "商品售后规则.md"
+      ],
+      "expected_rank": 2,
+      "candidate_expected_rank": 3,
+      "hit_at_1": false,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "reciprocal_rank": 0.5,
+      "required_evidence_categories": [
+        "refund",
+        "shipping",
+        "product_after_sales"
+      ],
+      "evidence_coverage_rate": 0.6667,
+      "required_evidence_coverage": 0.6667,
+      "candidate_evidence_coverage_rate": 1.0,
+      "keywords_pass": true,
+      "missing_keywords": [],
+      "keyword_report": {
+        "matched_terms": [
+          "运输",
+          "损坏",
+          "物流"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "candidate_keyword_report": {
+        "matched_terms": [
+          "运输",
+          "损坏",
+          "物流"
+        ],
+        "missing_terms": [],
+        "coverage": 1.0,
+        "satisfied": true
+      },
+      "source_concentration": 0.4,
+      "constraint_satisfied": false,
+      "constraint_report": {
+        "required_categories": [
+          "refund",
+          "shipping",
+          "product_after_sales"
+        ],
+        "matched_categories": [
+          "refund",
+          "product_after_sales"
+        ],
+        "missing_categories": [
+          "shipping"
+        ],
+        "evidence_coverage_rate": 0.6667,
+        "required_evidence_coverage": 0.6667,
+        "constraint_satisfied": false
+      },
+      "candidate_constraint_report": {
+        "required_categories": [
+          "refund",
+          "shipping",
+          "product_after_sales"
+        ],
+        "matched_categories": [
+          "refund",
+          "shipping",
+          "product_after_sales"
+        ],
+        "missing_categories": [],
+        "evidence_coverage_rate": 1.0,
+        "required_evidence_coverage": 1.0,
+        "constraint_satisfied": true
+      },
+      "evidence_guardrail_pass": true,
+      "evidence_guardrail_report": {
+        "reason": "evidence_valid",
+        "profile": "return_refund",
+        "top_score": 1.2994,
+        "evidence": [
+          {
+            "source": "退款政策.md",
+            "section": "正文",
+            "citation": "退款政策.md - 正文",
+            "score": 1.2994,
+            "rerank_score": 1.2994,
+            "rerank_reasons": [
+              "phrase_match: 保修",
+              "source_match: return_refund",
+              "phrase_match: 退款, 退款申请",
+              "keyword_coverage: 退款",
+              "order_state_match: 已发货"
+            ]
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "正文",
+            "citation": "退换货政策.md - 正文",
+            "score": 1.2757,
+            "rerank_score": 1.2757,
+            "rerank_reasons": [
+              "phrase_match: 已签收",
+              "phrase_match: 质量检测",
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 退款申请",
+              "keyword_coverage: 退款",
+              "order_state_match: 已发货"
+            ]
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "正文",
+            "citation": "商品售后规则.md - 正文",
+            "score": 1.2127,
+            "rerank_score": 1.2127,
+            "rerank_reasons": [
+              "source_match: warranty_repair",
+              "phrase_match: 保修, 质量检测, 黑屏",
+              "source_match: return_refund",
+              "phrase_match: 七天无理由, 退款, 人工审核",
+              "keyword_coverage: 退款"
+            ]
+          }
+        ]
+      },
+      "supporting_target_hit": false,
+      "candidate_chunk_ids": [
+        "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+        "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:e613949ebd0c2ad4d359bcdb",
+        "doc_b1f79b4599410856d608f1ef:chunk:e6ba338b082f2cd3124d5a24",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:89d4fb0c0d3458fe6caba8c2",
+        "doc_b1f79b4599410856d608f1ef:chunk:3cf133d284da95d2c8793b77",
+        "doc_8ae3fda162d548bd3b86efff:chunk:3c0b4654992dad80a5178e87",
+        "doc_8ae3fda162d548bd3b86efff:chunk:5fef26e60545127cfcb84c6e",
+        "doc_253629df931f97428ff46d6e:chunk:4f9150b0e3f57f9db816ac6a",
+        "doc_8ae3fda162d548bd3b86efff:chunk:ecd08f6059f44bda917c811f",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:7ad4f45582e186aaec446bce",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:34e1b33a19b38c122c8b0880",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:7c02101000017923507d12df",
+        "doc_253629df931f97428ff46d6e:chunk:22cbd01770beca0f30da91f0",
+        "doc_253629df931f97428ff46d6e:chunk:c6e99e959cb1705fe743beb4",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:8936796c3a17b641457ece59",
+        "doc_e624c6825315857037f266a7:chunk:e48dbfd34c10f92e4b39b16b",
+        "doc_b1f79b4599410856d608f1ef:chunk:48f14527260e5eaa80c65451",
+        "doc_e624c6825315857037f266a7:chunk:c26900e9c6b2fcae77aebb94"
+      ],
+      "ranking_trace": [
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:fe4264908079e31afd6cf913",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 1,
+          "retrieval_score": 0.9544,
+          "hybrid_score": 0.9544,
+          "vector_score": 0.5481,
+          "bm25_score": 50.4228,
+          "keyword_score": null,
+          "rule_score": 1.2994,
+          "rule_boost": 0.345,
+          "rule_reason": [
+            "phrase_match: 保修",
+            "source_match: return_refund",
+            "phrase_match: 退款, 退款申请",
+            "keyword_coverage: 退款",
+            "order_state_match: 已发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 1,
+          "text_preview": "》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货商品需要结合物流和退货状态判断。\n\n只有满足对应退款条件后，才能继续进入退款申请流程。\n\n## 退款申请\n\n满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请"
+        },
+        {
+          "chunk_id": "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:735586b12ddb4a20755cbdee",
+          "source": "退换货政策.md",
+          "section": "正文",
+          "citation": "退换货政策.md - 正文",
+          "retrieval_rank": 3,
+          "retrieval_score": 0.8507,
+          "hybrid_score": 0.8507,
+          "vector_score": 0.4574,
+          "bm25_score": 58.2511,
+          "keyword_score": null,
+          "rule_score": 1.2757,
+          "rule_boost": 0.425,
+          "rule_reason": [
+            "phrase_match: 已签收",
+            "phrase_match: 质量检测",
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款",
+            "order_state_match: 已发货"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 2,
+          "text_preview": "货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。\n\n## 已发货订单\n\n订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。\n\n## 已签收订单\n\n商品已经签收后，需"
+        },
+        {
+          "chunk_id": "doc_8ae3fda162d548bd3b86efff:chunk:5fef26e60545127cfcb84c6e",
+          "source": "商品售后规则.md",
+          "section": "正文",
+          "citation": "商品售后规则.md - 正文",
+          "retrieval_rank": 9,
+          "retrieval_score": 0.7077,
+          "hybrid_score": 0.7077,
+          "vector_score": 0.3573,
+          "bm25_score": 54.5237,
+          "keyword_score": null,
+          "rule_score": 1.2127,
+          "rule_boost": 0.505,
+          "rule_reason": [
+            "source_match: warranty_repair",
+            "phrase_match: 保修, 质量检测, 黑屏",
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 人工审核",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 3,
+          "text_preview": "货；\n- 质量问题检测；\n- 保修维修；\n- 换新；\n- 退货退款；\n- 人工审核。\n\n具体进入哪一种处理流程，需要根据商品类型、订单状态、签收时间、商品问题以及对应政策判断。\n\n## 电子产品\n\n耳机、手表、键盘、显示器等电子产品，在符合七天无理由退货条件时，可以按照《退换货政策》申请退货。\n\n超过七天无理由退货期限后，如果用户反馈黑屏、无法开机、无法充电"
+        },
+        {
+          "chunk_id": "doc_253629df931f97428ff46d6e:chunk:7595718acb82bb2f912e3049",
+          "source": "退款政策.md",
+          "section": "正文",
+          "citation": "退款政策.md - 正文",
+          "retrieval_rank": 2,
+          "retrieval_score": 0.8802,
+          "hybrid_score": 0.8802,
+          "vector_score": 0.4752,
+          "bm25_score": 54.888,
+          "keyword_score": null,
+          "rule_score": 1.1852,
+          "rule_boost": 0.305,
+          "rule_reason": [
+            "phrase_match: 保修",
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 退款, 退款申请",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 4,
+          "text_preview": "# 退款政策\n\n## 退款申请前置条件\n\n退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情况下承诺退款已经完成。\n\n## 退款资格判断\n\n创建退款申请前，需要先确认用户"
+        },
+        {
+          "chunk_id": "doc_8ae3fda162d548bd3b86efff:chunk:3c0b4654992dad80a5178e87",
+          "source": "商品售后规则.md",
+          "section": "正文",
+          "citation": "商品售后规则.md - 正文",
+          "retrieval_rank": 8,
+          "retrieval_score": 0.7171,
+          "hybrid_score": 0.7171,
+          "vector_score": 0.3455,
+          "bm25_score": 59.4238,
+          "keyword_score": null,
+          "rule_score": 1.1821,
+          "rule_boost": 0.465,
+          "rule_reason": [
+            "source_match: warranty_repair",
+            "phrase_match: 保修",
+            "source_match: return_refund",
+            "phrase_match: 七天无理由, 定制, 退款",
+            "keyword_coverage: 退款"
+          ],
+          "semantic_rerank_score": null,
+          "semantic_rank": null,
+          "constraint_adjusted": false,
+          "constraint_reason": null,
+          "final_rank": 5,
+          "text_preview": "定制刻字、定制尺寸、定制图案等根据用户要求制作的商品，通常不支持七天无理由退货。\n\n如果定制商品存在以下问题，可以申请进一步售后处理：\n\n- 商品本身存在质量问题；\n- 实际商品与用户确认的定制内容不一致；\n- 商品错发；\n- 商品漏发；\n- 商品运输过程中发生明显损坏。\n\n定制商品是否能够退款或者重新制作，需要根据实际问题和人工审核结果判断。\n\n不能因为商"
+        }
+      ],
+      "notes": "跨文档场景：运输损坏同时涉及物流责任、商品售后和退换货规则，测试多来源召回。",
+      "query_contract": {
+        "raw_query": "快递运输途中把商品弄坏了，我可以申请退款吗？",
+        "semantic_query": "快递运输途中把商品弄坏了，我可以申请退款吗？",
+        "lexical_query": "快递运输途中把商品弄坏了，我可以申请退款吗？ 退款 退货退款 退款条件 退款资格 物流异常 运输异常 商品故障 质量问题 商品破损",
+        "rerank_query": "用户问题：快递运输途中把商品弄坏了，我可以申请退款吗？\n主要意图：退款\n业务主题：退款条件\n关联主题：物流异常；商品故障",
+        "semantic_query_mode": "rerank",
+        "semantic_reranker_input": "用户问题：快递运输途中把商品弄坏了，我可以申请退款吗？\n主要意图：退款\n业务主题：退款条件\n关联主题：物流异常；商品故障",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [
+            "shipping_exception",
+            "product_failure"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        }
+      }
+    }
+  ]
+}

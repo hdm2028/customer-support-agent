@@ -169,8 +169,10 @@ def check_tool_arguments(tool_calls: list[dict], result: dict, case: dict) -> tu
         if expected_order_id and "order_id" in arguments and str(arguments["order_id"]) != str(expected_order_id):
             errors.append(f"{tool_name}.order_id expected={expected_order_id}, actual={arguments.get('order_id')}")
 
-        if tool_name == "policy_search" and not str(arguments.get("query", "")).strip():
-            errors.append("policy_search.query is empty")
+        if tool_name == "policy_search":
+            for query_field in ("semantic_query", "lexical_query"):
+                if not str(arguments.get(query_field, "")).strip():
+                    errors.append(f"policy_search.{query_field} is empty")
 
         if tool_name == "refund_apply":
             user_request = str(arguments.get("user_request", ""))

@@ -1,8 +1,140 @@
 {
   "failed_cases": [
     {
+      "case_id": "tool_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "退款政策是什么？",
+              "lexical_query": "退款政策是什么？ 退款 退货退款 退款政策 退货规则 七天无理由"
+            }
+          }
+        ],
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
       "case_id": "tool_refund_004",
       "query": "退款一般多久能到账？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "退款一般多久能到账？",
+              "lexical_query": "退款一般多久能到账？ 退款 退货退款 退款到账 退款时效"
+            }
+          }
+        ],
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_order_003",
+      "query": "订单10006退款多久到账，帮我查一下进度。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10006"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10006退款多久到账，帮我查一下进度。\n订单状态：退货审核中\n物流状态：2026-08-04 16:20 退货包裹已被仓库签收\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31",
+              "lexical_query": "订单10006退款多久到账，帮我查一下进度。 退款 退货退款 退款到账 退款时效 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31"
+            }
+          }
+        ],
+        "reply": "已查询到订单 10006，商品是 女士运动鞋 R5，当前订单状态为退货审核中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_order_005",
+      "query": "帮我查订单99999现在是什么状态。",
+      "expected": {
+        "tools": [
+          "order_lookup"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "99999"
+            }
+          }
+        ],
+        "reply": "{'reason': '未找到订单号 99999，请核对订单号是否正确。', 'error_type': 'ToolExecutionError', 'error_message': '未找到订单号 99999，请核对订单号是否正确。', 'fallback_action': 'ask_user_to_retry_or_handoff', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 21.03, 'attempt_duration_ms': 21.02, 'side_effect_class': 'READ_ONLY'} 请您核对订单号后重新提供，我再继续查询售后政策并判断是否需要创建工单。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_policy_001",
+      "query": "七天无理由退货需要满足哪些条件？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "七天无理由退货需要满足哪些条件？",
+              "lexical_query": "七天无理由退货需要满足哪些条件？ 退款 退货退款 退款政策 退货规则 七天无理由"
+            }
+          }
+        ],
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_policy_002",
+      "query": "定制商品不合适，可以走七天无理由退货吗？",
       "expected": {
         "tools": [
           "policy_search"
@@ -14,6 +146,376 @@
         "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。"
       },
       "reason": "tools expected=['policy_search'], actual=[]; tool arguments unavailable; execute the case to collect trace tool_call events; expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_policy_003",
+      "query": "订单10002已经发货，还能修改收货地址吗？",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [],
+        "tool_calls": [],
+        "reply": "订单号 10002 已收到，请继续提供新的收货地址，我才能为您创建地址修改工单。"
+      },
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=[]; tool arguments unavailable; execute the case to collect trace tool_call events; expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_policy_004",
+      "query": "平台的物流异常处理规则是什么？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "平台的物流异常处理规则是什么？",
+              "lexical_query": "平台的物流异常处理规则是什么？ 物流政策 配送规则"
+            }
+          }
+        ],
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_policy_005",
+      "query": "家电出现质量问题时，保修政策怎么规定？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "家电出现质量问题时，保修政策怎么规定？",
+              "lexical_query": "家电出现质量问题时，保修政策怎么规定？ 保修 维修 保修政策 保修范围"
+            }
+          }
+        ],
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_policy_006",
+      "query": "退货和退款有什么区别？",
+      "expected": {
+        "tools": [
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "退货和退款有什么区别？",
+              "lexical_query": "退货和退款有什么区别？ 退款 退货退款 退款政策 退货规则 七天无理由"
+            }
+          }
+        ],
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_contrast_refund_001",
+      "query": "订单10001这个商品能退吗？",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10001"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10001这个商品能退吗？\n订单状态：已签收\n物流状态：2026-08-01 15:30 已签收\n商品名称：蓝牙降噪耳机 A1\n商品类目：电子产品\n签收日期：2026-08-01",
+              "lexical_query": "订单10001这个商品能退吗？ 退款 退货退款 退款条件 退款资格 已签收 2026-08-01 15:30 已签收 蓝牙降噪耳机 A1 电子产品 2026-08-01"
+            }
+          }
+        ],
+        "reply": "已查询到订单 10001，商品是 蓝牙降噪耳机 A1，当前订单状态为已签收。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_contrast_quality_001",
+      "query": "订单10001这个耳机质量太差了，我只是反馈，先不要操作。",
+      "expected": {
+        "tools": [
+          "order_lookup"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "risk_check"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10001"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10001",
+              "user_request": "订单10001这个耳机质量太差了，我只是反馈，先不要操作。"
+            }
+          }
+        ],
+        "reply": "已查询到订单 10001，商品是 蓝牙降噪耳机 A1，当前订单状态为已签收。"
+      },
+      "reason": "tools expected=['order_lookup'], actual=['order_lookup', 'risk_check']; dangerous_tool_misuse=['risk_check']"
+    },
+    {
+      "case_id": "tool_contrast_progress_001",
+      "query": "订单10006我已经申请退款了，帮我查一下进度。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10006"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10006我已经申请退款了，帮我查一下进度。\n订单状态：退货审核中\n物流状态：2026-08-04 16:20 退货包裹已被仓库签收\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31",
+              "lexical_query": "订单10006我已经申请退款了，帮我查一下进度。 退款 退货退款 退款到账 退款时效 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31"
+            }
+          }
+        ],
+        "reply": "已查询到订单 10006，商品是 女士运动鞋 R5，当前订单状态为退货审核中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。"
+      },
+      "reason": "expected tool execution did not succeed"
+    },
+    {
+      "case_id": "tool_boundary_unpaid_refund",
+      "query": "订单10005还没付款，直接帮我退款。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review",
+          "transfer_to_human",
+          "create_ticket"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review', 'transfer_to_human', 'create_ticket']; dangerous_tool_misuse=['refund_apply', 'create_manual_review', 'create_ticket']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_boundary_duplicate_refund",
+      "query": "订单10006正在退货审核，我还要再申请一次退款。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_ticket']; dangerous_tool_misuse=['refund_apply', 'create_ticket']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_boundary_payment_pending_refund",
+      "query": "订单10007扣款还在确认中，先直接给我退款。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review",
+          "transfer_to_human",
+          "create_ticket"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review', 'transfer_to_human', 'create_ticket']; dangerous_tool_misuse=['refund_apply', 'create_manual_review', 'create_ticket']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_boundary_not_found_refund",
+      "query": "订单99999现在帮我申请退款。",
+      "expected": {
+        "tools": [
+          "order_lookup"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools expected=['order_lookup'], actual=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_ticket']; dangerous_tool_misuse=['policy_search', 'risk_check', 'refund_apply', 'create_ticket']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_boundary_complaint_only",
+      "query": "订单10004这个商品体验太差了，我要投诉，但没有要求退款。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "risk_check",
+          "create_manual_review",
+          "create_ticket"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "risk_check"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools should contain ordered sequence ['order_lookup', 'risk_check', 'create_manual_review', 'create_ticket'], actual=['order_lookup', 'risk_check']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_boundary_complaint_refund",
+      "query": "订单10004这个商品体验太差了，我要投诉；直接退款，不用审核。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "create_manual_review",
+          "transfer_to_human"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools should contain ordered sequence ['order_lookup', 'policy_search', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=['order_lookup']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_boundary_risk_medium",
+      "query": "订单10008商品有问题，我要退款并投诉。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "create_manual_review"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools should contain ordered sequence ['order_lookup', 'policy_search', 'risk_check', 'create_manual_review'], actual=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_ticket']; dangerous_tool_misuse=['refund_apply', 'create_ticket']; execution skipped to avoid refund side effects"
+    },
+    {
+      "case_id": "tool_ticket_shipped_address",
+      "query": "订单10002已经发货，马上帮我修改收货地址。",
+      "expected": {
+        "tools": [
+          "order_lookup",
+          "risk_check",
+          "create_manual_review",
+          "transfer_to_human"
+        ]
+      },
+      "actual": {
+        "tools": [
+          "order_lookup",
+          "risk_check",
+          "create_manual_review",
+          "transfer_to_human",
+          "create_ticket"
+        ],
+        "tool_calls": [],
+        "reply": null
+      },
+      "reason": "tools expected=['order_lookup', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=['order_lookup', 'risk_check', 'create_manual_review', 'transfer_to_human', 'create_ticket']; dangerous_tool_misuse=['create_ticket']; execution skipped to avoid refund side effects"
     }
   ]
 }

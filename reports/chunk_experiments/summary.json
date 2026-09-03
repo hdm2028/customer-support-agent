@@ -1,0 +1,57 @@
+[
+  {
+    "experiment": "chunk_a_fixed_256",
+    "chunk_strategy": "fixed_256",
+    "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+    "chunk_count": 70,
+    "average_token_count": 226.4,
+    "min_token_count": 34,
+    "max_token_count": 256,
+    "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_a_fixed_256\\chunks.jsonl",
+    "chunker_version": "token-strategy-v3"
+  },
+  {
+    "experiment": "chunk_b_fixed_512",
+    "chunk_strategy": "fixed_512",
+    "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+    "chunk_count": 37,
+    "average_token_count": 418.8108,
+    "min_token_count": 87,
+    "max_token_count": 512,
+    "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_b_fixed_512\\chunks.jsonl",
+    "chunker_version": "token-strategy-v3"
+  },
+  {
+    "experiment": "chunk_c_markdown",
+    "chunk_strategy": "markdown",
+    "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+    "chunk_count": 158,
+    "average_token_count": 88.2848,
+    "min_token_count": 20,
+    "max_token_count": 202,
+    "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_c_markdown\\chunks.jsonl",
+    "chunker_version": "token-strategy-v3"
+  },
+  {
+    "experiment": "chunk_d_type_aware",
+    "chunk_strategy": "type_aware",
+    "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+    "chunk_count": 144,
+    "average_token_count": 97.1806,
+    "min_token_count": 31,
+    "max_token_count": 288,
+    "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_d_type_aware\\chunks.jsonl",
+    "chunker_version": "token-strategy-v3"
+  },
+  {
+    "experiment": "chunk_e_fixed_128",
+    "chunk_strategy": "fixed_128",
+    "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+    "chunk_count": 133,
+    "average_token_count": 120.1203,
+    "min_token_count": 19,
+    "max_token_count": 128,
+    "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_e_fixed_128\\chunks.jsonl",
+    "chunker_version": "token-strategy-v3"
+  }
+]

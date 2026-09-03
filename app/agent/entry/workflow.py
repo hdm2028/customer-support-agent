@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from app.agent.routing.conversation_context import apply_conversation_context
-from app.agent.policies.fallback_policy import build_fallback_answer
+from app.agent.response.fallback import build_fallback_answer
 from app.agent.routing.memory import ConversationMemory
 from app.agent.routing.pending_task import (
     apply_slot_requirements,

@@ -1,0 +1,11 @@
+{
+  "experiment": "chunk_d_type_aware",
+  "chunk_strategy": "type_aware",
+  "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+  "chunk_count": 144,
+  "average_token_count": 97.1806,
+  "min_token_count": 31,
+  "max_token_count": 288,
+  "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_d_type_aware\\chunks.jsonl",
+  "chunker_version": "token-strategy-v3"
+}

@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from app.core.schemas import ToolResult
@@ -218,6 +219,92 @@ AGENT_TOOL_PERMISSIONS = {
     },
     "risk_agent": {"risk_check"},
 }
+
+
+READ_ONLY = "READ_ONLY"
+SIDE_EFFECT = "SIDE_EFFECT"
+
+
+@dataclass(frozen=True)
+class ToolRuntimePolicy:
+    timeout_seconds: float
+    max_attempts: int
+    retry_on: tuple[str, ...]
+    side_effect_class: str
+    idempotent: bool
+    fallback_action: str
+    backoff_seconds: float = 0.1
+    fail_closed: bool = False
+    recovery_action: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+TOOL_RUNTIME_POLICIES = {
+    "order_lookup": ToolRuntimePolicy(
+        timeout_seconds=3.0,
+        max_attempts=2,
+        retry_on=("ToolTimeout", "ToolTransientError"),
+        side_effect_class=READ_ONLY,
+        idempotent=True,
+        fallback_action="ask_user_to_retry_or_handoff",
+    ),
+    "policy_search": ToolRuntimePolicy(
+        timeout_seconds=8.0,
+        max_attempts=2,
+        retry_on=("ToolTimeout", "ToolTransientError"),
+        side_effect_class=READ_ONLY,
+        idempotent=True,
+        fallback_action="handoff_to_human",
+    ),
+    "risk_check": ToolRuntimePolicy(
+        timeout_seconds=4.0,
+        max_attempts=2,
+        retry_on=("ToolTimeout", "ToolTransientError"),
+        side_effect_class=READ_ONLY,
+        idempotent=True,
+        fallback_action="create_manual_review_or_handoff_to_human",
+        fail_closed=True,
+    ),
+    "refund_apply": ToolRuntimePolicy(
+        timeout_seconds=8.0,
+        max_attempts=1,
+        retry_on=(),
+        side_effect_class=SIDE_EFFECT,
+        idempotent=True,
+        fallback_action="recover_refund_status_or_handoff",
+        recovery_action="check_order_idempotency_state_before_any_replay",
+    ),
+    "create_manual_review": ToolRuntimePolicy(
+        timeout_seconds=5.0,
+        max_attempts=1,
+        retry_on=(),
+        side_effect_class=SIDE_EFFECT,
+        idempotent=False,
+        fallback_action="manual_queue",
+    ),
+    "create_ticket": ToolRuntimePolicy(
+        timeout_seconds=5.0,
+        max_attempts=1,
+        retry_on=(),
+        side_effect_class=SIDE_EFFECT,
+        idempotent=False,
+        fallback_action="handoff_to_human",
+    ),
+    "transfer_to_human": ToolRuntimePolicy(
+        timeout_seconds=2.0,
+        max_attempts=1,
+        retry_on=(),
+        side_effect_class=SIDE_EFFECT,
+        idempotent=True,
+        fallback_action="manual_queue",
+    ),
+}
+
+
+def get_tool_runtime_policy(tool_name: str) -> ToolRuntimePolicy | None:
+    return TOOL_RUNTIME_POLICIES.get(tool_name)
 
 
 def get_function_tool_specs() -> list[dict[str, Any]]:

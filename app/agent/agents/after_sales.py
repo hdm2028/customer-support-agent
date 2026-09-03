@@ -1,5 +1,5 @@
 from app.agent.policies.ticket_policy import evaluate_ticket_creation
-from app.agent.routing.router import infer_issue_type
+from app.agent.routing.router import get_issue_type
 from app.agent.state import AgentResult, AgentState
 from app.agent.tools.tool_results import get_tool_result
 from app.core.schemas import RouteDecision, ToolResult
@@ -122,7 +122,7 @@ class AfterSalesAgent:
 
     def create_ticket(self, state: AgentState) -> AgentResult:
         order = state.order
-        issue_type = infer_issue_type(state.user_message)
+        issue_type = get_issue_type(state.route.intent)
         decision_result = safe_tool_call(
             "ticket_decision",
             lambda: evaluate_ticket_creation(
@@ -196,16 +196,33 @@ class AfterSalesAgent:
         )
 
     def manual_review_blocks_auto_refund(self, state: AgentState) -> bool:
+        if (
+            state.manual_review is None
+            or state.refund is not None
+            or not state.route.need_refund_request
+        ):
+            return False
+
         risk = state.risk or {}
 
-        return bool(
-            state.manual_review is not None
-            and state.refund is None
-            and state.route.need_refund_request
+        refund_result = get_tool_result(
+            state.tool_results,
+            "refund_apply",
+        )
+
+        refund_requires_review = bool(
+            refund_result
+            and isinstance(refund_result.result, dict)
             and (
-                state.route.manual_review_required
-                or risk.get("review_required")
+                refund_result.result.get("review_required")
+                or refund_result.result.get("status") == "pending_manual_review"
             )
+        )
+
+        return bool(
+            state.route.manual_review_required
+            or risk.get("review_required")
+            or refund_requires_review
         )
 
     def create_manual_review(self, state: AgentState) -> AgentResult:

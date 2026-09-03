@@ -1,0 +1,896 @@
+{
+  "comparison": "C0 semantic_query -> C1 rerank_query",
+  "dataset": {
+    "path": "D:\\python-project\\客服agent\\data\\eval\\rag_eval.jsonl",
+    "version": "sha256:666bf6895c7737926beb782275f98dfb4c22dee47afb5a0c678b0acd5d7cb299"
+  },
+  "kb_version": "kb_44682b19d432ca3f4d502cd1",
+  "experiment_isolation": {
+    "passed": true,
+    "frozen_modes": [
+      "hybrid",
+      "hybrid_rule"
+    ],
+    "candidate_k": 20,
+    "top_k": 5,
+    "stable_contracts_checked": 60,
+    "candidate_pools_checked": 220,
+    "reproducibility_equal_outside_query_mode": true,
+    "a_b_aggregate_and_case_results_equal": true,
+    "candidate_chunk_ids_equal": true,
+    "frozen_mode_metrics": {
+      "hybrid": {
+        "overall_pass": "12/20",
+        "hit_at_1": 0.6,
+        "hit_at_3": 0.95,
+        "hit_at_5": 0.95,
+        "mrr": 0.7583,
+        "candidate_evidence_recall_at_20": 0.975,
+        "evidence_coverage_rate": 0.8417,
+        "evidence_guardrail_pass_rate": 1.0
+      },
+      "hybrid_rule": {
+        "overall_pass": "13/20",
+        "hit_at_1": 0.75,
+        "hit_at_3": 0.9,
+        "hit_at_5": 0.95,
+        "mrr": 0.835,
+        "candidate_evidence_recall_at_20": 0.975,
+        "evidence_coverage_rate": 0.8833,
+        "evidence_guardrail_pass_rate": 1.0
+      }
+    }
+  },
+  "semantic_reranker": {
+    "provider": "sentence_transformers_cross_encoder",
+    "model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "revision": "1427fd652930e4ba29e8149678df786c240d8825",
+    "library": "sentence-transformers",
+    "library_version": "6.0.1",
+    "device": "cpu",
+    "batch_size": 8,
+    "max_length": 512,
+    "input_version": "candidate-representation-v1"
+  },
+  "metrics": {
+    "overall_pass": {
+      "c0_semantic_query": {
+        "count": "18/20",
+        "rate": 0.9
+      },
+      "c1_rerank_query": {
+        "count": "18/20",
+        "rate": 0.9
+      },
+      "delta_count": 0,
+      "delta_rate": 0.0
+    },
+    "hit_at_1": {
+      "c0_semantic_query": 0.6,
+      "c1_rerank_query": 0.55,
+      "delta": -0.05
+    },
+    "hit_at_3": {
+      "c0_semantic_query": 1.0,
+      "c1_rerank_query": 0.95,
+      "delta": -0.05
+    },
+    "hit_at_5": {
+      "c0_semantic_query": 1.0,
+      "c1_rerank_query": 1.0,
+      "delta": 0.0
+    },
+    "mrr": {
+      "c0_semantic_query": 0.7917,
+      "c1_rerank_query": 0.7458,
+      "delta": -0.0459
+    },
+    "candidate_evidence_recall_at_20": {
+      "c0_semantic_query": 0.975,
+      "c1_rerank_query": 0.975,
+      "delta": 0.0
+    },
+    "evidence_coverage_rate": {
+      "c0_semantic_query": 0.95,
+      "c1_rerank_query": 0.95,
+      "delta": 0.0
+    },
+    "evidence_guardrail_pass_rate": {
+      "c0_semantic_query": 1.0,
+      "c1_rerank_query": 1.0,
+      "delta": 0.0
+    }
+  },
+  "primary_rank_movement": {
+    "counts": {
+      "unchanged": 12,
+      "promoted": 3,
+      "demoted": 5,
+      "recovered_to_top5": 0,
+      "dropped_from_top5": 0,
+      "outside_top5_both": 0
+    },
+    "net_top5_change": 0,
+    "c0_negative_vs_hybrid": [
+      "rag_refund_010",
+      "rag_refund_011",
+      "rag_refund_017",
+      "rag_refund_020"
+    ],
+    "c0_negative_restored_by_c1": [],
+    "newly_passed_cases": [],
+    "new_pass_regressions": [],
+    "promoted_cases": [
+      "rag_refund_002",
+      "rag_refund_006",
+      "rag_refund_012"
+    ],
+    "rank_regression_cases": [
+      "rag_refund_011",
+      "rag_refund_015",
+      "rag_refund_016",
+      "rag_refund_017",
+      "rag_refund_018"
+    ],
+    "changed_cases": [
+      {
+        "case_id": "rag_refund_002",
+        "query": "定制杯子可以七天无理由退货吗？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "定制杯子可以七天无理由退货吗？",
+        "rerank_query": "用户问题：定制杯子可以七天无理由退货吗？\n主要意图：退款\n业务主题：退款条件",
+        "hybrid_primary_rank": 3,
+        "c0_primary_rank": 2,
+        "c1_primary_rank": 1,
+        "movement": "promoted",
+        "c0_top5": [
+          {
+            "source": "商品说明文档.md",
+            "section": "售后说明",
+            "semantic_rerank_score": 0.979492,
+            "text_preview": "定制商品通常不支持七天无理由退货。\n\n如果存在以下情况，可以申请售后处理：\n\n- 实际刻字内容与用户确认内容不一致；\n- 商品存在明显质量问题；\n- 商品错发；\n- 商品漏发；\n- 商品运输过程中发生明显损坏。\n\n出现售后争议时，可以要求用"
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "定制商品",
+            "semantic_rerank_score": 0.977201,
+            "text_preview": "定制刻字、定制尺寸、定制图案等根据用户要求制作的商品，通常不支持七天无理由退货。\n\n如果定制商品存在以下问题，可以申请进一步售后处理：\n\n- 商品本身存在质量问题；\n- 实际商品与用户确认的定制内容不一致；\n- 商品错发；\n- 商品漏发；\n"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "不支持七天无理由退货的情况",
+            "semantic_rerank_score": 0.964374,
+            "text_preview": "以下情况原则上不支持七天无理由退货：\n\n- 定制商品；\n- 用户已经明显使用并影响二次销售的商品；\n- 商品或主要配件缺失；\n- 商品因用户人为原因损坏；\n- 超过七天无理由退货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认"
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "通用规则",
+            "semantic_rerank_score": 0.921265,
+            "text_preview": "用户提出具体商品的售后请求时，应先识别用户诉求以及商品类型。\n\n如果用户只是咨询一般售后政策，例如“耳机坏了能保修吗”“定制商品能不能七天无理由退货”，可以直接根据知识库回答，不需要强制查询订单。\n\n如果用户要求对具体订单执行退货、换货、维"
+          },
+          {
+            "source": "商品说明文档.md",
+            "section": "七天无理由退货",
+            "semantic_rerank_score": 0.739523,
+            "text_preview": "运动鞋 R5 可以按照《退换货政策》申请七天无理由退货。\n\n退货时商品需要保持完好，并且不影响二次销售。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "退换货政策.md",
+            "section": "不支持七天无理由退货的情况",
+            "semantic_rerank_score": 0.993518,
+            "text_preview": "以下情况原则上不支持七天无理由退货：\n\n- 定制商品；\n- 用户已经明显使用并影响二次销售的商品；\n- 商品或主要配件缺失；\n- 商品因用户人为原因损坏；\n- 超过七天无理由退货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认"
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "定制商品",
+            "semantic_rerank_score": 0.990068,
+            "text_preview": "定制刻字、定制尺寸、定制图案等根据用户要求制作的商品，通常不支持七天无理由退货。\n\n如果定制商品存在以下问题，可以申请进一步售后处理：\n\n- 商品本身存在质量问题；\n- 实际商品与用户确认的定制内容不一致；\n- 商品错发；\n- 商品漏发；\n"
+          },
+          {
+            "source": "商品说明文档.md",
+            "section": "售后说明",
+            "semantic_rerank_score": 0.977345,
+            "text_preview": "定制商品通常不支持七天无理由退货。\n\n如果存在以下情况，可以申请售后处理：\n\n- 实际刻字内容与用户确认内容不一致；\n- 商品存在明显质量问题；\n- 商品错发；\n- 商品漏发；\n- 商品运输过程中发生明显损坏。\n\n出现售后争议时，可以要求用"
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "通用规则",
+            "semantic_rerank_score": 0.963537,
+            "text_preview": "用户提出具体商品的售后请求时，应先识别用户诉求以及商品类型。\n\n如果用户只是咨询一般售后政策，例如“耳机坏了能保修吗”“定制商品能不能七天无理由退货”，可以直接根据知识库回答，不需要强制查询订单。\n\n如果用户要求对具体订单执行退货、换货、维"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例四：超过七天仍要求无理由退货",
+            "semantic_rerank_score": 0.93747,
+            "text_preview": "用户签收商品 15 天后表示不喜欢商品，希望按照七天无理由退货。\n\n由于已经超过七天无理由退货期限，并且商品不存在质量问题，没有按照七天无理由退货处理。\n\n处理结果：无理由退货申请未通过。"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_006",
+        "query": "已发货订单退款需要先做什么？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy",
+          "related_topics": [
+            "shipping_exception"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "已发货订单退款需要先做什么？",
+        "rerank_query": "用户问题：已发货订单退款需要先做什么？\n主要意图：退款\n业务主题：退款政策\n关联主题：物流异常",
+        "hybrid_primary_rank": null,
+        "c0_primary_rank": 3,
+        "c1_primary_rank": 2,
+        "movement": "promoted",
+        "c0_top5": [
+          {
+            "source": "退款政策.md",
+            "section": "退款申请前置条件",
+            "semantic_rerank_score": 0.996197,
+            "text_preview": "退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款资格判断",
+            "semantic_rerank_score": 0.994983,
+            "text_preview": "创建退款申请前，需要先确认用户是否满足对应的退款条件。\n\n退款资格本身不由本政策决定，应根据具体业务场景查询对应规则，例如：\n\n- 七天无理由退货按照《退换货政策》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "已发货订单",
+            "semantic_rerank_score": 0.97362,
+            "text_preview": "订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "物流拦截",
+            "semantic_rerank_score": 0.819187,
+            "text_preview": "用户要求取消已经发货的订单时，可以根据物流状态判断是否能够尝试物流拦截。\n\n物流拦截不保证一定成功。\n\n如果拦截成功，可以根据订单和退货状态继续后续退款流程。\n\n如果拦截失败，需要等待商品继续配送、拒收或者退回后再按照对应售后规则处理。\n\n"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款申请",
+            "semantic_rerank_score": 0.780292,
+            "text_preview": "满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请的当前状态。\n\n退款申请创建后进入异步退款处理流程。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "退款政策.md",
+            "section": "退款资格判断",
+            "semantic_rerank_score": 0.995068,
+            "text_preview": "创建退款申请前，需要先确认用户是否满足对应的退款条件。\n\n退款资格本身不由本政策决定，应根据具体业务场景查询对应规则，例如：\n\n- 七天无理由退货按照《退换货政策》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "已发货订单",
+            "semantic_rerank_score": 0.98907,
+            "text_preview": "订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款申请前置条件",
+            "semantic_rerank_score": 0.986527,
+            "text_preview": "退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "物流拦截",
+            "semantic_rerank_score": 0.967951,
+            "text_preview": "用户要求取消已经发货的订单时，可以根据物流状态判断是否能够尝试物流拦截。\n\n物流拦截不保证一定成功。\n\n如果拦截成功，可以根据订单和退货状态继续后续退款流程。\n\n如果拦截失败，需要等待商品继续配送、拒收或者退回后再按照对应售后规则处理。\n\n"
+          },
+          {
+            "source": "客服SOP.md",
+            "section": "退款请求",
+            "semantic_rerank_score": 0.648862,
+            "text_preview": "用户明确要求对某个订单进行退款时：\n\n1. 获取订单号；\n2. 查询订单信息；\n3. 判断订单当前状态；\n4. 查询适用退款政策；\n5. 判断是否满足退款条件；\n6. 必要时进行风险检查；\n7. 满足条件后创建退款申请；\n8. 向用户返回退"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_011",
+        "query": "退款申请已经提交了，但现在还在处理中，我应该怎么办？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy",
+          "related_topics": [],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "退款申请已经提交了，但现在还在处理中，我应该怎么办？",
+        "rerank_query": "用户问题：退款申请已经提交了，但现在还在处理中，我应该怎么办？\n主要意图：退款\n业务主题：退款政策",
+        "hybrid_primary_rank": 1,
+        "c0_primary_rank": 2,
+        "c1_primary_rank": 3,
+        "movement": "demoted",
+        "c0_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十二：退款处理过程中用户要求再次退款",
+            "semantic_rerank_score": 0.816888,
+            "text_preview": "用户已经存在一笔 PROCESSING 状态的退款申请，但再次要求客服执行退款。\n\n系统查询到已有退款任务后，没有再次创建退款。\n\n客服向用户说明当前退款正在处理中。\n\n处理结果：继续等待原退款任务。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款处理状态",
+            "semantic_rerank_score": 0.56483,
+            "text_preview": "退款申请可能处于以下状态：\n\n- `PENDING`：退款申请已创建，等待处理；\n- `PROCESSING`：退款任务正在处理；\n- `SUCCEEDED`：退款已经成功完成；\n- `FAILED`：退款处理失败；\n- `MANUAL_R"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十一：用户重复提交退款",
+            "semantic_rerank_score": 0.396813,
+            "text_preview": "用户短时间内连续两次提交同一个订单的退款请求。\n\n第一次请求已经成功创建退款申请。\n\n第二次请求没有创建新的退款记录，而是返回已有退款申请状态。\n\n处理结果：只存在一笔退款申请。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款申请",
+            "semantic_rerank_score": 0.305033,
+            "text_preview": "满足退款条件后，可以为订单创建退款申请。\n\n每笔退款申请应具有唯一的业务标识。\n\n同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请的当前状态。\n\n退款申请创建后进入异步退款处理流程。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款处理",
+            "semantic_rerank_score": 0.30298,
+            "text_preview": "退款申请创建成功后，系统会进入退款处理流程。\n\n退款处理过程中可能出现以下状态：\n\n- PENDING：等待处理；\n- PROCESSING：正在处理；\n- SUCCEEDED：退款成功；\n- FAILED：退款失败；\n- MANUAL_R"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十二：退款处理过程中用户要求再次退款",
+            "semantic_rerank_score": 0.963382,
+            "text_preview": "用户已经存在一笔 PROCESSING 状态的退款申请，但再次要求客服执行退款。\n\n系统查询到已有退款任务后，没有再次创建退款。\n\n客服向用户说明当前退款正在处理中。\n\n处理结果：继续等待原退款任务。"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十一：用户重复提交退款",
+            "semantic_rerank_score": 0.922777,
+            "text_preview": "用户短时间内连续两次提交同一个订单的退款请求。\n\n第一次请求已经成功创建退款申请。\n\n第二次请求没有创建新的退款记录，而是返回已有退款申请状态。\n\n处理结果：只存在一笔退款申请。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款处理状态",
+            "semantic_rerank_score": 0.863568,
+            "text_preview": "退款申请可能处于以下状态：\n\n- `PENDING`：退款申请已创建，等待处理；\n- `PROCESSING`：退款任务正在处理；\n- `SUCCEEDED`：退款已经成功完成；\n- `FAILED`：退款处理失败；\n- `MANUAL_R"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款申请前置条件",
+            "semantic_rerank_score": 0.687857,
+            "text_preview": "退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款处理",
+            "semantic_rerank_score": 0.478559,
+            "text_preview": "退款申请创建成功后，系统会进入退款处理流程。\n\n退款处理过程中可能出现以下状态：\n\n- PENDING：等待处理；\n- PROCESSING：正在处理；\n- SUCCEEDED：退款成功；\n- FAILED：退款失败；\n- MANUAL_R"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_012",
+        "query": "大额订单申请退款为什么需要人工审核？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy",
+          "related_topics": [],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "大额订单申请退款为什么需要人工审核？",
+        "rerank_query": "用户问题：大额订单申请退款为什么需要人工审核？\n主要意图：退款\n业务主题：退款政策",
+        "hybrid_primary_rank": 2,
+        "c0_primary_rank": 2,
+        "c1_primary_rank": 1,
+        "movement": "promoted",
+        "c0_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例九：高金额退款进入人工审核",
+            "semantic_rerank_score": 0.997906,
+            "text_preview": "用户申请一笔高金额订单退款。\n\n退款资格初步判断符合要求，但风险检查结果为高风险。\n\n系统没有直接执行退款，而是创建人工审核任务。\n\n处理结果：等待人工审核。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.996757,
+            "text_preview": "以下情况可能进入人工审核：\n\n- 大额退款；\n- 高频退款；\n- 账户行为异常；\n- 风险检查结果异常；\n- 用户描述与订单实际状态冲突；\n- 投诉升级并涉及资金操作；\n- 自动流程无法确认退款处理结果。\n\n进入人工审核不代表退款一定失败。"
+          },
+          {
+            "source": "售后FAQ.md",
+            "section": "为什么退款要人工审核？",
+            "semantic_rerank_score": 0.996282,
+            "text_preview": "部分高金额、异常状态或者风险较高的退款需要人工确认。\n\n进入人工审核并不代表退款一定会被拒绝。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.977351,
+            "text_preview": "以下情况可能进入人工审核：\n\n- 退款金额较高；\n- 短时间内存在多次退款行为；\n- 订单信息存在异常；\n- 风险系统判定为高风险；\n- 自动退款流程无法确认处理结果。\n\n进入人工审核并不代表退款一定失败。\n\n最终结果以人工审核结果为准。"
+          },
+          {
+            "source": "人工审核SOP.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.949693,
+            "text_preview": "以下情况可以进入退款人工审核：\n\n- 风险系统判断为高风险；\n- 退款金额超过自动处理范围；\n- 同一用户短时间存在多次退款；\n- 订单状态异常；\n- 自动系统无法确认退款是否已经执行；\n- 退款请求存在明显冲突信息。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "退款政策.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.998845,
+            "text_preview": "以下情况可能进入人工审核：\n\n- 大额退款；\n- 高频退款；\n- 账户行为异常；\n- 风险检查结果异常；\n- 用户描述与订单实际状态冲突；\n- 投诉升级并涉及资金操作；\n- 自动流程无法确认退款处理结果。\n\n进入人工审核不代表退款一定失败。"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例九：高金额退款进入人工审核",
+            "semantic_rerank_score": 0.997811,
+            "text_preview": "用户申请一笔高金额订单退款。\n\n退款资格初步判断符合要求，但风险检查结果为高风险。\n\n系统没有直接执行退款，而是创建人工审核任务。\n\n处理结果：等待人工审核。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.965945,
+            "text_preview": "以下情况可能进入人工审核：\n\n- 退款金额较高；\n- 短时间内存在多次退款行为；\n- 订单信息存在异常；\n- 风险系统判定为高风险；\n- 自动退款流程无法确认处理结果。\n\n进入人工审核并不代表退款一定失败。\n\n最终结果以人工审核结果为准。"
+          },
+          {
+            "source": "人工审核SOP.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.955736,
+            "text_preview": "以下情况可以进入退款人工审核：\n\n- 风险系统判断为高风险；\n- 退款金额超过自动处理范围；\n- 同一用户短时间存在多次退款；\n- 订单状态异常；\n- 自动系统无法确认退款是否已经执行；\n- 退款请求存在明显冲突信息。"
+          },
+          {
+            "source": "售后FAQ.md",
+            "section": "为什么退款要人工审核？",
+            "semantic_rerank_score": 0.953602,
+            "text_preview": "部分高金额、异常状态或者风险较高的退款需要人工确认。\n\n进入人工审核并不代表退款一定会被拒绝。"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_015",
+        "query": "物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？",
+        "input_context": {
+          "primary_intent": "shipping_exception",
+          "action_type": "query",
+          "topic": "shipping_exception",
+          "related_topics": [
+            "product_failure"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？",
+        "rerank_query": "用户问题：物流显示已经签收，但我根本没有收到商品，这种情况怎么处理？\n主要意图：物流\n业务主题：物流异常\n关联主题：商品故障",
+        "hybrid_primary_rank": 1,
+        "c0_primary_rank": 1,
+        "c1_primary_rank": 2,
+        "movement": "demoted",
+        "c0_top5": [
+          {
+            "source": "物流配送政策.md",
+            "section": "已签收但用户未收到",
+            "semantic_rerank_score": 0.99988,
+            "text_preview": "如果物流系统显示商品已经签收，但用户表示没有收到商品，应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否由家人、前台或者代收点代收。\n\n无法确认商品实际去向时，可以创建物流争议工单。\n\n不能仅因为物流显示“已签收”就"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例六：已签收但用户没有收到",
+            "semantic_rerank_score": 0.999741,
+            "text_preview": "物流系统显示订单已经签收，但用户表示本人没有收到商品。\n\n客服进一步查询发现商品由小区代收点签收。\n\n用户最终在代收点找到商品。\n\n处理结果：商品已找到。"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "已签收争议",
+            "semantic_rerank_score": 0.999596,
+            "text_preview": "用户表示没有收到商品，但物流系统显示已经签收时，属于用户描述与物流状态存在冲突。\n\n客服应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否存在家人代收；\n- 是否由前台、驿站或者其他代收点签收。\n\n如果无法确认实际收"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "长时间未收到商品",
+            "semantic_rerank_score": 0.998418,
+            "text_preview": "用户表示长时间没有收到商品时，应首先查询实际物流状态。\n\n如果物流仍处于运输中，并且已经超过正常异常判断时间，可以按照物流异常流程处理。\n\n如果物流显示已经签收，则进入已签收争议流程。\n\n不能仅根据“未收到”直接执行退款或者赔付。"
+          },
+          {
+            "source": "售后FAQ.md",
+            "section": "显示签收但是我没收到怎么办？",
+            "semantic_rerank_score": 0.993792,
+            "text_preview": "需要进一步核实签收时间、签收地点以及是否存在代收情况。\n\n无法确认商品实际去向时，可以创建物流争议工单。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例六：已签收但用户没有收到",
+            "semantic_rerank_score": 0.99992,
+            "text_preview": "物流系统显示订单已经签收，但用户表示本人没有收到商品。\n\n客服进一步查询发现商品由小区代收点签收。\n\n用户最终在代收点找到商品。\n\n处理结果：商品已找到。"
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "已签收但用户未收到",
+            "semantic_rerank_score": 0.999804,
+            "text_preview": "如果物流系统显示商品已经签收，但用户表示没有收到商品，应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否由家人、前台或者代收点代收。\n\n无法确认商品实际去向时，可以创建物流争议工单。\n\n不能仅因为物流显示“已签收”就"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "已签收争议",
+            "semantic_rerank_score": 0.999753,
+            "text_preview": "用户表示没有收到商品，但物流系统显示已经签收时，属于用户描述与物流状态存在冲突。\n\n客服应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否存在家人代收；\n- 是否由前台、驿站或者其他代收点签收。\n\n如果无法确认实际收"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "长时间未收到商品",
+            "semantic_rerank_score": 0.998533,
+            "text_preview": "用户表示长时间没有收到商品时，应首先查询实际物流状态。\n\n如果物流仍处于运输中，并且已经超过正常异常判断时间，可以按照物流异常流程处理。\n\n如果物流显示已经签收，则进入已签收争议流程。\n\n不能仅根据“未收到”直接执行退款或者赔付。"
+          },
+          {
+            "source": "售后FAQ.md",
+            "section": "显示签收但是我没收到怎么办？",
+            "semantic_rerank_score": 0.989191,
+            "text_preview": "需要进一步核实签收时间、签收地点以及是否存在代收情况。\n\n无法确认商品实际去向时，可以创建物流争议工单。"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_016",
+        "query": "快递运输途中把商品弄坏了，我可以申请退款吗？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [
+            "shipping_exception",
+            "product_failure"
+          ],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "快递运输途中把商品弄坏了，我可以申请退款吗？",
+        "rerank_query": "用户问题：快递运输途中把商品弄坏了，我可以申请退款吗？\n主要意图：退款\n业务主题：退款条件\n关联主题：物流异常；商品故障",
+        "hybrid_primary_rank": 3,
+        "c0_primary_rank": 1,
+        "c1_primary_rank": 2,
+        "movement": "demoted",
+        "c0_top5": [
+          {
+            "source": "商品售后规则.md",
+            "section": "定制商品",
+            "semantic_rerank_score": 0.568418,
+            "text_preview": "定制刻字、定制尺寸、定制图案等根据用户要求制作的商品，通常不支持七天无理由退货。\n\n如果定制商品存在以下问题，可以申请进一步售后处理：\n\n- 商品本身存在质量问题；\n- 实际商品与用户确认的定制内容不一致；\n- 商品错发；\n- 商品漏发；\n"
+          },
+          {
+            "source": "商品说明文档.md",
+            "section": "售后说明",
+            "semantic_rerank_score": 0.545922,
+            "text_preview": "定制商品通常不支持七天无理由退货。\n\n如果存在以下情况，可以申请售后处理：\n\n- 实际刻字内容与用户确认内容不一致；\n- 商品存在明显质量问题；\n- 商品错发；\n- 商品漏发；\n- 商品运输过程中发生明显损坏。\n\n出现售后争议时，可以要求用"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "质量问题退款",
+            "semantic_rerank_score": 0.169335,
+            "text_preview": "如果商品存在无法正常使用、功能异常、明显质量缺陷等问题，用户可以申请售后处理。\n\n质量问题通常需要经过售后检测。\n\n检测确认属于商品质量问题后，可以根据具体情况进行：\n\n- 维修；\n- 换新；\n- 退货退款。\n\n不能仅根据用户描述直接认定商"
+          },
+          {
+            "source": "售后FAQ.md",
+            "section": "不合适可以退吗？",
+            "semantic_rerank_score": 0.093285,
+            "text_preview": "如果商品满足七天无理由退货条件，可以申请退货。\n\n具体需要结合签收时间、商品状态以及商品类型判断。"
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "物流赔付",
+            "semantic_rerank_score": 0.046393,
+            "text_preview": "物流异常不代表客服可以直接进行退款或者赔付。\n\n涉及退款、赔付等资金操作时，需要按照对应售后政策以及风险控制流程执行。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "商品说明文档.md",
+            "section": "售后说明",
+            "semantic_rerank_score": 0.599811,
+            "text_preview": "定制商品通常不支持七天无理由退货。\n\n如果存在以下情况，可以申请售后处理：\n\n- 实际刻字内容与用户确认内容不一致；\n- 商品存在明显质量问题；\n- 商品错发；\n- 商品漏发；\n- 商品运输过程中发生明显损坏。\n\n出现售后争议时，可以要求用"
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "定制商品",
+            "semantic_rerank_score": 0.409903,
+            "text_preview": "定制刻字、定制尺寸、定制图案等根据用户要求制作的商品，通常不支持七天无理由退货。\n\n如果定制商品存在以下问题，可以申请进一步售后处理：\n\n- 商品本身存在质量问题；\n- 实际商品与用户确认的定制内容不一致；\n- 商品错发；\n- 商品漏发；\n"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "质量问题退款",
+            "semantic_rerank_score": 0.403914,
+            "text_preview": "如果商品存在无法正常使用、功能异常、明显质量缺陷等问题，用户可以申请售后处理。\n\n质量问题通常需要经过售后检测。\n\n检测确认属于商品质量问题后，可以根据具体情况进行：\n\n- 维修；\n- 换新；\n- 退货退款。\n\n不能仅根据用户描述直接认定商"
+          },
+          {
+            "source": "物流规则.md",
+            "section": "物流异常与退款",
+            "semantic_rerank_score": 0.201819,
+            "text_preview": "发生物流异常不代表用户一定可以立即退款。\n\n物流 Agent 或客服 Agent 可以查询物流状态、创建物流异常工单，但不能仅根据物流异常直接认定退款资格。\n\n涉及退款时，应继续按照对应退款和退换货规则处理。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款资格判断",
+            "semantic_rerank_score": 0.098078,
+            "text_preview": "创建退款申请前，需要先确认用户是否满足对应的退款条件。\n\n退款资格本身不由本政策决定，应根据具体业务场景查询对应规则，例如：\n\n- 七天无理由退货按照《退换货政策》判断；\n- 商品质量问题按照《商品售后规则》和《保修政策》判断；\n- 已发货"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_017",
+        "query": "商品已经退回仓库了，为什么退款还没有到账？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_timing",
+          "related_topics": [],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "商品已经退回仓库了，为什么退款还没有到账？",
+        "rerank_query": "用户问题：商品已经退回仓库了，为什么退款还没有到账？\n主要意图：退款\n业务主题：退款到账",
+        "hybrid_primary_rank": 1,
+        "c0_primary_rank": 2,
+        "c1_primary_rank": 4,
+        "movement": "demoted",
+        "c0_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例三：七天内退货成功",
+            "semantic_rerank_score": 0.366685,
+            "text_preview": "用户签收商品 3 天后表示商品不合适，希望退货。\n\n商品保持完好，配件齐全，不影响二次销售。\n\n客服创建退货申请。\n\n商品退回仓库并完成质检后，进入退款流程。\n\n处理结果：退货退款成功。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款到账",
+            "semantic_rerank_score": 0.335044,
+            "text_preview": "退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款到账时间",
+            "semantic_rerank_score": 0.321785,
+            "text_preview": "退款成功后，实际到账时间可能受到原支付渠道影响。\n\n平台完成退款操作不代表资金一定立即到账。\n\n如果退款状态已经显示成功，但用户长时间未收到退款，可以进一步查询支付渠道处理状态。"
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "用户拒收",
+            "semantic_rerank_score": 0.108787,
+            "text_preview": "用户在配送过程中拒收商品后，需要等待物流状态更新。\n\n商品退回仓库并完成确认后，再根据订单情况进入退款或者退货流程。"
+          },
+          {
+            "source": "商品售后规则.md",
+            "section": "退款",
+            "semantic_rerank_score": 0.102194,
+            "text_preview": "商品售后处理最终涉及退款时，应按照《退款政策》继续执行。\n\n商品售后规则负责判断当前问题应该进入哪种售后处理路径，不负责直接认定退款已经成功。\n\n退款申请创建、退款状态、人工审核以及退款到账等规则以《退款政策》为准。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例三：七天内退货成功",
+            "semantic_rerank_score": 0.896524,
+            "text_preview": "用户签收商品 3 天后表示商品不合适，希望退货。\n\n商品保持完好，配件齐全，不影响二次销售。\n\n客服创建退货申请。\n\n商品退回仓库并完成质检后，进入退款流程。\n\n处理结果：退货退款成功。"
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "用户拒收",
+            "semantic_rerank_score": 0.659174,
+            "text_preview": "用户在配送过程中拒收商品后，需要等待物流状态更新。\n\n商品退回仓库并完成确认后，再根据订单情况进入退款或者退货流程。"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十二：退款处理过程中用户要求再次退款",
+            "semantic_rerank_score": 0.364422,
+            "text_preview": "用户已经存在一笔 PROCESSING 状态的退款申请，但再次要求客服执行退款。\n\n系统查询到已有退款任务后，没有再次创建退款。\n\n客服向用户说明当前退款正在处理中。\n\n处理结果：继续等待原退款任务。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款到账",
+            "semantic_rerank_score": 0.346442,
+            "text_preview": "退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款到账时间",
+            "semantic_rerank_score": 0.340287,
+            "text_preview": "退款成功后，实际到账时间可能受到原支付渠道影响。\n\n平台完成退款操作不代表资金一定立即到账。\n\n如果退款状态已经显示成功，但用户长时间未收到退款，可以进一步查询支付渠道处理状态。"
+          }
+        ]
+      },
+      {
+        "case_id": "rag_refund_018",
+        "query": "退款失败以后系统会不会自动再给我退一次？",
+        "input_context": {
+          "primary_intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_policy",
+          "related_topics": [],
+          "order_status": null,
+          "shipping_status": null,
+          "product_name": null,
+          "product_category": null,
+          "signed_date": null,
+          "handoff_required": false
+        },
+        "semantic_query": "退款失败以后系统会不会自动再给我退一次？",
+        "rerank_query": "用户问题：退款失败以后系统会不会自动再给我退一次？\n主要意图：退款\n业务主题：退款政策",
+        "hybrid_primary_rank": 2,
+        "c0_primary_rank": 1,
+        "c1_primary_rank": 3,
+        "movement": "demoted",
+        "c0_top5": [
+          {
+            "source": "退款政策.md",
+            "section": "退款失败",
+            "semantic_rerank_score": 0.796694,
+            "text_preview": "退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款处理",
+            "semantic_rerank_score": 0.50925,
+            "text_preview": "退款申请创建成功后，系统会进入退款处理流程。\n\n退款处理过程中可能出现以下状态：\n\n- PENDING：等待处理；\n- PROCESSING：正在处理；\n- SUCCEEDED：退款成功；\n- FAILED：退款失败；\n- MANUAL_R"
+          },
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十二：退款处理过程中用户要求再次退款",
+            "semantic_rerank_score": 0.505613,
+            "text_preview": "用户已经存在一笔 PROCESSING 状态的退款申请，但再次要求客服执行退款。\n\n系统查询到已有退款任务后，没有再次创建退款。\n\n客服向用户说明当前退款正在处理中。\n\n处理结果：继续等待原退款任务。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款到账",
+            "semantic_rerank_score": 0.410428,
+            "text_preview": "退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款人工审核",
+            "semantic_rerank_score": 0.309169,
+            "text_preview": "以下情况可能进入人工审核：\n\n- 退款金额较高；\n- 短时间内存在多次退款行为；\n- 订单信息存在异常；\n- 风险系统判定为高风险；\n- 自动退款流程无法确认处理结果。\n\n进入人工审核并不代表退款一定失败。\n\n最终结果以人工审核结果为准。"
+          }
+        ],
+        "c1_top5": [
+          {
+            "source": "历史问题案例.md",
+            "section": "案例十二：退款处理过程中用户要求再次退款",
+            "semantic_rerank_score": 0.789422,
+            "text_preview": "用户已经存在一笔 PROCESSING 状态的退款申请，但再次要求客服执行退款。\n\n系统查询到已有退款任务后，没有再次创建退款。\n\n客服向用户说明当前退款正在处理中。\n\n处理结果：继续等待原退款任务。"
+          },
+          {
+            "source": "退换货政策.md",
+            "section": "退款处理",
+            "semantic_rerank_score": 0.761072,
+            "text_preview": "退款申请创建成功后，系统会进入退款处理流程。\n\n退款处理过程中可能出现以下状态：\n\n- PENDING：等待处理；\n- PROCESSING：正在处理；\n- SUCCEEDED：退款成功；\n- FAILED：退款失败；\n- MANUAL_R"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款失败",
+            "semantic_rerank_score": 0.721018,
+            "text_preview": "退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款到账",
+            "semantic_rerank_score": 0.633431,
+            "text_preview": "退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。"
+          },
+          {
+            "source": "退款政策.md",
+            "section": "退款处理通知",
+            "semantic_rerank_score": 0.548345,
+            "text_preview": "退款状态发生重要变化后，可以通过系统通知用户当前处理进度。\n\n通知内容应以退款系统中的真实状态为准。\n\n不能将 `PENDING`、`PROCESSING` 或 `MANUAL_REVIEW` 描述为退款已经成功。"
+          }
+        ]
+      }
+    ]
+  },
+  "query_contract_audit": {
+    "case_count": 20,
+    "rerank_query_length_chars": {
+      "min": 33,
+      "max": 62,
+      "average": 46.8,
+      "over_500_chars": 0
+    },
+    "empty_cases": [],
+    "duplicate_line_cases": [],
+    "none_literal_cases": [],
+    "false_handoff_leaks": [],
+    "router_key_exposure": {},
+    "semantic_and_lexical_queries_frozen": true,
+    "vocabulary_policy": "first mapped Chinese retrieval term only"
+  },
+  "hypothesis_assessment": {
+    "a_rerank_query_effectiveness": {
+      "answer": "mixed",
+      "net_effect": "negative",
+      "evidence": "Some primary ranks improved, but demotions were more frequent and Hit@1, Hit@3, and MRR decreased while Pass and Hit@5 were unchanged."
+    },
+    "hypothesis_1_business_semantics_restore_negative_reranks": {
+      "status": "not_supported_on_dev",
+      "c0_negative_vs_hybrid": [
+        "rag_refund_010",
+        "rag_refund_011",
+        "rag_refund_017",
+        "rag_refund_020"
+      ],
+      "restored_by_c1": [],
+      "evidence": "None of the C0 regressions relative to Hybrid were restored by C1."
+    },
+    "hypothesis_2_benefit_concentrates_in_minimal_or_explicit": {
+      "status": "not_testable_on_dev_v1",
+      "slice_fields_present": [],
+      "fact_enriched_cases": [],
+      "evidence": "The 20-case v1 Dev set has no scenario/context/difficulty labels and contains no populated order or shipping fact fields."
+    },
+    "hypothesis_3_rerank_query_adds_noise": {
+      "status": "supported",
+      "promoted_cases": [
+        "rag_refund_002",
+        "rag_refund_006",
+        "rag_refund_012"
+      ],
+      "rank_regression_cases": [
+        "rag_refund_011",
+        "rag_refund_015",
+        "rag_refund_016",
+        "rag_refund_017",
+        "rag_refund_018"
+      ],
+      "inference": "Broad business labels can strengthen generic policy or historical-case matches over the exact primary evidence; this is inferred from the changed ranking traces, not from a separate model attribution signal."
+    },
+    "unresolved": [
+      "authority conflict",
+      "hard multi-evidence ranking",
+      "generic Cross-Encoder relevance mismatch",
+      "evidence composition"
+    ],
+    "recommendation": "Keep the reversible query-mode experiment, but do not treat rerank_query as a validated fix for the Cross-Encoder negative-rerank problem. The next experiment may evaluate ranking-power control without changing this query contract or tuning on the 60-case Holdout."
+  }
+}

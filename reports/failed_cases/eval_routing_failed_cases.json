@@ -1,8 +1,8 @@
 {
   "failed_cases": [
     {
-      "case_id": "routing_refund_003",
-      "query": "退款一般多久能到账？",
+      "case_id": "routing_refund_017",
+      "query": "超过七天是不是就一定不能退了？",
       "expected": {
         "intent": "return_refund",
         "route": {
@@ -16,18 +16,18 @@
         ]
       },
       "actual": {
-        "intent": "return_refund",
+        "intent": "general_support",
         "route": {
-          "intent": "return_refund",
-          "confidence": 0.67,
-          "routing_reason": "命中退货退款意图关键词：退款。",
+          "intent": "general_support",
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: RemoteDisconnected: Remote end closed connection without response",
           "agent_plan": [
             "客服 Agent"
           ],
           "tool_plan": [],
           "order_id": null,
           "need_order": false,
-          "need_policy": true,
+          "need_policy": false,
           "need_ticket": false,
           "need_refund_request": false,
           "need_risk_check": false,
@@ -35,8 +35,8 @@
           "need_handoff": false,
           "blocked_by_guardrail": false,
           "guardrail_reason": null,
-          "need_clarification": true,
-          "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+          "need_clarification": false,
+          "clarification_question": null,
           "handoff_required": false,
           "handoff_reason": null,
           "risk_level": "low",
@@ -46,7 +46,7 @@
           "客服 Agent"
         ]
       },
-      "reason": "route.need_clarification expected=False, actual=True"
+      "reason": "intent expected='return_refund', actual='general_support'; route.need_policy expected=True, actual=False"
     }
   ]
 }

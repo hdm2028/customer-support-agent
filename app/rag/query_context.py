@@ -20,6 +20,7 @@ class RAGQueryContext:
 class RetrievalQuery:
     semantic_query: str
     lexical_query: str
+    rerank_query: str | None = None
 
     def __post_init__(self) -> None:
         if not self.semantic_query.strip():

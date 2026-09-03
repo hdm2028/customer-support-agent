@@ -1,6 +1,5 @@
 from app.agent.policies.fallback_policy import requires_order_id
-from app.agent.routing.router import extract_order_id
-
+from app.agent.routing.parsing import extract_order_id
 
 ISSUE_CONTEXT_KEYWORDS = [
     "不想要",

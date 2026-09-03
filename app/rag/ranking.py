@@ -9,15 +9,25 @@ HYBRID_MODE = "hybrid"
 RULE_RERANK_MODE = "hybrid_rule"
 SEMANTIC_RERANK_MODE = "hybrid_semantic"
 SEMANTIC_CONSTRAINT_MODE = "hybrid_semantic_constraint"
+SEMANTIC_FUSION_MODE = "hybrid_semantic_fusion"
 RANKING_MODES = (
     HYBRID_MODE,
     RULE_RERANK_MODE,
     SEMANTIC_RERANK_MODE,
     SEMANTIC_CONSTRAINT_MODE,
+    SEMANTIC_FUSION_MODE,
 )
 
 BUSINESS_CONSTRAINT_VERSION = "business-evidence-constraint-v1"
 ABLATION_RUNNER_VERSION = "rag-ablation-v1"
+SEMANTIC_QUERY_MODE = "semantic"
+RERANK_QUERY_MODE = "rerank"
+SEMANTIC_QUERY_MODES = (
+    SEMANTIC_QUERY_MODE,
+    RERANK_QUERY_MODE,
+)
+SEMANTIC_FUSION_RETRIEVAL_WEIGHT = 0.5
+SEMANTIC_FUSION_SEMANTIC_WEIGHT = 0.5
 
 
 @dataclass(frozen=True)
@@ -184,6 +194,61 @@ def _final_ranked(candidates: list[dict]) -> list[dict]:
     ]
 
 
+def _min_max_normalize(value: float, values: list[float]) -> float:
+    minimum = min(values)
+    maximum = max(values)
+    if maximum == minimum:
+        return 0.0
+    return (value - minimum) / (maximum - minimum)
+
+
+def _semantic_fusion_ranked(
+    retrieval_candidates: list[dict],
+    semantic_candidates: list[dict],
+    *,
+    retrieval_weight: float = SEMANTIC_FUSION_RETRIEVAL_WEIGHT,
+    semantic_weight: float = SEMANTIC_FUSION_SEMANTIC_WEIGHT,
+) -> list[dict]:
+    """Fuse retrieval and the already-computed semantic scores within Top20."""
+    semantic_by_id = {
+        candidate["chunk_id"]: candidate
+        for candidate in semantic_candidates
+    }
+    retrieval_values = [
+        float(candidate.get("retrieval_score", candidate.get("score", 0)) or 0)
+        for candidate in retrieval_candidates
+    ]
+    semantic_values = [
+        float(semantic_by_id[candidate["chunk_id"]].get("semantic_rerank_score", 0) or 0)
+        for candidate in retrieval_candidates
+    ]
+    fused = []
+    for candidate, retrieval_value, semantic_value in zip(
+        retrieval_candidates, retrieval_values, semantic_values
+    ):
+        normalized_retrieval = _min_max_normalize(retrieval_value, retrieval_values)
+        normalized_semantic = _min_max_normalize(semantic_value, semantic_values)
+        fused.append({
+            **candidate,
+            "semantic_rerank_score": semantic_value,
+            "normalized_retrieval_score": round(normalized_retrieval, 6),
+            "normalized_semantic_score": round(normalized_semantic, 6),
+            "semantic_fusion_score": round(
+                retrieval_weight * normalized_retrieval
+                + semantic_weight * normalized_semantic,
+                6,
+            ),
+        })
+    fused.sort(key=lambda item: (
+        item["semantic_fusion_score"],
+        -int(item.get("retrieval_rank", 10**9)),
+    ), reverse=True)
+    return [
+        {**candidate, "semantic_fusion_rank": rank}
+        for rank, candidate in enumerate(fused, start=1)
+    ]
+
+
 def _rule_ranked(query: RetrievalQuery, candidates: list[dict]) -> list[dict]:
     reranked = rerank_documents(query.semantic_query, candidates)
     return [
@@ -196,6 +261,21 @@ def _rule_ranked(query: RetrievalQuery, candidates: list[dict]) -> list[dict]:
         }
         for candidate in reranked
     ]
+
+
+def resolve_semantic_rerank_query(
+    query: RetrievalQuery,
+    semantic_query_mode: str,
+) -> str:
+    if semantic_query_mode == SEMANTIC_QUERY_MODE:
+        return query.semantic_query
+
+    if semantic_query_mode == RERANK_QUERY_MODE:
+        return query.rerank_query or query.semantic_query
+
+    raise ValueError(
+        f"Unsupported semantic query mode: {semantic_query_mode}"
+    )
 
 
 def _replaceable_top_index(
@@ -283,15 +363,40 @@ def build_ablation_rankings(
     semantic_reranker: SemanticReranker,
     top_k: int,
     evidence_constraint: EvidenceConstraint | None = None,
+    semantic_query_mode: str = RERANK_QUERY_MODE,
 ) -> dict[str, list[dict]]:
     """Build A/B/C/D from one fixed candidate pool and one semantic pass."""
 
-    retrieval = _retrieval_ranked(candidates)
-    hybrid = _final_ranked([dict(candidate) for candidate in retrieval])
-    rule = _final_ranked(_rule_ranked(query, retrieval))
-    semantic = _final_ranked(
-        semantic_reranker.rerank(query.semantic_query, retrieval)
+    retrieval = _retrieval_ranked(
+        candidates
     )
+
+    hybrid = _final_ranked(
+        [
+            dict(candidate)
+            for candidate in retrieval
+        ]
+    )
+
+    rule = _final_ranked(
+        _rule_ranked(
+            query,
+            retrieval,
+        )
+    )
+
+    rerank_query = resolve_semantic_rerank_query(
+        query,
+        semantic_query_mode,
+    )
+
+    semantic = _final_ranked(
+        semantic_reranker.rerank(
+            rerank_query,
+            retrieval,
+        )
+    )
+
     constrained = _final_ranked(
         apply_business_evidence_constraint(
             semantic,
@@ -299,11 +404,17 @@ def build_ablation_rankings(
             top_k=top_k,
         )
     )
+
+    fusion = _final_ranked(
+        _semantic_fusion_ranked(retrieval, semantic)
+    )
+
     return {
         HYBRID_MODE: hybrid,
         RULE_RERANK_MODE: rule,
         SEMANTIC_RERANK_MODE: semantic,
         SEMANTIC_CONSTRAINT_MODE: constrained,
+        SEMANTIC_FUSION_MODE: fusion,
     }
 
 
@@ -315,6 +426,7 @@ def rank_candidates(
     top_k: int,
     evidence_constraint: EvidenceConstraint | None = None,
     semantic_reranker: SemanticReranker | None = None,
+    semantic_query_mode: str = RERANK_QUERY_MODE,
 ) -> list[dict]:
     retrieval = _retrieval_ranked(candidates)
 
@@ -324,12 +436,22 @@ def rank_candidates(
     if mode == RULE_RERANK_MODE:
         return _final_ranked(_rule_ranked(query, retrieval))
 
+    if mode == SEMANTIC_FUSION_MODE:
+        reranker = semantic_reranker or build_semantic_reranker()
+        rerank_query = resolve_semantic_rerank_query(query, semantic_query_mode)
+        semantic = reranker.rerank(rerank_query, retrieval)
+        return _final_ranked(_semantic_fusion_ranked(retrieval, semantic))
+
     if mode not in {SEMANTIC_RERANK_MODE, SEMANTIC_CONSTRAINT_MODE}:
         raise ValueError(f"Unsupported RAG ranking mode: {mode}")
 
     reranker = semantic_reranker or build_semantic_reranker()
+    rerank_query = resolve_semantic_rerank_query(
+        query,
+        semantic_query_mode,
+    )
     semantic = _final_ranked(
-        reranker.rerank(query.semantic_query, retrieval)
+        reranker.rerank(rerank_query, retrieval)
     )
     if mode == SEMANTIC_RERANK_MODE:
         return semantic

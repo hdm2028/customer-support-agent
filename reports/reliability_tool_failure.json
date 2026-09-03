@@ -28,7 +28,7 @@
         }
       },
       "reply": "{'error_type': 'RuntimeError', 'error_message': 'mock order_lookup unavailable', 'fallback_action': 'ask_user_to_retry_or_handoff', 'reason': 'order_lookup 工具调用失败，已进入降级处理。'} 请您核对订单号后重新提供，我再继续查询售后政策并判断是否需要创建工单。",
-      "trace_id": "1522c5e0-8327-4402-891d-93fd2f97d06a",
+      "trace_id": "3bdb7aec-a56c-4540-aa87-895f2f5c0c30",
       "refund_rows_delta": 0,
       "mq_messages_delta": 0,
       "reason": "passed"
@@ -52,8 +52,8 @@
           "reason": "policy_search 工具调用失败，已进入降级处理。"
         }
       },
-      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
-      "trace_id": "ddb50997-22e7-4846-bdf2-5aa835fcf655",
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为待发货。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+      "trace_id": "f2a0f572-7b62-4c3f-94cf-7b91701bf0b0",
       "refund_rows_delta": 0,
       "mq_messages_delta": 0,
       "reason": "passed"
@@ -78,8 +78,8 @@
           "reason": "risk_check 工具调用失败，已进入降级处理。"
         }
       },
-      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。",
-      "trace_id": "fb0ea412-4165-4fc4-8bd8-37e57f48eb9f",
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为待发货。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。",
+      "trace_id": "cfa588fe-b0de-465b-ada0-ac63a26be50a",
       "refund_rows_delta": 0,
       "mq_messages_delta": 0,
       "reason": "passed"
@@ -105,13 +105,13 @@
           "reason": "refund_apply 工具调用失败，已进入降级处理。"
         }
       },
-      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为退款处理中。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。退款申请暂未创建成功：refund_apply 工具调用失败，已进入降级处理。",
-      "trace_id": "663a6409-60b0-4d3b-b2be-44d3570fe659",
+      "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为待发货。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。退款申请暂未创建成功：refund_apply 工具调用失败，已进入降级处理。",
+      "trace_id": "9ed4828d-4129-4ee2-b41c-4f3c6a1efab0",
       "refund_rows_delta": 0,
       "mq_messages_delta": 0,
       "reason": "passed"
     }
   ],
   "report_name": "reliability_tool_failure",
-  "created_at": "2026-08-30T14:13:20"
+  "created_at": "2026-08-31T16:48:30"
 }

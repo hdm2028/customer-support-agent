@@ -7,8 +7,11 @@ from app.rag.query_context import RAGQueryContext, RetrievalQuery
 from app.rag.ranking import (
     HYBRID_MODE,
     RANKING_MODES,
+    RERANK_QUERY_MODE,
     RULE_RERANK_MODE,
     SEMANTIC_CONSTRAINT_MODE,
+    SEMANTIC_FUSION_MODE,
+    SEMANTIC_QUERY_MODE,
     SEMANTIC_RERANK_MODE,
     EvidenceConstraint,
     apply_business_evidence_constraint,
@@ -37,11 +40,13 @@ class FakeIdentity:
 class FakeSemanticReranker:
     def __init__(self) -> None:
         self.calls = 0
+        self.received_queries: list[str] = []
         self.received_pools: list[list[str]] = []
         self.identity = FakeIdentity()
 
     def rerank(self, query: str, candidates: list[dict]) -> list[dict]:
         self.calls += 1
+        self.received_queries.append(query)
         self.received_pools.append([item["chunk_id"] for item in candidates])
         reranked = [
             {
@@ -148,7 +153,11 @@ class SemanticRerankerContractTests(unittest.TestCase):
 
 class RerankAblationTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.query = RetrievalQuery("退款为什么没到账", "退款 到账")
+        self.query = RetrievalQuery(
+            "退款为什么没到账",
+            "退款 到账",
+            "用户问题：退款为什么没到账\n业务主题：退款到账",
+        )
         self.candidates = [candidate(number) for number in range(1, 21)]
 
     def test_ablation_uses_same_top20_and_one_semantic_pass(self) -> None:
@@ -174,6 +183,44 @@ class RerankAblationTests(unittest.TestCase):
                     {item["chunk_id"] for item in rankings[mode]},
                     expected_ids,
                 )
+
+        fusion = rankings[SEMANTIC_FUSION_MODE]
+        self.assertEqual(
+            {item["chunk_id"] for item in fusion},
+            expected_ids,
+        )
+        self.assertEqual(fusion, build_ablation_rankings(
+            self.query, self.candidates, semantic_reranker=FakeSemanticReranker(), top_k=5
+        )[SEMANTIC_FUSION_MODE])
+
+    def test_semantic_fusion_normalizes_and_reuses_semantic_scores(self) -> None:
+        reranker = FakeSemanticReranker()
+        candidates = [
+            candidate(1, semantic_score=0.2),
+            candidate(2, semantic_score=0.8),
+            candidate(3, semantic_score=0.3),
+        ]
+        rankings = build_ablation_rankings(
+            self.query, candidates, semantic_reranker=reranker, top_k=1
+        )
+        fused = rankings[SEMANTIC_FUSION_MODE]
+        self.assertEqual(reranker.calls, 1)
+        self.assertEqual(fused[0]["chunk_id"], "chunk-02")
+        self.assertEqual(fused[0]["normalized_semantic_score"], 1.0)
+        self.assertEqual(
+            next(item["normalized_semantic_score"] for item in fused if item["chunk_id"] == "chunk-01"),
+            0.0,
+        )
+        self.assertEqual(fused[0]["semantic_fusion_rank"], 1)
+
+    def test_semantic_fusion_handles_constant_scores(self) -> None:
+        reranker = FakeSemanticReranker()
+        candidates = [candidate(1, semantic_score=0.5), candidate(2, semantic_score=0.5)]
+        fused = build_ablation_rankings(
+            self.query, candidates, semantic_reranker=reranker, top_k=1
+        )[SEMANTIC_FUSION_MODE]
+        self.assertEqual([item["normalized_semantic_score"] for item in fused], [0.0, 0.0])
+        self.assertEqual([item["normalized_retrieval_score"] for item in fused], [1.0, 0.0])
 
     def test_a_executes_no_reranker(self) -> None:
         with patch(
@@ -240,6 +287,49 @@ class RerankAblationTests(unittest.TestCase):
             rankings[SEMANTIC_RERANK_MODE],
             rankings[SEMANTIC_CONSTRAINT_MODE],
         )
+
+    def test_semantic_query_modes_only_change_cross_encoder_input(self) -> None:
+        semantic_reranker = FakeSemanticReranker()
+        rerank_reranker = FakeSemanticReranker()
+        semantic_rankings = build_ablation_rankings(
+            self.query,
+            self.candidates,
+            semantic_reranker=semantic_reranker,
+            semantic_query_mode=SEMANTIC_QUERY_MODE,
+            top_k=5,
+        )
+        rerank_rankings = build_ablation_rankings(
+            self.query,
+            self.candidates,
+            semantic_reranker=rerank_reranker,
+            semantic_query_mode=RERANK_QUERY_MODE,
+            top_k=5,
+        )
+
+        self.assertEqual(
+            semantic_reranker.received_queries,
+            [self.query.semantic_query],
+        )
+        self.assertEqual(
+            rerank_reranker.received_queries,
+            [self.query.rerank_query],
+        )
+        for mode in (HYBRID_MODE, RULE_RERANK_MODE):
+            self.assertEqual(semantic_rankings[mode], rerank_rankings[mode])
+
+    def test_missing_rerank_query_falls_back_to_semantic_query(self) -> None:
+        reranker = FakeSemanticReranker()
+        query = RetrievalQuery("原始语义问题", "词法问题")
+        rank_candidates(
+            query,
+            self.candidates,
+            mode=SEMANTIC_RERANK_MODE,
+            top_k=5,
+            semantic_reranker=reranker,
+            semantic_query_mode=RERANK_QUERY_MODE,
+        )
+
+        self.assertEqual(reranker.received_queries, [query.semantic_query])
 
     def test_semantic_provider_failure_propagates(self) -> None:
         with self.assertRaisesRegex(
@@ -387,10 +477,12 @@ class EvaluationAblationTests(unittest.TestCase):
                 retriever,
                 top_k=5,
                 semantic_reranker=reranker,
+                semantic_query_mode=SEMANTIC_QUERY_MODE,
             )
 
         self.assertEqual(retriever.calls, [CANDIDATE_K, CANDIDATE_K])
         self.assertEqual(reranker.calls, len(cases))
+        self.assertEqual(reranker.received_queries, ["退款规则", "退款规则"])
         self.assertEqual(set(reports), set(RANKING_MODES))
         for report in reports.values():
             self.assertEqual(report["total_cases"], len(cases))

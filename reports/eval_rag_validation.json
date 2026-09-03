@@ -1,0 +1,69 @@
+{
+  "report_type": "rag_dataset_validation",
+  "passed": true,
+  "dataset": "D:\\python-project\\客服agent\\data\\eval\\rag_eval_holdout.jsonl",
+  "dataset_sha256": "sha256:1734f22a5a5b6c06af5116ac6f3958f3ab8c02226105404564c353b23daec591",
+  "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+  "dataset_cases": 60,
+  "v2_cases": 60,
+  "knowledge_markdown_files": 15,
+  "schema_validation": {
+    "passed": true,
+    "duplicate_case_ids": 0
+  },
+  "ground_truth_validation": {
+    "passed": true,
+    "error_count": 0,
+    "error_counts": {},
+    "errors": []
+  },
+  "dataset_distribution": {
+    "scenario_type": {
+      "authority_conflict": 5,
+      "cross_policy": 16,
+      "exception_override": 8,
+      "insufficient_information": 5,
+      "semantic_confusion": 8,
+      "single_policy": 8,
+      "state_conditioned": 10
+    },
+    "difficulty": {
+      "easy": 8,
+      "hard": 36,
+      "medium": 16
+    },
+    "context_mode": {
+      "explicit": 17,
+      "fact_enriched": 15,
+      "minimal": 28
+    },
+    "evidence_type": {
+      "address_change": 3,
+      "complaint_escalation": 2,
+      "custom_product": 4,
+      "human_review": 3,
+      "invoice": 1,
+      "membership_restriction": 4,
+      "order_cancel": 6,
+      "payment_exception": 1,
+      "product_quality": 16,
+      "refund_application": 1,
+      "refund_eligibility": 13,
+      "refund_idempotency": 4,
+      "refund_risk_review": 5,
+      "refund_state": 6,
+      "refund_timing": 3,
+      "replacement": 3,
+      "shipping_delay": 4,
+      "shipping_intercept": 3,
+      "shipping_status": 3,
+      "signed_not_received": 4,
+      "warranty": 6
+    }
+  },
+  "knowledge_reference_index": {
+    "ambiguous_basenames": {}
+  },
+  "created_at": "2026-09-02T17:38:26",
+  "report_name": "eval_rag_validation"
+}

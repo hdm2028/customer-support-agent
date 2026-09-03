@@ -1,105 +1,121 @@
 {
   "failed_cases": [
     {
-      "case_id": "e2e_refund_004",
-      "failure_stage": "ROUTING_FAILURE",
+      "case_id": "e2e_refund_001",
+      "failure_stage": "DATABASE_FAILURE",
       "expected": {
-        "order_id": "10006",
-        "agents": [
-          "after_sales_agent",
-          "customer_agent"
-        ],
-        "tools": [
-          "order_lookup",
-          "policy_search"
-        ],
-        "final_action": "policy_answer"
-      },
-      "actual": {
-        "order_id": "10006",
+        "order_id": "10009",
         "agents": [
           "after_sales_agent",
           "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "final_action": "refund_queued"
+      },
+      "actual": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent",
+          "after_sales_agent",
           "after_sales_agent"
         ],
         "tools": [
           "order_lookup",
           "policy_search",
+          "risk_check",
+          "refund_apply",
           "create_ticket"
         ],
         "tool_calls": [
           {
             "tool_name": "order_lookup",
             "arguments": {
-              "order_id": "10006"
+              "order_id": "10009"
             }
           },
           {
             "tool_name": "policy_search",
             "arguments": {
-              "query": "订单10006退款多久到账？\n用户意图：退货退款 退款申请 七天无理由 质检 审核 人工审核 MQ\n订单状态：退货审核中\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31"
+              "query": "订单10009我要退款。\n用户意图：退货退款 退款申请 七天无理由 质检 审核 人工审核 MQ\n订单状态：待发货\n商品名称：儿童安全座椅 B6\n商品类目：母婴用品\n签收日期：None"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。"
+            }
+          },
+          {
+            "tool_name": "refund_apply",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。",
+              "risk_assessment": {
+                "risk_level": "low",
+                "risk_score": 15,
+                "risk_flags": [
+                  "中额退款"
+                ],
+                "review_required": false,
+                "review_reason": "中额退款",
+                "profile": {
+                  "user_id": "u009",
+                  "account_status": "normal",
+                  "refund_count_30d": 0,
+                  "complaint_count_30d": 0
+                }
+              }
             }
           },
           {
             "tool_name": "create_ticket",
             "arguments": {
-              "order_id": "10006",
+              "order_id": "10009",
               "issue_type": "退货退款",
-              "user_request": "订单10006退款多久到账？",
+              "user_request": "订单10009我要退款。",
               "priority": "high"
             }
           }
         ],
-        "final_action": "create_ticket_pending_review",
-        "reply": "已查询到订单 10006，商品是 女士运动鞋 R5，当前订单状态为退货审核中。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。我已生成退货退款工单草稿，后续需要人工客服核对订单和凭证后处理。",
+        "final_action": "refund_queued",
+        "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为待发货。根据知识库来源《退换货政策.md - 七天无理由退货》，本问题需要结合售后政策进一步判断。已创建退款申请 R-52151a7f5bd3，并投递 MQ 消息 MQ-c78d61d456cd，等待退款处理服务异步处理。我已生成退货退款工单草稿，后续需要人工客服核对订单和凭证后处理。",
         "side_effects": {
-          "cleanup": {
-            "performed": true,
-            "scope": "order_eval_side_effects",
-            "order_id": "10006",
-            "deleted": {
-              "mq_messages": 0,
-              "refund_requests": 0,
-              "manual_reviews": 0,
-              "tickets": 13
-            },
-            "cache_deleted": [
-              "idempotency:refund_apply:10006",
-              "lock:refund_apply:10006"
-            ]
-          },
           "before": {
-            "refund_count": 0,
-            "active_refund_count": 0,
+            "refund_count": 3,
+            "active_refund_count": 3,
             "mq_message_count": 0
           },
           "after": {
-            "refund_count": 0,
-            "active_refund_count": 0,
+            "refund_count": 3,
+            "active_refund_count": 3,
             "mq_message_count": 0
           }
         }
       },
-      "trace_id": "503148e1-4db2-4fb0-a870-3ee98ee81c99",
+      "trace_id": "f188f454-39dc-4256-b705-5bb46a154845",
       "reason": {
-        "route": [
-          "route.need_ticket expected=False, actual=True"
-        ],
+        "route": [],
         "agent": [],
         "rag": [],
-        "tool": [
-          "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'policy_search', 'create_ticket']"
-        ],
+        "tool": [],
         "tool_argument": [],
         "risk": [],
         "refund": [],
-        "database_mq": [],
-        "action": [
-          "final_action expected=policy_answer, actual=create_ticket_pending_review"
+        "database_mq": [
+          "duplicate active refunds for order 10009: ['R-52151a7f5bd3', 'R-a6460bdf813e', 'R-d994dc965cbb']"
         ],
-        "answer": [
-          "reply contains forbidden phrase: 工单草稿"
-        ]
+        "action": [],
+        "answer": []
       }
     }
   ]

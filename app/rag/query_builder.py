@@ -67,6 +67,7 @@ def build_rag_query_context(
     """汇总上游语义结论和已查询到的订单事实。"""
 
     order_result = get_order_lookup_result(tool_results)
+
     order = (
         order_result.result
         if (
@@ -92,8 +93,11 @@ def build_rag_query_context(
     )
 
 
-def _semantic_query(context: RAGQueryContext) -> str:
+def _semantic_query(
+    context: RAGQueryContext,
+) -> str:
     parts = [context.raw_query]
+
     facts = (
         ("订单状态", context.order_status),
         ("物流状态", context.shipping_status),
@@ -102,22 +106,47 @@ def _semantic_query(context: RAGQueryContext) -> str:
         ("签收日期", context.signed_date),
     )
 
-    parts.extend(f"{label}：{value}" for label, value in facts if value)
+    parts.extend(
+        f"{label}：{value}"
+        for label, value in facts
+        if value
+    )
 
     if context.handoff_required:
         parts.append("处理约束：需要人工处理")
 
-    return "\n".join(part for part in parts if part)
+    return "\n".join(
+        part
+        for part in parts
+        if part
+    )
 
 
-def _lexical_query(context: RAGQueryContext) -> str:
+def _lexical_query(
+    context: RAGQueryContext,
+) -> str:
     terms = [context.raw_query]
-    terms.extend(INTENT_RETRIEVAL_TERMS.get(context.primary_intent or "", ()))
 
-    topics = [context.topic, *context.related_topics]
+    terms.extend(
+        INTENT_RETRIEVAL_TERMS.get(
+            context.primary_intent or "",
+            (),
+        )
+    )
+
+    topics = [
+        context.topic,
+        *context.related_topics,
+    ]
+
     for topic in topics:
         if topic:
-            terms.extend(TOPIC_RETRIEVAL_TERMS.get(topic, ()))
+            terms.extend(
+                TOPIC_RETRIEVAL_TERMS.get(
+                    topic,
+                    (),
+                )
+            )
 
     terms.extend(
         value
@@ -134,13 +163,140 @@ def _lexical_query(context: RAGQueryContext) -> str:
     if context.handoff_required:
         terms.append("人工处理")
 
-    return " ".join(dict.fromkeys(term for term in terms if term))
+    return " ".join(
+        dict.fromkeys(
+            term
+            for term in terms
+            if term
+        )
+    )
 
 
-def build_retrieval_query(context: RAGQueryContext) -> RetrievalQuery:
+def _first_retrieval_term(
+    mapping: dict[str, tuple[str, ...]],
+    key: str | None,
+) -> str | None:
+    """
+    将 Router 的结构化语义转换为一个简洁、可读的业务描述，
+    用于构造 Cross-Encoder rerank query。
+    """
+
+    if not key:
+        return None
+
+    terms = mapping.get(key)
+
+    if not terms:
+        return None
+
+    return terms[0]
+
+
+def _rerank_query(
+    context: RAGQueryContext,
+) -> str:
+    """
+    Cross-Encoder 专用 Query。
+
+    与 semantic_query / lexical_query 不同：
+    - 保留用户原始问题
+    - 显式暴露 Router 已确定的业务语义
+    - 显式暴露订单、物流、商品等业务事实
+    - 不做 BM25 风格的关键词堆叠
+    """
+
+    parts: list[str] = []
+
+    raw_query = context.raw_query.strip()
+
+    if raw_query:
+        parts.append(
+            f"用户问题：{raw_query}"
+        )
+
+    primary_intent = _first_retrieval_term(
+        INTENT_RETRIEVAL_TERMS,
+        context.primary_intent,
+    )
+
+    if primary_intent:
+        parts.append(
+            f"主要意图：{primary_intent}"
+        )
+
+    topic = _first_retrieval_term(
+        TOPIC_RETRIEVAL_TERMS,
+        context.topic,
+    )
+
+    if topic:
+        parts.append(
+            f"业务主题：{topic}"
+        )
+
+    related_topics: list[str] = []
+
+    for related_topic in context.related_topics:
+        related_topic_text = _first_retrieval_term(
+            TOPIC_RETRIEVAL_TERMS,
+            related_topic,
+        )
+
+        if related_topic_text:
+            related_topics.append(
+                related_topic_text
+            )
+
+    if related_topics:
+        parts.append(
+            "关联主题："
+            + "；".join(
+                dict.fromkeys(
+                    related_topics
+                )
+            )
+        )
+
+    if context.order_status:
+        parts.append(
+            f"订单状态：{context.order_status}"
+        )
+
+    if context.shipping_status:
+        parts.append(
+            f"物流状态：{context.shipping_status}"
+        )
+
+    if context.product_name:
+        parts.append(
+            f"商品名称：{context.product_name}"
+        )
+
+    if context.product_category:
+        parts.append(
+            f"商品类目：{context.product_category}"
+        )
+
+    if context.signed_date:
+        parts.append(
+            f"签收日期：{context.signed_date}"
+        )
+
+    if context.handoff_required:
+        parts.append(
+            "处理约束：需要人工处理"
+        )
+
+    return "\n".join(parts)
+
+
+def build_retrieval_query(
+    context: RAGQueryContext,
+) -> RetrievalQuery:
     return RetrievalQuery(
         semantic_query=_semantic_query(context),
         lexical_query=_lexical_query(context),
+        rerank_query=_rerank_query(context),
     )
 
 

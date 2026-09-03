@@ -1,0 +1,11 @@
+{
+  "experiment": "chunk_c_markdown",
+  "chunk_strategy": "markdown",
+  "knowledge_dir": "D:\\python-project\\客服agent\\data\\knowledge",
+  "chunk_count": 158,
+  "average_token_count": 88.2848,
+  "min_token_count": 20,
+  "max_token_count": 202,
+  "chunks_path": "D:\\python-project\\客服agent\\reports\\chunk_experiments\\chunk_c_markdown\\chunks.jsonl",
+  "chunker_version": "token-strategy-v3"
+}

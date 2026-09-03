@@ -144,6 +144,7 @@ class LoaderAndMetadataTests(unittest.TestCase):
                 root,
                 path_metadata={"refund": {"knowledge_category": "path"}},
                 explicit_metadata={source: {"knowledge_category": "explicit"}},
+                chunk_strategy="markdown",
             )
             result = service.build(compare_with_stored=False)
 
@@ -151,7 +152,7 @@ class LoaderAndMetadataTests(unittest.TestCase):
             self.assertEqual(result.documents[0].metadata["tags"], ["refund"])
             self.assertEqual(
                 split_markdown_sections(result.documents[0].text),
-                [("总则", "第一部分"), ("例外", "第二部分")],
+                [("总则", "# 总则\n第一部分"), ("例外", "## 例外\n第二部分")],
             )
             self.assertEqual([chunk.section for chunk in result.chunks], ["总则", "例外"])
 
@@ -249,18 +250,66 @@ class LoaderAndMetadataTests(unittest.TestCase):
 class ChunkAndManifestTests(unittest.TestCase):
     def test_chunk_strategy_parameters_match_the_baseline(self) -> None:
         cases = [
-            (raw_document("规则.pdf", file_type="pdf"), (900, 150)),
-            (raw_document("售后FAQ.md"), (420, 60)),
-            (raw_document("客服SOP.md"), (500, 80)),
-            (raw_document("商品说明文档.md"), (520, 80)),
-            (raw_document("退款政策.md"), (650, 100)),
-            (raw_document("普通知识.md"), (700, 120)),
+            ("fixed_128", 128, 16),
+            ("fixed_256", 256, 32),
+            ("fixed_512", 512, 64),
+            ("markdown", 700, 0),
+            ("type_aware", 700, 0),
         ]
 
-        for document, expected in cases:
-            with self.subTest(source=document.source):
+        for name, size, overlap in cases:
+            document = raw_document(
+                "规则.md",
+                metadata={"chunk_strategy": name},
+            )
+
+            with self.subTest(strategy=name):
                 strategy = choose_chunk_strategy(document)
-                self.assertEqual((strategy.max_chars, strategy.overlap), expected)
+                self.assertEqual(strategy.name, name)
+                self.assertEqual((strategy.max_chars, strategy.overlap), (size, overlap))
+
+    def test_fixed_chunking_ignores_markdown_boundaries(self) -> None:
+        body_a = " ".join(["alpha"] * 100)
+        body_b = " ".join(["bravo"] * 100)
+        body_c = " ".join(["charlie"] * 100)
+        document = raw_document(
+            "规则.md",
+            f"# 文档\n\n## Section A\n{body_a}\n\n## Section B\n{body_b}\n\n"
+            f"## Section C\n{body_c}",
+        )
+
+        fixed_chunks = chunk_document(document, chunk_strategy="fixed_256")
+        markdown_chunks = chunk_document(document, chunk_strategy="markdown")
+
+        self.assertIn("## Section A", fixed_chunks[0].text)
+        self.assertIn("## Section B", fixed_chunks[0].text)
+        self.assertEqual(
+            [chunk.section for chunk in markdown_chunks],
+            ["Section A", "Section B", "Section C"],
+        )
+        self.assertTrue(
+            all(
+                not ("## Section A" in chunk.text and "## Section B" in chunk.text)
+                for chunk in markdown_chunks
+            )
+        )
+        self.assertTrue(all(chunk.metadata["token_count"] <= 256 for chunk in fixed_chunks))
+
+    def test_fixed_256_and_512_are_different(self) -> None:
+        sections = []
+        for index in range(6):
+            body = " ".join([f"word{index}"] * 100)
+            sections.append(f"## Section {index}\n{body}")
+        document = raw_document("规则.md", "# 文档\n\n" + "\n\n".join(sections))
+
+        fixed_256 = chunk_document(document, chunk_strategy="fixed_256")
+        fixed_512 = chunk_document(document, chunk_strategy="fixed_512")
+
+        self.assertGreater(len(fixed_256), len(fixed_512))
+        self.assertNotEqual(
+            [chunk.text for chunk in fixed_256],
+            [chunk.text for chunk in fixed_512],
+        )
 
     def test_chunk_id_contains_document_identity_and_version_is_explicit(self) -> None:
         document = raw_document("政策.md", "内容" * 400)

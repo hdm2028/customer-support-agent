@@ -1,6 +1,5 @@
 {
   "side_effects": [
-    "[DELETES ORDER-SCOPED EVAL SIDE EFFECTS BEFORE RUN]",
     "[WRITES DATABASE]",
     "[USES REDIS OR MEMORY CACHE]",
     "[PUBLISHES MQ WHEN REFUND IS FIRST CREATED]"
@@ -23,39 +22,24 @@
     "requests": 50,
     "eligible_without_guard": 50,
     "would_create_duplicate_refunds": 49,
-    "duration_ms": 72.15
+    "duration_ms": 1993.44
   },
   "successful_responses": 50,
   "failed_responses": 0,
-  "created_by_lock_owner": 1,
-  "idempotent_replayed": 49,
+  "created_by_lock_owner": 0,
+  "idempotent_replayed": 50,
   "refund_records": 1,
   "duplicate_refunds": 0,
   "unique_refund_ids": [
-    "R-9b52087516ad"
+    "R-23b8887216d1"
   ],
-  "new_refund_rows": 1,
-  "new_mq_messages": 1,
+  "new_refund_rows": 0,
+  "new_mq_messages": 0,
   "errors": [],
-  "duration_ms": 1238.5,
+  "duration_ms": 191.31,
   "passed_count": 1,
   "failed_count": 0,
   "failed_cases": [],
-  "cleanup": {
-    "performed": true,
-    "scope": "order_eval_side_effects",
-    "order_id": "10009",
-    "deleted": {
-      "mq_messages": 1,
-      "refund_requests": 1,
-      "manual_reviews": 0,
-      "tickets": 0
-    },
-    "cache_deleted": [
-      "idempotency:refund_apply:10009",
-      "lock:refund_apply:10009"
-    ]
-  },
   "report_name": "reliability_refund_concurrency",
-  "created_at": "2026-08-30T14:09:09"
+  "created_at": "2026-08-31T16:46:00"
 }

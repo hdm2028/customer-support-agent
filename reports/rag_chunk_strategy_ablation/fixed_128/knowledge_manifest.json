@@ -1,0 +1,608 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-02T12:31:56+00:00",
+  "kb_version": "kb_3f628b720862cd75e096f5a6",
+  "parser_version": "knowledge-parser-v1",
+  "chunker_version": "token-strategy-v2",
+  "documents": {
+    "doc_0106c205c0e3c2267e897ca5": {
+      "document_id": "doc_0106c205c0e3c2267e897ca5",
+      "source": "支付与发票政策.md",
+      "content_hash": "9686a12269eb31d49dc51c845fe745be4a325702f4f133029cf9d3c522b7e2b2",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_0106c205c0e3c2267e897ca5:chunk:7035ccce4ab90b226e45d8c6",
+        "doc_0106c205c0e3c2267e897ca5:chunk:76ee79e913328f9bf183f319",
+        "doc_0106c205c0e3c2267e897ca5:chunk:7d79a32bb82d674bcde4925a",
+        "doc_0106c205c0e3c2267e897ca5:chunk:2b5f87bd26edf418fc6b4524",
+        "doc_0106c205c0e3c2267e897ca5:chunk:2b90f90590ec97e9d79f8548",
+        "doc_0106c205c0e3c2267e897ca5:chunk:3584e4742ae3cd07c5cf5887",
+        "doc_0106c205c0e3c2267e897ca5:chunk:b16ffbe9904904f52d9746c2",
+        "doc_0106c205c0e3c2267e897ca5:chunk:8d1310f7a6eec33a50f6a090"
+      ],
+      "chunk_hashes": {
+        "doc_0106c205c0e3c2267e897ca5:chunk:7035ccce4ab90b226e45d8c6": "3011033f3bb0a65fd7d79efad8649ee8e83192aee6f4dc507fbfd47c9c7811b0",
+        "doc_0106c205c0e3c2267e897ca5:chunk:76ee79e913328f9bf183f319": "2d945703b6b61a2becd180756e53b285eda54a4c8dfd2c9d8181d3f29f3955b8",
+        "doc_0106c205c0e3c2267e897ca5:chunk:7d79a32bb82d674bcde4925a": "36eefe4535b1e910e4b49201810d8f296201ff72af81f49b40876795b9855438",
+        "doc_0106c205c0e3c2267e897ca5:chunk:2b5f87bd26edf418fc6b4524": "df91de3e80b5b2d2f3188b442885593c50127f0b463d1dca78219e5ab0a75ec2",
+        "doc_0106c205c0e3c2267e897ca5:chunk:2b90f90590ec97e9d79f8548": "d30eb627e7ea7f58d58c6ad4093cd787f12482f1b759def36b662287ea05cb07",
+        "doc_0106c205c0e3c2267e897ca5:chunk:3584e4742ae3cd07c5cf5887": "6c76f7b3a05805bf241f64dcbf781efaba966cc806ab92a161a746b806123153",
+        "doc_0106c205c0e3c2267e897ca5:chunk:b16ffbe9904904f52d9746c2": "6bf84bf84b8de66ba3c788872db0bbbb1eb88c8fef805362b0704ed3eeda1aec",
+        "doc_0106c205c0e3c2267e897ca5:chunk:8d1310f7a6eec33a50f6a090": "e9fb76785baf818e6ae5d7af3d46011e1d06d775850001674785729754c8218e"
+      }
+    },
+    "doc_19f87b3780f5e4c88f021d90": {
+      "document_id": "doc_19f87b3780f5e4c88f021d90",
+      "source": "客服SOP.md",
+      "content_hash": "4ed55e51a56963c306e1badf5cc76a1179823e059c489b98cf97cb1006fbf8bc",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "customer_sop",
+        "business_domain": "customer_service",
+        "source_type": "sop"
+      },
+      "chunk_ids": [
+        "doc_19f87b3780f5e4c88f021d90:chunk:00954be5c6d0cfe6d589c6b3",
+        "doc_19f87b3780f5e4c88f021d90:chunk:b0ad10cbdff139127d49eb8d",
+        "doc_19f87b3780f5e4c88f021d90:chunk:1e383eb46d1a30888ddba66b",
+        "doc_19f87b3780f5e4c88f021d90:chunk:0d2edb45f5ed24a9658c6b06",
+        "doc_19f87b3780f5e4c88f021d90:chunk:943d32d905d04b16bec81818",
+        "doc_19f87b3780f5e4c88f021d90:chunk:f85463e4560b607061a9de37",
+        "doc_19f87b3780f5e4c88f021d90:chunk:9c31ac71100ff0d75ea125c0",
+        "doc_19f87b3780f5e4c88f021d90:chunk:2b7d8bd405d795f1966ff2a5",
+        "doc_19f87b3780f5e4c88f021d90:chunk:4dcc721403c3d61dc3b8db5b",
+        "doc_19f87b3780f5e4c88f021d90:chunk:04ae64936972191d71b58ff5",
+        "doc_19f87b3780f5e4c88f021d90:chunk:d90e5a9c91206e2b79e4a1ed",
+        "doc_19f87b3780f5e4c88f021d90:chunk:47ced7704c53742a0a1429f5"
+      ],
+      "chunk_hashes": {
+        "doc_19f87b3780f5e4c88f021d90:chunk:00954be5c6d0cfe6d589c6b3": "5e370b653cdc8f8581f67952b6aee40a2ec6d6c3c9f965b6ed6253b541757bbc",
+        "doc_19f87b3780f5e4c88f021d90:chunk:b0ad10cbdff139127d49eb8d": "d63e97d7312fcf1a636698107a6f533297f8e792428ccea178044c16eaf74c5b",
+        "doc_19f87b3780f5e4c88f021d90:chunk:1e383eb46d1a30888ddba66b": "8c20250f48bfa22818428ae38efb67f42cdaccd2f8e048ae5028f199480a6546",
+        "doc_19f87b3780f5e4c88f021d90:chunk:0d2edb45f5ed24a9658c6b06": "7653fb4e39b64d7e54c471135f5d1343412295f716a9a626762c2ed8987e57a6",
+        "doc_19f87b3780f5e4c88f021d90:chunk:943d32d905d04b16bec81818": "e3ff28bae8e49107ac2f3e7a854c909f1611b4377fedcffa8b06cbcf1e0839f8",
+        "doc_19f87b3780f5e4c88f021d90:chunk:f85463e4560b607061a9de37": "9921e103ef0ede0b2279a0ee00361414d2bb8d8778c0dd66f51bef274c726bca",
+        "doc_19f87b3780f5e4c88f021d90:chunk:9c31ac71100ff0d75ea125c0": "6dbd7bbd2da5281f028160e1a30d16bd24ec6e5f7efb468fb0464f882294b082",
+        "doc_19f87b3780f5e4c88f021d90:chunk:2b7d8bd405d795f1966ff2a5": "0dbfa69a865e7a995a0db636191b840a74aa05763b9d226e57ef216ca0e6ad68",
+        "doc_19f87b3780f5e4c88f021d90:chunk:4dcc721403c3d61dc3b8db5b": "e3554933ee3a42989ac25cf05a8a7a51aa7ef59a74c0bab75c924cf4fc2fb544",
+        "doc_19f87b3780f5e4c88f021d90:chunk:04ae64936972191d71b58ff5": "92d6b3be3553c63ce7126e1335a95c92869682171786e2bdfb3bb2538861f031",
+        "doc_19f87b3780f5e4c88f021d90:chunk:d90e5a9c91206e2b79e4a1ed": "8608aac65cc49b1b03e2695f4258b19cf797a87118683af6e184e2b25a8c7ae1",
+        "doc_19f87b3780f5e4c88f021d90:chunk:47ced7704c53742a0a1429f5": "ca1c0c34b840fa4aff524f1809a40b26235714486fe44eab3d0deea81cf6df84"
+      }
+    },
+    "doc_253629df931f97428ff46d6e": {
+      "document_id": "doc_253629df931f97428ff46d6e",
+      "source": "退款政策.md",
+      "content_hash": "87ac9a39f5901439f43b21010c9cd219751673db6915d6a998a54a7b47005ea2",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "refund_policy",
+        "business_domain": "after_sales",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_253629df931f97428ff46d6e:chunk:d45ea0d161c08fbae5c315cb",
+        "doc_253629df931f97428ff46d6e:chunk:c7c678aa16df972cb9bc7394",
+        "doc_253629df931f97428ff46d6e:chunk:35f50cda548be566bc9a6962",
+        "doc_253629df931f97428ff46d6e:chunk:3896a48595d7a5a51b807999",
+        "doc_253629df931f97428ff46d6e:chunk:8982dd7a239903c72b952d01",
+        "doc_253629df931f97428ff46d6e:chunk:6d5989dcce6699ae9ae64236",
+        "doc_253629df931f97428ff46d6e:chunk:25389095d6e52ba034e7d5fd",
+        "doc_253629df931f97428ff46d6e:chunk:d60a10f38abc504d4fe52a31",
+        "doc_253629df931f97428ff46d6e:chunk:fb48e352ea55e03591d1d349",
+        "doc_253629df931f97428ff46d6e:chunk:f96be0af385611f564e21883",
+        "doc_253629df931f97428ff46d6e:chunk:af9ba1af543ffc249213a622",
+        "doc_253629df931f97428ff46d6e:chunk:6b58ef7cb3dfc85b488c1842",
+        "doc_253629df931f97428ff46d6e:chunk:6da7c246f55b90f5f3c58a55",
+        "doc_253629df931f97428ff46d6e:chunk:10835783e474685ee6c27eb4"
+      ],
+      "chunk_hashes": {
+        "doc_253629df931f97428ff46d6e:chunk:d45ea0d161c08fbae5c315cb": "e6d06565adf2329a357a836a25e48c17a1f1854f307de332ab13232b76662a64",
+        "doc_253629df931f97428ff46d6e:chunk:c7c678aa16df972cb9bc7394": "f878ca7f1ef5af1c06ab930e72a1ed4ef450147f818df5c6e626fa9d7e3945c3",
+        "doc_253629df931f97428ff46d6e:chunk:35f50cda548be566bc9a6962": "5321c6cfea5e5308fbbf90b3cdb75f64a7ca1074fb212f6d25e04b6fcbc9e403",
+        "doc_253629df931f97428ff46d6e:chunk:3896a48595d7a5a51b807999": "f1ba65c8c91bb8c0dbdbcc13e0d33c7437610cf3bcd088c1c66b71afae54a1e4",
+        "doc_253629df931f97428ff46d6e:chunk:8982dd7a239903c72b952d01": "8fc54e3ef88e32169ba7caf4d8790132a46d30815c0806677f6c4b3092268aff",
+        "doc_253629df931f97428ff46d6e:chunk:6d5989dcce6699ae9ae64236": "f73db8e1d7045fe2013220ee7f7ba1856322845b3df1ab416d25340c795bd880",
+        "doc_253629df931f97428ff46d6e:chunk:25389095d6e52ba034e7d5fd": "d63fb083a13209bf2fb76edffb86236ba7a220ef5c5f433e7292599a924f6877",
+        "doc_253629df931f97428ff46d6e:chunk:d60a10f38abc504d4fe52a31": "4be245bc8c2628104adb15a866c8b0363bea7f9ea3b8cc27fedccfa3f7f473fb",
+        "doc_253629df931f97428ff46d6e:chunk:fb48e352ea55e03591d1d349": "156e5da3ffb28ef216fe350328c138abc25f5a23f09bed4b33c1892ade96dc5d",
+        "doc_253629df931f97428ff46d6e:chunk:f96be0af385611f564e21883": "0109e6d12bd5d0a2635eaaef52e19d73fdd5b6d907abb42c1bbcf1c66f2116c6",
+        "doc_253629df931f97428ff46d6e:chunk:af9ba1af543ffc249213a622": "91ade49d846b5ca7ddc2f7ce4c9b9f0bc4be94752f09090d76829710616e29ab",
+        "doc_253629df931f97428ff46d6e:chunk:6b58ef7cb3dfc85b488c1842": "f81e941e9a77b8ac5ee468fc1589d866aa5b9fbb9c1e7fb8237bb257f44067a8",
+        "doc_253629df931f97428ff46d6e:chunk:6da7c246f55b90f5f3c58a55": "78a11d1dbf48f21aac1250c4dd013166195315d2e4c28289b5b5e935d7474a7e",
+        "doc_253629df931f97428ff46d6e:chunk:10835783e474685ee6c27eb4": "c05a026a1913c90a893f8a722eac92301d9a1c50935f8df9c8bfba754b8bfd33"
+      }
+    },
+    "doc_41203502602eba8a5ebda54a": {
+      "document_id": "doc_41203502602eba8a5ebda54a",
+      "source": "订单取消与修改政策.md",
+      "content_hash": "ad14b22598bea9308b45a90cc01bdce0d19f9456ca78b25e549629ee9cbf8007",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_41203502602eba8a5ebda54a:chunk:84039533ebdbefc4ebf293e4",
+        "doc_41203502602eba8a5ebda54a:chunk:7ce777b1d61241d8707a04c6",
+        "doc_41203502602eba8a5ebda54a:chunk:1dbd5c7a6e57a3cd23a53f65",
+        "doc_41203502602eba8a5ebda54a:chunk:e043c8eeb2d6a69795811a8a",
+        "doc_41203502602eba8a5ebda54a:chunk:871b67158cf37816798c51c1",
+        "doc_41203502602eba8a5ebda54a:chunk:ac88f74202f1bd0864355406",
+        "doc_41203502602eba8a5ebda54a:chunk:2d26a2f23be84e78617124cc",
+        "doc_41203502602eba8a5ebda54a:chunk:ed1e6a133ec10d6a1f66f108"
+      ],
+      "chunk_hashes": {
+        "doc_41203502602eba8a5ebda54a:chunk:84039533ebdbefc4ebf293e4": "397581693a8b5e6ca7d1af0da581b899a2b3c05054c940feada31d6e11fe986f",
+        "doc_41203502602eba8a5ebda54a:chunk:7ce777b1d61241d8707a04c6": "5379c96395d8d8e61088c08abea88d026d2bbabdd480f15144f16568d1337463",
+        "doc_41203502602eba8a5ebda54a:chunk:1dbd5c7a6e57a3cd23a53f65": "50124d601a3a7e3f8bc2e90c33c37164e61c7bcc02a1161d9f75babc96a1367c",
+        "doc_41203502602eba8a5ebda54a:chunk:e043c8eeb2d6a69795811a8a": "6d3625d2947d07c036781c8ede08d79641435d363ff3af3a0464e317529bc47a",
+        "doc_41203502602eba8a5ebda54a:chunk:871b67158cf37816798c51c1": "b43a32853747a9af9676ee4cf6f234f64fc7574602dc215424c118474e2c775b",
+        "doc_41203502602eba8a5ebda54a:chunk:ac88f74202f1bd0864355406": "75345af1e8d5cfadd983f432e40ca2780fc8845bf637f3fc28d3f84d14f3758c",
+        "doc_41203502602eba8a5ebda54a:chunk:2d26a2f23be84e78617124cc": "7b491119b7f9e61d09d7819893b0b57d1076a24bd6d5549ee912093a7c6dc68d",
+        "doc_41203502602eba8a5ebda54a:chunk:ed1e6a133ec10d6a1f66f108": "d3eb90eede04042a20907c48fff492dbb25ddcbf8b030ebf5a1370530cd90bf7"
+      }
+    },
+    "doc_61ae6301a2e6d1ddf7fc0bc4": {
+      "document_id": "doc_61ae6301a2e6d1ddf7fc0bc4",
+      "source": "退换货政策.md",
+      "content_hash": "ba7a31d50d49e14176a9c221706a1ef07bddd14f5a9c7d3fca985cae741b2d90",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "refund_policy",
+        "business_domain": "after_sales",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:14a3fe4a9a5fc30cce3f3b55",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:5b8fa6aa33a324ce9cedb0ec",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:c20484bfcca59b54a12d55d1",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:c58166c96265d842fbd7fc1a",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:dc2e91f21e29d1d957638343",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:84eabab6d1af15afd280bdec",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:4ead3df74b028bbe0c5f4e89",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:cb1e7f28d10bc652f66bcb04",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:6f3e91b05a0ee81abf2f2fb9",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:f4c63db6575bb6e2863f1fb0",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:771503d3be145fc2d87fef34",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:7bef4936181a4d32df5024ca",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:eb2a2ecf046db8dbbf7059e6"
+      ],
+      "chunk_hashes": {
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:14a3fe4a9a5fc30cce3f3b55": "20c5ab555c9a982680f482e823e6695502bdcd9dbf6b26ce3de7fd3684d58968",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:5b8fa6aa33a324ce9cedb0ec": "362a9e2fdd62015ce3d607850249125091f1edd97b82b11e678c0e399e5d852a",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:c20484bfcca59b54a12d55d1": "b8ebe34fc1c0ed973507bea9dd4d992967fce08ad446d3199705668eeb2f8482",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:c58166c96265d842fbd7fc1a": "7c2804eefd24a02aa722f979453184fc85b84de5a5d2bab9e01cef02b2879bc4",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:dc2e91f21e29d1d957638343": "7767d9f90714c874e9457fd66c9d1a56abda9abf26622866bb1ff7e83d3c85ad",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:84eabab6d1af15afd280bdec": "bdd036c8890fc746ab049d51ce034d43ac566b3196374ed2e053767153ff3bc6",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:4ead3df74b028bbe0c5f4e89": "cc6dd94057e863ef8d2370413516c3974ae2fc5395b0394d413a478d827f392e",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:cb1e7f28d10bc652f66bcb04": "7815bf99b9c3016d69c32364e398dbad5e92b8b84e65c4670e1ff7b7a59a823f",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:6f3e91b05a0ee81abf2f2fb9": "8c155a7d8acb1adb1933fd10e76ce8e74915ed3f86f9740925e37c791935a7de",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:f4c63db6575bb6e2863f1fb0": "6e2a870696798902f9cd7c2f28af05e758379ebbd0c28a38149f41b39435febd",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:771503d3be145fc2d87fef34": "f803b4c1369f58d14eed25db62e9b0e336d5d705fac87e90530eb1183c953e1c",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:7bef4936181a4d32df5024ca": "7942639319c7f3ef2c0c9e9bd83be2355bc1536f89efc1bd9589ba9176dbae81",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:eb2a2ecf046db8dbbf7059e6": "e70e752c0abbad00bae2d49d2baffffd9ab88874c2a04abd8850e28d542018d6"
+      }
+    },
+    "doc_6351ec570558996fe88c33a7": {
+      "document_id": "doc_6351ec570558996fe88c33a7",
+      "source": "会员权益政策.md",
+      "content_hash": "f82ef9ee47cc93f4863c19c75a8f46c1c176ebe59b2f55b32c8afbeff28ae84c",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_6351ec570558996fe88c33a7:chunk:486f6c5f54993ffb17cf9fd2",
+        "doc_6351ec570558996fe88c33a7:chunk:6cf7f7ab7e5652955eaefe6f",
+        "doc_6351ec570558996fe88c33a7:chunk:975a957a9c78d198be243d89",
+        "doc_6351ec570558996fe88c33a7:chunk:17a5606ef9e4108275f76514",
+        "doc_6351ec570558996fe88c33a7:chunk:247a4dd77e52c7ed8dbf8e26",
+        "doc_6351ec570558996fe88c33a7:chunk:ea56714ea0645b5f1f65ca07"
+      ],
+      "chunk_hashes": {
+        "doc_6351ec570558996fe88c33a7:chunk:486f6c5f54993ffb17cf9fd2": "0d321d189b332e1a72f61ba361a24c3013930ecaef9b563096347973866cb210",
+        "doc_6351ec570558996fe88c33a7:chunk:6cf7f7ab7e5652955eaefe6f": "d898a62bcd68cdaa85a3b4668cbe2eb712211a10f16f8c98470fd5f049a177b7",
+        "doc_6351ec570558996fe88c33a7:chunk:975a957a9c78d198be243d89": "13586ff6d5b1d8660fe8b4372c3d861bd937e80457aa4c628da34b42276b57ba",
+        "doc_6351ec570558996fe88c33a7:chunk:17a5606ef9e4108275f76514": "bccde7afd766bf187d7bc1ae994fcc09e1c53bbe38925ab4acc4c57fa2523a7d",
+        "doc_6351ec570558996fe88c33a7:chunk:247a4dd77e52c7ed8dbf8e26": "1462c1f3f8cb7e698746e1b6e23e6904e5403435352d54008feb5383468284e4",
+        "doc_6351ec570558996fe88c33a7:chunk:ea56714ea0645b5f1f65ca07": "618ca9a58758509be0475111796d3e754b86880004ac88ea2786c222e660801a"
+      }
+    },
+    "doc_721c67dfb01f86d6212a3708": {
+      "document_id": "doc_721c67dfb01f86d6212a3708",
+      "source": "保修政策.md",
+      "content_hash": "ffd154556e803ed4833eb8d4436bf18136a94f79c1e4dbc3d42392380cd2dd58",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "product_manual",
+        "business_domain": "product_support",
+        "source_type": "manual"
+      },
+      "chunk_ids": [
+        "doc_721c67dfb01f86d6212a3708:chunk:799902492b5cc4bdfecc4121",
+        "doc_721c67dfb01f86d6212a3708:chunk:91c76287392d6c64b95932a5",
+        "doc_721c67dfb01f86d6212a3708:chunk:e2655005d5132cc54d490534",
+        "doc_721c67dfb01f86d6212a3708:chunk:6cb554717dde1a865ac881e9",
+        "doc_721c67dfb01f86d6212a3708:chunk:d8aebd28486f4e709820b047",
+        "doc_721c67dfb01f86d6212a3708:chunk:a00bd0f09b8aaa5db6f1e322",
+        "doc_721c67dfb01f86d6212a3708:chunk:1f0757314a2e3f702d2c5944",
+        "doc_721c67dfb01f86d6212a3708:chunk:c1949a957691d60573c05bf1",
+        "doc_721c67dfb01f86d6212a3708:chunk:2267abc5db1a1748168e5754"
+      ],
+      "chunk_hashes": {
+        "doc_721c67dfb01f86d6212a3708:chunk:799902492b5cc4bdfecc4121": "8850462950dd77c4c277ebe95d1e0cc74ffee9a9a230f89d248aeda3eccb09d2",
+        "doc_721c67dfb01f86d6212a3708:chunk:91c76287392d6c64b95932a5": "9f009b56762fb105d8721fa3902f587494fcc17d5382b127d1b028e25cb5481c",
+        "doc_721c67dfb01f86d6212a3708:chunk:e2655005d5132cc54d490534": "ab9c27d60c9c024fd876ae69a67ba2a1416e5fdbe6d234df17f152e1f8cf0fd8",
+        "doc_721c67dfb01f86d6212a3708:chunk:6cb554717dde1a865ac881e9": "96c65fe89828a94e78026a22be69e3fbc82b6a0ead5cfb766ddf4390dafe67c1",
+        "doc_721c67dfb01f86d6212a3708:chunk:d8aebd28486f4e709820b047": "f62ba9424392ef67a7c5e2b44f952156c8b4178115b10c5396a14b28fd53e407",
+        "doc_721c67dfb01f86d6212a3708:chunk:a00bd0f09b8aaa5db6f1e322": "6ef5ec3918e0bf855ebd8f749b161bc19acc90700ba2941451c6ef3f020915f9",
+        "doc_721c67dfb01f86d6212a3708:chunk:1f0757314a2e3f702d2c5944": "994c5b72b55e4bc4e3aaf3553b73d00593f72cf28210d91119f61a6e3cc660ae",
+        "doc_721c67dfb01f86d6212a3708:chunk:c1949a957691d60573c05bf1": "abc2b86764fe0b25e27c2fb0f3e08c7b5773ac6f4976339a1312fc119ea13805",
+        "doc_721c67dfb01f86d6212a3708:chunk:2267abc5db1a1748168e5754": "9d6581a23ac441d1713e9574076d473a11437d0ec630b9a1a48e230bce9a9a81"
+      }
+    },
+    "doc_8ae3fda162d548bd3b86efff": {
+      "document_id": "doc_8ae3fda162d548bd3b86efff",
+      "source": "商品售后规则.md",
+      "content_hash": "12096ec9ad50c7527b32c60c9b0b6c31881dd8524d47130fe8cce391fa2afc5d",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "refund_policy",
+        "business_domain": "after_sales",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_8ae3fda162d548bd3b86efff:chunk:8acc2d0f14f5487611e23ad4",
+        "doc_8ae3fda162d548bd3b86efff:chunk:5d34ef0be3483de8d97be150",
+        "doc_8ae3fda162d548bd3b86efff:chunk:9745f199dc47fbbbebe143e7",
+        "doc_8ae3fda162d548bd3b86efff:chunk:d0db9d671df6260dfa4d4e86",
+        "doc_8ae3fda162d548bd3b86efff:chunk:fba5f899a26cbb184058e994",
+        "doc_8ae3fda162d548bd3b86efff:chunk:353b84526e0a1b5417e35e09",
+        "doc_8ae3fda162d548bd3b86efff:chunk:a65aaa61539b505c36fd1baa",
+        "doc_8ae3fda162d548bd3b86efff:chunk:de87d9709b29b01cb9391046",
+        "doc_8ae3fda162d548bd3b86efff:chunk:d7a6abe7aa1c85ae2ec47960",
+        "doc_8ae3fda162d548bd3b86efff:chunk:032223eec80e2395af42327f",
+        "doc_8ae3fda162d548bd3b86efff:chunk:aaae738552c06f26f3c6a017",
+        "doc_8ae3fda162d548bd3b86efff:chunk:275d2d352c68b5f144adec9b",
+        "doc_8ae3fda162d548bd3b86efff:chunk:0b31ad5e7aa7fe7c9fecb04e",
+        "doc_8ae3fda162d548bd3b86efff:chunk:256579079290aaa377f6367e",
+        "doc_8ae3fda162d548bd3b86efff:chunk:e5016ae57c15d45bd5a1b51c",
+        "doc_8ae3fda162d548bd3b86efff:chunk:a65c63f72f8c6c6188a824ef",
+        "doc_8ae3fda162d548bd3b86efff:chunk:6ed6ad23291433b8e46a52ae",
+        "doc_8ae3fda162d548bd3b86efff:chunk:0d4344b346d36f7fe469f2b5",
+        "doc_8ae3fda162d548bd3b86efff:chunk:693412d9b9aa0df73c7b88ae",
+        "doc_8ae3fda162d548bd3b86efff:chunk:963b4d4bb04e10d482b4fd47"
+      ],
+      "chunk_hashes": {
+        "doc_8ae3fda162d548bd3b86efff:chunk:8acc2d0f14f5487611e23ad4": "eac5e6e1176521f70b302ae18fa2dc026b4591603078fa8c0cbcd680113e29b5",
+        "doc_8ae3fda162d548bd3b86efff:chunk:5d34ef0be3483de8d97be150": "ff0a8f6536d1c2e972fcdb12676b0f04be27533c732bb1ab227a2368659eb3b5",
+        "doc_8ae3fda162d548bd3b86efff:chunk:9745f199dc47fbbbebe143e7": "97a9508f17ff4f35dc0740eb9a468d487cd3b5f11b1be7d48067742cbb101f4d",
+        "doc_8ae3fda162d548bd3b86efff:chunk:d0db9d671df6260dfa4d4e86": "dd8331e6c3c66d4aa1a9216dccd5f3aad719c052a60434d378d2dbea26be0951",
+        "doc_8ae3fda162d548bd3b86efff:chunk:fba5f899a26cbb184058e994": "f21b11609a9723ae2f61c520a538046663ef3805ba0f03464eddd78691b80f61",
+        "doc_8ae3fda162d548bd3b86efff:chunk:353b84526e0a1b5417e35e09": "c6c0bc75b4ee8d36acc604c8cea3e9608fedc74a4133022c4e6440b322c43b11",
+        "doc_8ae3fda162d548bd3b86efff:chunk:a65aaa61539b505c36fd1baa": "bb21c38435a7045c6b55da76a8a1aea42cb1ad12306318d4e66889efd1641224",
+        "doc_8ae3fda162d548bd3b86efff:chunk:de87d9709b29b01cb9391046": "456c26882becd4e4ed7d3c8eed41519ac2d366e66abfdef6171ade04c68e66a9",
+        "doc_8ae3fda162d548bd3b86efff:chunk:d7a6abe7aa1c85ae2ec47960": "0fae6f21ccba4d8e386cc82fe8c2ba232b43a3c5be08dc043ac225d860bc2745",
+        "doc_8ae3fda162d548bd3b86efff:chunk:032223eec80e2395af42327f": "7508ba22c1cbc9294e4ced7436781a43eadc61ccda0e3beab3e33cc9eda5cef8",
+        "doc_8ae3fda162d548bd3b86efff:chunk:aaae738552c06f26f3c6a017": "b6c0df669e7b2745ec798e2105f2f41f6be1781e465364a9152742c5c4ede351",
+        "doc_8ae3fda162d548bd3b86efff:chunk:275d2d352c68b5f144adec9b": "03f81f172610180e0575a0008cb48f8132f2a3b1eca4bceeb05a51d1552e0b0f",
+        "doc_8ae3fda162d548bd3b86efff:chunk:0b31ad5e7aa7fe7c9fecb04e": "ccc5aca72d5dea4b88bd2dc9982e4df16b8c783703b935c130967c2507c3119e",
+        "doc_8ae3fda162d548bd3b86efff:chunk:256579079290aaa377f6367e": "967da08d9dcca91324b68d9f4ccd937286d23b8106db893b4448baf44a0a16d2",
+        "doc_8ae3fda162d548bd3b86efff:chunk:e5016ae57c15d45bd5a1b51c": "1fb1d686bb2ea2d72cdc2dc2ca611be3dd14ebfba96a00c6ea868be73a81fbd6",
+        "doc_8ae3fda162d548bd3b86efff:chunk:a65c63f72f8c6c6188a824ef": "732654f4a87e2a275046d3f90f2d6472eef149b3503fa265520cada5ac043cfc",
+        "doc_8ae3fda162d548bd3b86efff:chunk:6ed6ad23291433b8e46a52ae": "afe5ef32388edbf8b5df1e80f5a9c9eadf9eddd66b395a965b74f6c204dd348b",
+        "doc_8ae3fda162d548bd3b86efff:chunk:0d4344b346d36f7fe469f2b5": "ee82b42d244ee2fd6f66ccd879e1caa8e5c3b923de153a4fdc686f040b86f99d",
+        "doc_8ae3fda162d548bd3b86efff:chunk:693412d9b9aa0df73c7b88ae": "f2bf023f15d749deb21e02303bebb28933646dace2e09e2f5c9f7a222844c22b",
+        "doc_8ae3fda162d548bd3b86efff:chunk:963b4d4bb04e10d482b4fd47": "8593a773fc54ad379b81b3d620f15031ad94a280577592e226013bf1f7a75e74"
+      }
+    },
+    "doc_9e26bcd1585c743b0269eb0c": {
+      "document_id": "doc_9e26bcd1585c743b0269eb0c",
+      "source": "历史问题案例.md",
+      "content_hash": "fcb85256604de188864252b9814e00aaaddecb665bd9e57ec10065445c43c13d",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "historical_case",
+        "business_domain": "customer_service",
+        "source_type": "case"
+      },
+      "chunk_ids": [
+        "doc_9e26bcd1585c743b0269eb0c:chunk:851be413ace3b9a6761ceffe",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:d8dbbf48b3653fe0cbf59eb8",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:949fcafbb9591de5b0f05fc1",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:01afff4ac96fa496e6fc4151",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:c9a50f8df213a67ce8e77580",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:7408fdedd0494c3a45970061",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:646dd009b2fbdf6623e0e6fa",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:0c91ac181efdb9eb8233b86c",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:39c6497cbb4595c8e99618b5",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:5e55efb86a00f120b1c5b4a6",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:f8e1636b34999252b3cb6c58",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:96dbeb881fc9187c9d3fd34d",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:abc4b2af74e1bb37a852f17b"
+      ],
+      "chunk_hashes": {
+        "doc_9e26bcd1585c743b0269eb0c:chunk:851be413ace3b9a6761ceffe": "e2c411c7a046d7318b117f877d5fa2ef825932c818332688195583d0f3cd259a",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:d8dbbf48b3653fe0cbf59eb8": "48004f979832b736df72a4690190970a1257ad4fe90d48da30076fed6c4a19de",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:949fcafbb9591de5b0f05fc1": "7cc3bb39867966c4d48d1491f842b4e6ca089edda82bee72f30c88ef346dabc0",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:01afff4ac96fa496e6fc4151": "7a2c01c232b9667cd95b4df6abd91064258aceb0f9fb77b83cb36621f0f47607",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:c9a50f8df213a67ce8e77580": "b312088491a3b85b608f1bb0aa786123703c1273312d9d59336f9d7c24a6b706",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:7408fdedd0494c3a45970061": "a96866661887ea98fea112cce2dc568fa354702ed21469439d5eda7fda215d64",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:646dd009b2fbdf6623e0e6fa": "3522fcc2e4c9a7e6a5807fd9170e45e0a499adc0f67f5ceb10bfb2e718b738ab",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:0c91ac181efdb9eb8233b86c": "3af6dc65f4a6a68edd84022532b4b7e3288e7984b4db3e1c18cf30c77481f342",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:39c6497cbb4595c8e99618b5": "11e4d7124493235c43025fd734d6f8e01699e826908f2f899850c3f748642c82",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:5e55efb86a00f120b1c5b4a6": "540e50704fb1ea680d842023a5583434c4769badf2962273068f8e0a2917e3b2",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:f8e1636b34999252b3cb6c58": "4fc72de2ec9afdabe2a59df3df54d1c5fca26eddd8867a1b02944bf957718c50",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:96dbeb881fc9187c9d3fd34d": "5d9078e30caa038079b202c6b9880d0135b7de914be6cab6d0acb454bb12e6a5",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:abc4b2af74e1bb37a852f17b": "f7676692d3859b2656f07594b90b55332dcbebfefbfda14018f4dbecaa8eb028"
+      }
+    },
+    "doc_a9500ec500355af232d543b7": {
+      "document_id": "doc_a9500ec500355af232d543b7",
+      "source": "人工审核SOP.md",
+      "content_hash": "82009e364064390a399149a9faf527b2f3922d0c827b83d54e2b3e3f01bb557c",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_a9500ec500355af232d543b7:chunk:f540e856cddd86d3f969cec1",
+        "doc_a9500ec500355af232d543b7:chunk:d6f63ff50ebc9c1e1cf4c4a9",
+        "doc_a9500ec500355af232d543b7:chunk:779822e266fdc1037f1f6e7d",
+        "doc_a9500ec500355af232d543b7:chunk:e2ab11fa1b10a6deb0f0f76e",
+        "doc_a9500ec500355af232d543b7:chunk:9589f2d4a54728b1e4101f4d",
+        "doc_a9500ec500355af232d543b7:chunk:8c0ad9b141ebc4d0ea186071",
+        "doc_a9500ec500355af232d543b7:chunk:c040614a174afc9c9961bd5b"
+      ],
+      "chunk_hashes": {
+        "doc_a9500ec500355af232d543b7:chunk:f540e856cddd86d3f969cec1": "6532881e6c77ca582bfffaf912caac6fbbb2eba44b5be846d19827d9b7dfd8bb",
+        "doc_a9500ec500355af232d543b7:chunk:d6f63ff50ebc9c1e1cf4c4a9": "f736b2cc0656a0e7b2a58bd7a31c770dd51a907723445914b116e8b927a1a326",
+        "doc_a9500ec500355af232d543b7:chunk:779822e266fdc1037f1f6e7d": "d4531bb2cc985762349d4440fde895e11ded3751ed6564d99581a7d86ebdc7f2",
+        "doc_a9500ec500355af232d543b7:chunk:e2ab11fa1b10a6deb0f0f76e": "450d34b5a1af54a2e044d56e1c14c92ad8bf6d0ba9759e1c5bb265aeaae9a553",
+        "doc_a9500ec500355af232d543b7:chunk:9589f2d4a54728b1e4101f4d": "a046ca250ec20f680ea902a85054471f940a08dc558ddb4352e50f85d603e420",
+        "doc_a9500ec500355af232d543b7:chunk:8c0ad9b141ebc4d0ea186071": "1b59c884ecf704ca08264093493abe433fb5440b39bf996c2a373f2f9f0eadb9",
+        "doc_a9500ec500355af232d543b7:chunk:c040614a174afc9c9961bd5b": "431e419b5fc688decd9d5dbf9c239df93bbcf9c7dbfdd9cdc87b4265a26cb6e9"
+      }
+    },
+    "doc_acfdb96dc65ed74f58613bc9": {
+      "document_id": "doc_acfdb96dc65ed74f58613bc9",
+      "source": "投诉升级SOP.md",
+      "content_hash": "b1341e45759dc62dd17cae1d8d40abf6172429bc9e5667feeff5480cf1f25617",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_acfdb96dc65ed74f58613bc9:chunk:58679540215c55cf281d4eb4",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:5c767a209aef7afe5fc79a5d",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:962608f8ef896a0345e169df",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:7bb24fe14a3e1335b6dd043f",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:1d09277525cfb865cf19d05e",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:fa426126bd0716b85b82d392"
+      ],
+      "chunk_hashes": {
+        "doc_acfdb96dc65ed74f58613bc9:chunk:58679540215c55cf281d4eb4": "9447bbe8dca411599796e4eb2bce69fbada70763e31c48fb434dfbcca4b3dc7d",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:5c767a209aef7afe5fc79a5d": "e5f370109b348f83d9bdbb5843103d8023de06d206e6963a7e10bd4654d5c66e",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:962608f8ef896a0345e169df": "00be7653e3abea503c9a8bf7c15e5122b50e5e1f3ced2b02661f823637caf25c",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:7bb24fe14a3e1335b6dd043f": "4a6b353ec6ad0b2995a8c47d6436d6dcf6b7ec836537eb117c6fb0bc1d09cdba",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:1d09277525cfb865cf19d05e": "7034447fb56c08aaf7bb5598bcb737332278df6c6ed21ac18ecaded0ddd532a2",
+        "doc_acfdb96dc65ed74f58613bc9:chunk:fa426126bd0716b85b82d392": "4c551ca565f6d9e30bf526ef9662b7acbf28a7efef9849c2a1cb8538b9d2d8ee"
+      }
+    },
+    "doc_b1f79b4599410856d608f1ef": {
+      "document_id": "doc_b1f79b4599410856d608f1ef",
+      "source": "售后FAQ.md",
+      "content_hash": "72500dda632af6ac0e3ce248bd13a58514544812d66e6ce01cb1e15a597a943c",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "historical_case",
+        "business_domain": "customer_service",
+        "source_type": "case"
+      },
+      "chunk_ids": [
+        "doc_b1f79b4599410856d608f1ef:chunk:7d9e07196c840983efe5143d",
+        "doc_b1f79b4599410856d608f1ef:chunk:bbd1fa83091ea91b5bee6e71",
+        "doc_b1f79b4599410856d608f1ef:chunk:8851b65b4b6d7551bcdfd785",
+        "doc_b1f79b4599410856d608f1ef:chunk:2b3b9b56e3a4ab076f476511",
+        "doc_b1f79b4599410856d608f1ef:chunk:77eef604f73de4ed3021466d",
+        "doc_b1f79b4599410856d608f1ef:chunk:4f8ef5434e3378232aec8e68",
+        "doc_b1f79b4599410856d608f1ef:chunk:26c5f7467565a0180b3678f4",
+        "doc_b1f79b4599410856d608f1ef:chunk:5fa0dda2c9608dc36ac146df",
+        "doc_b1f79b4599410856d608f1ef:chunk:185e2872461479d822c2b7d0",
+        "doc_b1f79b4599410856d608f1ef:chunk:9708af169ed9aba5b605c2c7",
+        "doc_b1f79b4599410856d608f1ef:chunk:78b4b47cd7da47cdd9e5832f",
+        "doc_b1f79b4599410856d608f1ef:chunk:fa4cd3a8d432162a6988d649",
+        "doc_b1f79b4599410856d608f1ef:chunk:c17518ae28979f9d18b2bb68",
+        "doc_b1f79b4599410856d608f1ef:chunk:e3d497ff61ece3f5324f77ec",
+        "doc_b1f79b4599410856d608f1ef:chunk:00372064aca09696a9b03564",
+        "doc_b1f79b4599410856d608f1ef:chunk:3b6231321df8ea0efeb424e2",
+        "doc_b1f79b4599410856d608f1ef:chunk:26f4f96c8b52bcc5ab9e55f4"
+      ],
+      "chunk_hashes": {
+        "doc_b1f79b4599410856d608f1ef:chunk:7d9e07196c840983efe5143d": "9ed88b91a58a10ebe33e2305791bf9dc98114ed44a0c89c02826f416ba00ea2b",
+        "doc_b1f79b4599410856d608f1ef:chunk:bbd1fa83091ea91b5bee6e71": "47fd7d4ba97497dc8386f3ad1c64d13b1072827c114b0262976a593b97b7c35e",
+        "doc_b1f79b4599410856d608f1ef:chunk:8851b65b4b6d7551bcdfd785": "e7c66184fd89829cc59d8480b926adb8ccddc248379029c5bd3ede8725cc0635",
+        "doc_b1f79b4599410856d608f1ef:chunk:2b3b9b56e3a4ab076f476511": "112ce7ffbe344bfa303aaec7837ee45c980fdf18123ea477324754c7c4ad9420",
+        "doc_b1f79b4599410856d608f1ef:chunk:77eef604f73de4ed3021466d": "4a3ad2dba91e1366a87f470dc1df518107fa79bd64a21331b6f562d663e540c7",
+        "doc_b1f79b4599410856d608f1ef:chunk:4f8ef5434e3378232aec8e68": "878580b8aee60368e8a45bc6f288cf8921d320286c0dfbefd3d4c2d4880cc8f8",
+        "doc_b1f79b4599410856d608f1ef:chunk:26c5f7467565a0180b3678f4": "7293137f271ad654863fa9d36412f84f5aa1850f056527274d697d6dfbeeb4f8",
+        "doc_b1f79b4599410856d608f1ef:chunk:5fa0dda2c9608dc36ac146df": "78ab5d2b93f8b085557d490cbffbeffe5efa88aebea63b801191c4c6a8624894",
+        "doc_b1f79b4599410856d608f1ef:chunk:185e2872461479d822c2b7d0": "9fef65d982b105755fbb42c763b5073f3258317aabfd19640dd143228deccf4c",
+        "doc_b1f79b4599410856d608f1ef:chunk:9708af169ed9aba5b605c2c7": "a28a94f7c6104d56b23f8a71ddd8b3e421d0692f5391f2e1ecb9b84bf5ad477e",
+        "doc_b1f79b4599410856d608f1ef:chunk:78b4b47cd7da47cdd9e5832f": "65c7bada10c8ee30f4c0fac153e834e7d831f2fc2be7ec1c61f9517c673e0e51",
+        "doc_b1f79b4599410856d608f1ef:chunk:fa4cd3a8d432162a6988d649": "cd07a2a86b7e94dd206ad18fb48781fc6e5e45ae1ac81c632499292ff208c52c",
+        "doc_b1f79b4599410856d608f1ef:chunk:c17518ae28979f9d18b2bb68": "98c6c9cb19f7a32e2422d7fce2721320fbefa2436bd51ae2c4c4680a6e6106d8",
+        "doc_b1f79b4599410856d608f1ef:chunk:e3d497ff61ece3f5324f77ec": "ffea36512b7ab72f6bc7b248efb23da8ec579ae784a096827c4c01e2e66d6fb0",
+        "doc_b1f79b4599410856d608f1ef:chunk:00372064aca09696a9b03564": "d8cba67813379ac8abca8e3714516f631c6523b108cd3aac3c6bfd373ba6f481",
+        "doc_b1f79b4599410856d608f1ef:chunk:3b6231321df8ea0efeb424e2": "d094fe23c73465b924ac1efc8b8b07a56ea50ccf255f7e8bb8c0017598ec37ba",
+        "doc_b1f79b4599410856d608f1ef:chunk:26f4f96c8b52bcc5ab9e55f4": "9492947b6987d8feeac3208eb21db80f653d4928439a5a517f294df0a1706e09"
+      }
+    },
+    "doc_b3377cfe0dac262b10bf7bd4": {
+      "document_id": "doc_b3377cfe0dac262b10bf7bd4",
+      "source": "物流配送政策.md",
+      "content_hash": "4e69477ef4f4e9b4c87e791897f59b48e257d2d6445717387cdf64e1f01769d6",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "logistics_policy",
+        "business_domain": "fulfillment",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:2168858389fe8737b80904c1",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:50d64ed05b17761cfaf7b946",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:2c115adaaa7779759d9de7d3",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:4e286bdfd646d61e7fab479b",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:0bd18e5eb9ed69df705f96ab",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:15906903bd17cc9d0f9f1413",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:cccba09f25e9cf9e7044bc90",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:add621873f70f1b242631a96",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:4d0fb5cb7d28f34a6bb6984c"
+      ],
+      "chunk_hashes": {
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:2168858389fe8737b80904c1": "f1c02972603bec361757009c8cf4efb22ee792e883903be6ae59833e5b2e5832",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:50d64ed05b17761cfaf7b946": "f080923cbd70d8800c78f501bee0b46b8c9f181d3957fc08ca49815b278392df",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:2c115adaaa7779759d9de7d3": "101c9bd584888d68e8057002b5ace0b27ea1933598745164a7d401602c7ccfc6",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:4e286bdfd646d61e7fab479b": "01e5106c7f0befbfe0a4620fadbc40fae5889fb6b49327abda4f8718be2ec292",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:0bd18e5eb9ed69df705f96ab": "c8fd8ecffc5c8efb84d41d2c30379285a1a9462f47c880ef740d6b9caa63f558",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:15906903bd17cc9d0f9f1413": "82a14df1a0c01f7dc0759fd9414c48a4087aa71b414411dda6e8e10474ed9583",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:cccba09f25e9cf9e7044bc90": "1700d1070eac5e80655a082330fedb7ab9721174567811b073daaa79c36d2e73",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:add621873f70f1b242631a96": "bb193c9ed747cd0191f4725aacb0713eb2c50072fb6e33a7a3d8a565e66c3919",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:4d0fb5cb7d28f34a6bb6984c": "1244b74fe5736e0ce02c02fe1baafca6f5a56d62cf6c8793d8d882a65a949fe6"
+      }
+    },
+    "doc_cfacd4e13eac8045fad3c4c8": {
+      "document_id": "doc_cfacd4e13eac8045fad3c4c8",
+      "source": "商品说明文档.md",
+      "content_hash": "f9fd274a4a0496a6180a49a1c429bf9f7a3ee819efa93aa462dc6fa0de84c861",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "product_manual",
+        "business_domain": "product_support",
+        "source_type": "manual"
+      },
+      "chunk_ids": [
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:aef8fa1728838a446ff0a303",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:5be123a630b01b8dc3de0fb7",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:3e9a1409a08e2041f194df49",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ecb09d0a350d74b0d82efa40",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:817e21fe54777ff6cf808ec1",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:bdfe366d1a056193191bb7bd",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:97b9649e89ad1446b088d86c",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:0ff113d8ac0cc9d2bfd08c6a",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:d5be36e021307ee81065f2f0",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:e06d176ae6b436dcbf654c8b",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:367a2ede51147edd8a93cc5f",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:cf02f890d7ddf4c87b1c58c2",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:e5a1a70ba9bf4c7a3caf7640",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ebee5298c8a317c66b908dd6",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:f557bd0a9aaaaaaa8746507a",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ca680638eade2879d17b61bb",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:c8d91902c7325946c9bb66a1",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:5753d304fe6634e99fba25c1",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:3f533accce5ff6a4643710af",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:71fd424231e9701d0aebee0d"
+      ],
+      "chunk_hashes": {
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:aef8fa1728838a446ff0a303": "e90b4c188299ede2cb51a8d11f207ba3530d2e7fb3b6b7991cd6019491d8f4a4",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:5be123a630b01b8dc3de0fb7": "885e3f63cf6a47689c40bf7eeb01c7d3de9d130bfc3e2a92e67dc257d0e989e4",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:3e9a1409a08e2041f194df49": "20e86c9efc5d678fa4ff8f80b19b439c2ed4c13d909261f02644ab28f80e00cd",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ecb09d0a350d74b0d82efa40": "02ad150dc9bd0294db16025d07d938615b5f805a9e297546731443ed83057f3e",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:817e21fe54777ff6cf808ec1": "df7ccef63267e44027ded3791cc29d33213fc481c15edaa4efd7a84738333be4",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:bdfe366d1a056193191bb7bd": "25a392b6831e01e7925c95c7d6b0fd5d0ad376a6204973e363478519c342df27",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:97b9649e89ad1446b088d86c": "f39217cf65ce469df14e248f7f42b148fab6afd6c53080559cbbcb6a8e1be4fc",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:0ff113d8ac0cc9d2bfd08c6a": "cc8c236902ef332ea61b7f06e9a25fa090782bf738aa317f1d98b23e00b4af71",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:d5be36e021307ee81065f2f0": "76e0ba4f7b11524dc65d0284ce911a54f4b42ebf10ec659b186a69deef11d012",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:e06d176ae6b436dcbf654c8b": "f2a0dfce8b896160c51ad162d61c9982e617e0a9ba89e8d2049b856993485f3c",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:367a2ede51147edd8a93cc5f": "8c2a5f80072b2eff2d845642d638994c2e0a7660ab20cebf8cd440f867608d12",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:cf02f890d7ddf4c87b1c58c2": "2836d3621748de0609f9fe83054bf70057c104937cab6d242f7b2ea4371003df",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:e5a1a70ba9bf4c7a3caf7640": "77781d01c223d11c73f9087c1e896c01df696e097a6f30d9f06595fcf8b656ed",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ebee5298c8a317c66b908dd6": "df6848b9d29f0d6e3d7f8f297eb482cffaee4902ceed6fe5a35b9b4c87567102",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:f557bd0a9aaaaaaa8746507a": "1721672e6fe95637568bada04c06f8c931b931d9706195ee527191ed07df0486",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ca680638eade2879d17b61bb": "89701d4bc10b754021ab87c35d0c1be89472c53e64682247894837859cc705f3",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:c8d91902c7325946c9bb66a1": "1d5b004512ebb9e83902f846e98af2100c7a99e6a80245600885730ba82c900c",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:5753d304fe6634e99fba25c1": "42182169676b58e7734ffef03000eed02e176ab068e35a022855922e04e3a971",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:3f533accce5ff6a4643710af": "01b7c34080682a09e28fcbcdef36409adebd771a0bf9d5ab26dfcad59c364e2d",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:71fd424231e9701d0aebee0d": "e229db63cbedae83009a33cd816edb89f53586847a1ab8b259290defdd6d90b3"
+      }
+    },
+    "doc_e624c6825315857037f266a7": {
+      "document_id": "doc_e624c6825315857037f266a7",
+      "source": "物流规则.md",
+      "content_hash": "b071e76bfb1764073cf605eea4f60e1d8e22b724c477dcc08ad89827a5b131a5",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "logistics_policy",
+        "business_domain": "fulfillment",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_e624c6825315857037f266a7:chunk:a4cc8f4204ed94039c05a936",
+        "doc_e624c6825315857037f266a7:chunk:cedb49ac1f45bac97a195c81",
+        "doc_e624c6825315857037f266a7:chunk:0b942a5f74d30196046dbb7e",
+        "doc_e624c6825315857037f266a7:chunk:fe271060e38152af17104dc4",
+        "doc_e624c6825315857037f266a7:chunk:55157d8db8cbaa1edd67a982",
+        "doc_e624c6825315857037f266a7:chunk:cc12c97e510950100d841ea3",
+        "doc_e624c6825315857037f266a7:chunk:7f82057b87fc4db19c23dd1f",
+        "doc_e624c6825315857037f266a7:chunk:e1de496ade3d37d386d3e240",
+        "doc_e624c6825315857037f266a7:chunk:251e7d2df831354b88263e98",
+        "doc_e624c6825315857037f266a7:chunk:bf1c389cae1c9abcbc6d5dd7",
+        "doc_e624c6825315857037f266a7:chunk:f8464121d7c86923404515b6",
+        "doc_e624c6825315857037f266a7:chunk:7e65718deb4d06fdd0bef383",
+        "doc_e624c6825315857037f266a7:chunk:1a9e1fb478cccfb09b4fde10",
+        "doc_e624c6825315857037f266a7:chunk:1256b550edea588abd725a0a",
+        "doc_e624c6825315857037f266a7:chunk:dc43b5c2209ab95046fd32fc",
+        "doc_e624c6825315857037f266a7:chunk:ef50f8daf176ae790659a2df",
+        "doc_e624c6825315857037f266a7:chunk:7e093ea02dccf3e6c10b3852"
+      ],
+      "chunk_hashes": {
+        "doc_e624c6825315857037f266a7:chunk:a4cc8f4204ed94039c05a936": "588f4489239d163eb5708db2e7150cbbffeab65e264e2f0964c9f9b15a637d22",
+        "doc_e624c6825315857037f266a7:chunk:cedb49ac1f45bac97a195c81": "8179bb4253841996d26c991814c32c6f32f2247a5cfeaa66fe306112cdb8c8ce",
+        "doc_e624c6825315857037f266a7:chunk:0b942a5f74d30196046dbb7e": "85b9ddb337117ece7a5b8d801457161d62b756e8a5cafb5ac503cb3934b08ecf",
+        "doc_e624c6825315857037f266a7:chunk:fe271060e38152af17104dc4": "3484e585dd9f6d0bf2818334a7506fd8f299034f8be4e98e9701a003adc17a42",
+        "doc_e624c6825315857037f266a7:chunk:55157d8db8cbaa1edd67a982": "ba3d7bfde9e3acafe9533db5659cf904daaa1c0548c309644cd3e420bddf83bf",
+        "doc_e624c6825315857037f266a7:chunk:cc12c97e510950100d841ea3": "ce40f29deaeeea7e777ff0397dc0ddf2b63b3686523474e3c8aaa855e4363b42",
+        "doc_e624c6825315857037f266a7:chunk:7f82057b87fc4db19c23dd1f": "2e8859a9a264e3d2841142d26c747509dce39a82a7f7b815074a52b56c7157d4",
+        "doc_e624c6825315857037f266a7:chunk:e1de496ade3d37d386d3e240": "aa3862e1b1feb4baaffac27469d2cec075c27e0fdb8b175b10d40e557f28847a",
+        "doc_e624c6825315857037f266a7:chunk:251e7d2df831354b88263e98": "6e0eeb3d3469c3b1a08acdd72aab092e664c1df1ea129558af509dc8fbedb53f",
+        "doc_e624c6825315857037f266a7:chunk:bf1c389cae1c9abcbc6d5dd7": "0bafe337426a07f40ee8ed5bb46540ec2508425c2d93543f98c6db4ea668ebef",
+        "doc_e624c6825315857037f266a7:chunk:f8464121d7c86923404515b6": "7f89270d54cfd1a34a9793d4a62702279f0e427481632eef53244d53de959f09",
+        "doc_e624c6825315857037f266a7:chunk:7e65718deb4d06fdd0bef383": "eb22fbeccf290eab20b4ba7398014341832fb61760c713cc453ddb4190848dc6",
+        "doc_e624c6825315857037f266a7:chunk:1a9e1fb478cccfb09b4fde10": "8009b949ef19ba29a2be74209d6061b0d339cbaf2de643a8bfe68df40298eaf4",
+        "doc_e624c6825315857037f266a7:chunk:1256b550edea588abd725a0a": "fa909c1394ae3e041ee24114370da917f0400468b4103359891c40bc095b192c",
+        "doc_e624c6825315857037f266a7:chunk:dc43b5c2209ab95046fd32fc": "e058fbd19d05244fad31b916d801f8887420b411ab77b17925d842f067dd61d3",
+        "doc_e624c6825315857037f266a7:chunk:ef50f8daf176ae790659a2df": "ebe793eec5ab96dfbda0922faf02c9d223b013168bbf8e9ab4316163b0d56974",
+        "doc_e624c6825315857037f266a7:chunk:7e093ea02dccf3e6c10b3852": "644dd2c675fc603894eca14e60d9b34a7c00a3e1f179f2108db448546541d409"
+      }
+    }
+  },
+  "unsupported_sources": []
+}

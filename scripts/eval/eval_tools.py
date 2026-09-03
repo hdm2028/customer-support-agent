@@ -88,6 +88,13 @@ def check_arguments(tool_calls: list[dict], expected_arguments: dict) -> tuple[b
                 actual_key = key
                 actual_value = arguments.get(actual_key)
 
+            if (
+                tool_name == "policy_search"
+                and actual_key == "query"
+                and actual_value is None
+            ):
+                actual_value = arguments.get("semantic_query")
+
             if not check_argument_rule(actual_value, expected_rule):
                 errors.append(
                     f"{tool_name}.{actual_key} expected_rule={expected_rule}, actual={actual_value}"

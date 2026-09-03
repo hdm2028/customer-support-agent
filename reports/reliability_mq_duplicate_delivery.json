@@ -1,21 +1,25 @@
 {
   "side_effects": [
-    "[DELETES ORDER-SCOPED EVAL SIDE EFFECTS BEFORE RUN]",
     "[WRITES DATABASE]",
     "[PUBLISHES MQ]",
     "[UPDATES REFUND STATUS]",
     "[CREATES NOTIFICATIONS]"
   ],
   "order_id": "10009",
-  "event_id": "refund.created:R-c8b5c0614913",
-  "message_id": "MQ-85f0bf2037c4",
+  "refund_id": "R-23b8887216d1",
+  "event_id": "refund.created:R-23b8887216d1",
+  "message_id": "MQ-9b89434bbf38",
+  "initial_refund_status": "refund_processing",
   "received_events": 2,
-  "processed_events": 1,
-  "ignored_duplicate_events": 1,
+  "consumer_handled_events": 2,
+  "business_executed_events": 0,
+  "duplicate_business_ignored_events": 2,
   "first_result": {
     "success": true,
-    "action": "refund_processing",
-    "event_id": "refund.created:R-c8b5c0614913",
+    "action": "refund_event_noop",
+    "business_executed": false,
+    "duplicate_ignored": true,
+    "reason": "退款当前状态为 refund_processing，无需重复执行业务处理。",
     "refund_request": {
       "amount": 899.0,
       "reason": "refund_request",
@@ -23,18 +27,19 @@
       "user_id": "u009",
       "order_id": "10009",
       "next_step": "等待退款处理服务消费 MQ 消息。",
-      "refund_id": "R-c8b5c0614913",
-      "created_at": "2026-08-30T14:12:02",
+      "refund_id": "R-23b8887216d1",
+      "created_at": "2026-08-31T16:07:33",
       "risk_level": "low",
-      "updated_at": "2026-08-30T14:12:03",
+      "updated_at": "2026-08-31T16:50:12",
       "eligibility": {
         "reason": "订单满足进入退款申请流程的基础条件。",
         "eligible": true,
         "refund_reason": "refund_request",
         "review_required": false
       },
-      "user_request": "订单 10009 我要退款。",
-      "mq_message_id": "MQ-04359e006036",
+      "user_request": "订单10009我要退款。",
+      "mq_message_id": "MQ-1a0eaa569930",
+      "processor_note": "退款任务已被业务处理服务消费，订单状态已更新为退款处理中。",
       "idempotency_key": "refund_apply:10009",
       "risk_assessment": {
         "profile": {
@@ -50,70 +55,82 @@
         "risk_score": 15,
         "review_reason": "中额退款",
         "review_required": false
-      },
-      "processor_note": "退款任务已被业务处理服务消费，订单状态已更新为退款处理中。",
-      "last_processed_event_id": "refund.created:R-c8b5c0614913",
-      "processed_event_ids": [
-        "refund.created:R-c8b5c0614913"
-      ]
-    },
-    "order": {
-      "notes": "待发货订单可能支持修改收货地址，但必须在仓库出库前由人工确认。",
-      "amount": 899.0,
-      "user_id": "u009",
-      "category": "母婴用品",
-      "order_id": "10009",
-      "user_name": "郑楠",
-      "signed_date": null,
-      "order_status": "退款处理中",
-      "product_name": "儿童安全座椅 B6",
-      "payment_status": "paid",
-      "shipping_status": "仓库正在拣货",
-      "warranty_months": 6,
-      "after_sales_status": "refund_processing",
-      "return_window_days": 7,
-      "can_refund_directly": false,
-      "last_refund_id": "R-c8b5c0614913"
+      }
     },
     "notification": {
-      "notification_id": "N-97ee098e96d6",
+      "notification_id": "N-6ff1e0814eed",
       "status": "sent",
-      "created_at": "2026-08-30T14:12:03",
+      "created_at": "2026-08-31T17:06:57",
       "user_id": "u009",
       "channel": "system",
-      "content": "退款申请 R-c8b5c0614913 已受理，订单进入退款处理中。",
-      "refund_id": "R-c8b5c0614913"
+      "content": "退款申请 R-23b8887216d1 已受理，当前状态为 refund_processing。",
+      "refund_id": "R-23b8887216d1"
     }
   },
   "second_result": {
     "success": true,
-    "action": "duplicate_ignored",
-    "event_id": "refund.created:R-c8b5c0614913",
-    "refund_id": "R-c8b5c0614913",
-    "refund_status": "refund_processing"
+    "action": "refund_event_noop",
+    "business_executed": false,
+    "duplicate_ignored": true,
+    "reason": "退款当前状态为 refund_processing，无需重复执行业务处理。",
+    "refund_request": {
+      "amount": 899.0,
+      "reason": "refund_request",
+      "status": "refund_processing",
+      "user_id": "u009",
+      "order_id": "10009",
+      "next_step": "等待退款处理服务消费 MQ 消息。",
+      "refund_id": "R-23b8887216d1",
+      "created_at": "2026-08-31T16:07:33",
+      "risk_level": "low",
+      "updated_at": "2026-08-31T16:50:12",
+      "eligibility": {
+        "reason": "订单满足进入退款申请流程的基础条件。",
+        "eligible": true,
+        "refund_reason": "refund_request",
+        "review_required": false
+      },
+      "user_request": "订单10009我要退款。",
+      "mq_message_id": "MQ-1a0eaa569930",
+      "processor_note": "退款任务已被业务处理服务消费，订单状态已更新为退款处理中。",
+      "idempotency_key": "refund_apply:10009",
+      "risk_assessment": {
+        "profile": {
+          "user_id": "u009",
+          "account_status": "normal",
+          "refund_count_30d": 0,
+          "complaint_count_30d": 0
+        },
+        "risk_flags": [
+          "中额退款"
+        ],
+        "risk_level": "low",
+        "risk_score": 15,
+        "review_reason": "中额退款",
+        "review_required": false
+      }
+    },
+    "notification": {
+      "notification_id": "N-4d1c1e9d8c06",
+      "status": "sent",
+      "created_at": "2026-08-31T17:06:57",
+      "user_id": "u009",
+      "channel": "system",
+      "content": "退款申请 R-23b8887216d1 已受理，当前状态为 refund_processing。",
+      "refund_id": "R-23b8887216d1"
+    }
   },
   "refund_status_after_first": "refund_processing",
   "refund_status_after_second": "refund_processing",
-  "cleanup": {
-    "performed": true,
-    "scope": "order_eval_side_effects",
-    "order_id": "10009",
-    "deleted": {
-      "mq_messages": 0,
-      "refund_requests": 0,
-      "manual_reviews": 0,
-      "tickets": 0
-    },
-    "demo_orders_reset": true,
-    "cache_deleted": [
-      "idempotency:refund_apply:10009",
-      "lock:refund_apply:10009",
-      "business:order:10009"
-    ]
+  "assertions": {
+    "no_duplicate_business_execution": true,
+    "second_delivery_did_not_execute_business": true,
+    "second_delivery_was_idempotent": true,
+    "status_stable_after_processing": true
   },
   "passed_count": 1,
   "failed_count": 0,
   "failed_cases": [],
   "report_name": "reliability_mq_duplicate_delivery",
-  "created_at": "2026-08-30T14:12:04"
+  "created_at": "2026-08-31T17:06:58"
 }

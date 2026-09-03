@@ -1,0 +1,324 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-03T04:55:45+00:00",
+  "kb_version": "kb_1a4e15b22cc2ce82aa99b4bc",
+  "parser_version": "knowledge-parser-v1",
+  "chunker_version": "token-strategy-v3",
+  "documents": {
+    "doc_0106c205c0e3c2267e897ca5": {
+      "document_id": "doc_0106c205c0e3c2267e897ca5",
+      "source": "支付与发票政策.md",
+      "content_hash": "9686a12269eb31d49dc51c845fe745be4a325702f4f133029cf9d3c522b7e2b2",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_0106c205c0e3c2267e897ca5:chunk:1c694169963991146d2b256d"
+      ],
+      "chunk_hashes": {
+        "doc_0106c205c0e3c2267e897ca5:chunk:1c694169963991146d2b256d": "9686a12269eb31d49dc51c845fe745be4a325702f4f133029cf9d3c522b7e2b2"
+      }
+    },
+    "doc_19f87b3780f5e4c88f021d90": {
+      "document_id": "doc_19f87b3780f5e4c88f021d90",
+      "source": "客服SOP.md",
+      "content_hash": "4ed55e51a56963c306e1badf5cc76a1179823e059c489b98cf97cb1006fbf8bc",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "customer_sop",
+        "business_domain": "customer_service",
+        "source_type": "sop"
+      },
+      "chunk_ids": [
+        "doc_19f87b3780f5e4c88f021d90:chunk:9d3d86114b7fedcd37d9e09c",
+        "doc_19f87b3780f5e4c88f021d90:chunk:c60bb50eba377dea79b81709",
+        "doc_19f87b3780f5e4c88f021d90:chunk:98d7bc084067f06ce446b5fb"
+      ],
+      "chunk_hashes": {
+        "doc_19f87b3780f5e4c88f021d90:chunk:9d3d86114b7fedcd37d9e09c": "82b8f2d56ee3c069d25fe4e5b3c2d44694f27ced4715d38a967378fa48370e8b",
+        "doc_19f87b3780f5e4c88f021d90:chunk:c60bb50eba377dea79b81709": "580cf4701ea7095c6f4beaad2f85a76ab72d942095046c262a4e559bca103c80",
+        "doc_19f87b3780f5e4c88f021d90:chunk:98d7bc084067f06ce446b5fb": "747a2563949b21625d423007110009cc929358902a4e3cc72bcac445ddac0695"
+      }
+    },
+    "doc_253629df931f97428ff46d6e": {
+      "document_id": "doc_253629df931f97428ff46d6e",
+      "source": "退款政策.md",
+      "content_hash": "87ac9a39f5901439f43b21010c9cd219751673db6915d6a998a54a7b47005ea2",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "refund_policy",
+        "business_domain": "after_sales",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_253629df931f97428ff46d6e:chunk:33b8ff238ce8292b4032e7e8",
+        "doc_253629df931f97428ff46d6e:chunk:b32bfbb9ccc58341824ed350",
+        "doc_253629df931f97428ff46d6e:chunk:242b8dce91e93431d7734ff4"
+      ],
+      "chunk_hashes": {
+        "doc_253629df931f97428ff46d6e:chunk:33b8ff238ce8292b4032e7e8": "613c72d8e58706c96b647737ea03f3a054c7bbead278444a53b895d5b521f7c3",
+        "doc_253629df931f97428ff46d6e:chunk:b32bfbb9ccc58341824ed350": "5e5470e651163f67a3e776cee505f8eb159c1211c6f677bfb5281a44ebe85280",
+        "doc_253629df931f97428ff46d6e:chunk:242b8dce91e93431d7734ff4": "d00bce35122df786a92a428dd319e6f58e980958980556ab2ec63ecac2a224c7"
+      }
+    },
+    "doc_41203502602eba8a5ebda54a": {
+      "document_id": "doc_41203502602eba8a5ebda54a",
+      "source": "订单取消与修改政策.md",
+      "content_hash": "ad14b22598bea9308b45a90cc01bdce0d19f9456ca78b25e549629ee9cbf8007",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_41203502602eba8a5ebda54a:chunk:9b39f9ca8b65dd609dfa9627",
+        "doc_41203502602eba8a5ebda54a:chunk:206fe8cdbddbff0841add5a4"
+      ],
+      "chunk_hashes": {
+        "doc_41203502602eba8a5ebda54a:chunk:9b39f9ca8b65dd609dfa9627": "80f37ca70083901be98e6465a519ad023eb0d84160ad66db367c86807ed22336",
+        "doc_41203502602eba8a5ebda54a:chunk:206fe8cdbddbff0841add5a4": "e615f3e089f34b5ffa989d5a93487ecf04536550197d965bcba06a1124475c2a"
+      }
+    },
+    "doc_61ae6301a2e6d1ddf7fc0bc4": {
+      "document_id": "doc_61ae6301a2e6d1ddf7fc0bc4",
+      "source": "退换货政策.md",
+      "content_hash": "ba7a31d50d49e14176a9c221706a1ef07bddd14f5a9c7d3fca985cae741b2d90",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "refund_policy",
+        "business_domain": "after_sales",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:92409536ad52d341b827eb95",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:c7fa73008d1ad682c0417463",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:00ac79843d2fbf1492081182"
+      ],
+      "chunk_hashes": {
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:92409536ad52d341b827eb95": "dab7b5628dd293cdc99132a4a61b9b910ed75ab6b2f587fd01ae21d9f11a5e23",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:c7fa73008d1ad682c0417463": "fa3b3fde1563475232cd5f7202f3a3cb4d0219786d0025c9f76bddac10c42ec1",
+        "doc_61ae6301a2e6d1ddf7fc0bc4:chunk:00ac79843d2fbf1492081182": "6642c0c1d7069a3347dbb5882c4b54e563cb6a8f288e13ae10ed0bd8a21fe69c"
+      }
+    },
+    "doc_6351ec570558996fe88c33a7": {
+      "document_id": "doc_6351ec570558996fe88c33a7",
+      "source": "会员权益政策.md",
+      "content_hash": "f82ef9ee47cc93f4863c19c75a8f46c1c176ebe59b2f55b32c8afbeff28ae84c",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_6351ec570558996fe88c33a7:chunk:e54efe04555b5c166e89d1f9"
+      ],
+      "chunk_hashes": {
+        "doc_6351ec570558996fe88c33a7:chunk:e54efe04555b5c166e89d1f9": "39168f34eeb06181133f014d27cdcf61d9a9637b0d70a75c5ae9bcb36fca94ea"
+      }
+    },
+    "doc_721c67dfb01f86d6212a3708": {
+      "document_id": "doc_721c67dfb01f86d6212a3708",
+      "source": "保修政策.md",
+      "content_hash": "ffd154556e803ed4833eb8d4436bf18136a94f79c1e4dbc3d42392380cd2dd58",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "product_manual",
+        "business_domain": "product_support",
+        "source_type": "manual"
+      },
+      "chunk_ids": [
+        "doc_721c67dfb01f86d6212a3708:chunk:3af9a2812bdc5e903ac070f8",
+        "doc_721c67dfb01f86d6212a3708:chunk:a097cb374c12babd5509bc58"
+      ],
+      "chunk_hashes": {
+        "doc_721c67dfb01f86d6212a3708:chunk:3af9a2812bdc5e903ac070f8": "7b751a0f0abf8b82f1dc46d22629dfa7cd4dfb5acf26eaf621f9f3fa79905d02",
+        "doc_721c67dfb01f86d6212a3708:chunk:a097cb374c12babd5509bc58": "986ee9fad721449245d11bf43606b28f3d1134b83341c7a9995b49b6813cd429"
+      }
+    },
+    "doc_8ae3fda162d548bd3b86efff": {
+      "document_id": "doc_8ae3fda162d548bd3b86efff",
+      "source": "商品售后规则.md",
+      "content_hash": "12096ec9ad50c7527b32c60c9b0b6c31881dd8524d47130fe8cce391fa2afc5d",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "refund_policy",
+        "business_domain": "after_sales",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_8ae3fda162d548bd3b86efff:chunk:5da4c08bc5d93115447ba13e",
+        "doc_8ae3fda162d548bd3b86efff:chunk:7e00f98aa3545993a8384cd4",
+        "doc_8ae3fda162d548bd3b86efff:chunk:4718cda261e388f45ec5bb9d",
+        "doc_8ae3fda162d548bd3b86efff:chunk:eb35e6b1b98c98654058787b",
+        "doc_8ae3fda162d548bd3b86efff:chunk:d362fe18e7256ed8ccca0c26"
+      ],
+      "chunk_hashes": {
+        "doc_8ae3fda162d548bd3b86efff:chunk:5da4c08bc5d93115447ba13e": "4f7c9c18c928630ba7a3ef06764d50ae98b979c9369b3a8715baf3903b300739",
+        "doc_8ae3fda162d548bd3b86efff:chunk:7e00f98aa3545993a8384cd4": "c8c4fde1c2e4d342a0e44d3273c3835240e7f37fd0058593424c62c786836666",
+        "doc_8ae3fda162d548bd3b86efff:chunk:4718cda261e388f45ec5bb9d": "7ab44f331f7c122ef1701b3effdbfc7e972970eb0e5f54e9356f25c49b3277ad",
+        "doc_8ae3fda162d548bd3b86efff:chunk:eb35e6b1b98c98654058787b": "6dec399c688fdd72c1cc21c071b9a7a07644e0101c4ae883936f7eadb64a6c52",
+        "doc_8ae3fda162d548bd3b86efff:chunk:d362fe18e7256ed8ccca0c26": "6264605ce85408c7c2a8917ebf1bf518b9a71e0720ba9dac299d7e7be0deb54e"
+      }
+    },
+    "doc_9e26bcd1585c743b0269eb0c": {
+      "document_id": "doc_9e26bcd1585c743b0269eb0c",
+      "source": "历史问题案例.md",
+      "content_hash": "fcb85256604de188864252b9814e00aaaddecb665bd9e57ec10065445c43c13d",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "historical_case",
+        "business_domain": "customer_service",
+        "source_type": "case"
+      },
+      "chunk_ids": [
+        "doc_9e26bcd1585c743b0269eb0c:chunk:40d9772e8530704d072fa6fb",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:3ac5ac5079d0330964a112fe",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:cff8cfe94bb3b5d8818d69c6"
+      ],
+      "chunk_hashes": {
+        "doc_9e26bcd1585c743b0269eb0c:chunk:40d9772e8530704d072fa6fb": "4f8892c179aa1876ac9bd8b2a74882177fe34da1b6e877c6003f1e1560d35211",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:3ac5ac5079d0330964a112fe": "82bf8e75a26db8303064d6d19228a06fde9f7eb01ec71498390c53a09348e888",
+        "doc_9e26bcd1585c743b0269eb0c:chunk:cff8cfe94bb3b5d8818d69c6": "dda3e6c5ece59c74250c33da9994990e90683d3bfbfba6b16380170e7bf06037"
+      }
+    },
+    "doc_a9500ec500355af232d543b7": {
+      "document_id": "doc_a9500ec500355af232d543b7",
+      "source": "人工审核SOP.md",
+      "content_hash": "82009e364064390a399149a9faf527b2f3922d0c827b83d54e2b3e3f01bb557c",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_a9500ec500355af232d543b7:chunk:1e5a06be87502d0367a4a853"
+      ],
+      "chunk_hashes": {
+        "doc_a9500ec500355af232d543b7:chunk:1e5a06be87502d0367a4a853": "4fe35017e1c6941a88d1b34fb4a8b35bfee5aba839b83edd38257ac07df0e933"
+      }
+    },
+    "doc_acfdb96dc65ed74f58613bc9": {
+      "document_id": "doc_acfdb96dc65ed74f58613bc9",
+      "source": "投诉升级SOP.md",
+      "content_hash": "b1341e45759dc62dd17cae1d8d40abf6172429bc9e5667feeff5480cf1f25617",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "general_policy",
+        "business_domain": "customer_service",
+        "source_type": "knowledge"
+      },
+      "chunk_ids": [
+        "doc_acfdb96dc65ed74f58613bc9:chunk:583dcfd78f2534f1dedbd6de"
+      ],
+      "chunk_hashes": {
+        "doc_acfdb96dc65ed74f58613bc9:chunk:583dcfd78f2534f1dedbd6de": "7778eb966daadad2d43e0ec709332752d3a691aad6500032e670ab560a04dc21"
+      }
+    },
+    "doc_b1f79b4599410856d608f1ef": {
+      "document_id": "doc_b1f79b4599410856d608f1ef",
+      "source": "售后FAQ.md",
+      "content_hash": "72500dda632af6ac0e3ce248bd13a58514544812d66e6ce01cb1e15a597a943c",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "historical_case",
+        "business_domain": "customer_service",
+        "source_type": "case"
+      },
+      "chunk_ids": [
+        "doc_b1f79b4599410856d608f1ef:chunk:bea95e2eeef255f7f47f4929",
+        "doc_b1f79b4599410856d608f1ef:chunk:15adfa10f77646fc0e51d743",
+        "doc_b1f79b4599410856d608f1ef:chunk:f095450026e74f00b7c17787"
+      ],
+      "chunk_hashes": {
+        "doc_b1f79b4599410856d608f1ef:chunk:bea95e2eeef255f7f47f4929": "9f9ac5a4576bf913aaf80011cc4df1b49cf42da9cd1004a946cde285fd8e6642",
+        "doc_b1f79b4599410856d608f1ef:chunk:15adfa10f77646fc0e51d743": "21a95ed9df652123b58e452e262ac47051b7fc81a2038cfa0cec38bf60539683",
+        "doc_b1f79b4599410856d608f1ef:chunk:f095450026e74f00b7c17787": "b8281c279d59ef40a45a9aaf2272e61cdf8a594ba3a958b3fc81739ef800e44c"
+      }
+    },
+    "doc_b3377cfe0dac262b10bf7bd4": {
+      "document_id": "doc_b3377cfe0dac262b10bf7bd4",
+      "source": "物流配送政策.md",
+      "content_hash": "4e69477ef4f4e9b4c87e791897f59b48e257d2d6445717387cdf64e1f01769d6",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "logistics_policy",
+        "business_domain": "fulfillment",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:8a82f61e380b3f19c3e6e88a",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:5b4db2e838e26e280aa59bd3"
+      ],
+      "chunk_hashes": {
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:8a82f61e380b3f19c3e6e88a": "e56f7a3b1c1acfbf0fce93b5ceed37db15a297eee5d0aacd1020917780c6e73c",
+        "doc_b3377cfe0dac262b10bf7bd4:chunk:5b4db2e838e26e280aa59bd3": "09811f39880967a130724aff8f5689df4da9e94a94118a1a06d1c19e930de7eb"
+      }
+    },
+    "doc_cfacd4e13eac8045fad3c4c8": {
+      "document_id": "doc_cfacd4e13eac8045fad3c4c8",
+      "source": "商品说明文档.md",
+      "content_hash": "f9fd274a4a0496a6180a49a1c429bf9f7a3ee819efa93aa462dc6fa0de84c861",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "product_manual",
+        "business_domain": "product_support",
+        "source_type": "manual"
+      },
+      "chunk_ids": [
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ee3b0882b2a99a7212ee0ede",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:4a304a1f9556f0cb6f2aeb39",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:b57790238a87da9f6abb9670"
+      ],
+      "chunk_hashes": {
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:ee3b0882b2a99a7212ee0ede": "2c7689ac3885325a3bcc06e793d4160582bdec2c4928bc60241bcb85112c6792",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:4a304a1f9556f0cb6f2aeb39": "e3f189a974b391ca685f8e2c7bdd1a659e5ea7390546133f45e2ae578628ed90",
+        "doc_cfacd4e13eac8045fad3c4c8:chunk:b57790238a87da9f6abb9670": "e595cf799963ddc33aefe2d9fb5adf1cd3c1084180f8f22d7cdd3e0face328a3"
+      }
+    },
+    "doc_e624c6825315857037f266a7": {
+      "document_id": "doc_e624c6825315857037f266a7",
+      "source": "物流规则.md",
+      "content_hash": "b071e76bfb1764073cf605eea4f60e1d8e22b724c477dcc08ad89827a5b131a5",
+      "file_type": "md",
+      "metadata": {
+        "loader": "text",
+        "knowledge_category": "logistics_policy",
+        "business_domain": "fulfillment",
+        "source_type": "policy"
+      },
+      "chunk_ids": [
+        "doc_e624c6825315857037f266a7:chunk:1ca198c2497259b9fd64e768",
+        "doc_e624c6825315857037f266a7:chunk:20a4df71e214f479c8d02232",
+        "doc_e624c6825315857037f266a7:chunk:0f6f2e9d016242248e7a189e",
+        "doc_e624c6825315857037f266a7:chunk:ae1e1a2cf626d58574fb45b2"
+      ],
+      "chunk_hashes": {
+        "doc_e624c6825315857037f266a7:chunk:1ca198c2497259b9fd64e768": "c0c08f9424624ec54ff012f0e69d9d4d590ea5de976f06e6ea53c40efcd7b0c3",
+        "doc_e624c6825315857037f266a7:chunk:20a4df71e214f479c8d02232": "38c6984591b47b755aaf68c5fd2d1c9dd5c79d02fb7591ab15b5c83943473277",
+        "doc_e624c6825315857037f266a7:chunk:0f6f2e9d016242248e7a189e": "5b6fcdd95a673f0ef61a1ad7da709569b93ba49534212b1f3978613d74a742ca",
+        "doc_e624c6825315857037f266a7:chunk:ae1e1a2cf626d58574fb45b2": "40aa0ea79e46792e91f4e6ade5566f880ca97026dab97607c569a3ff1207a96d"
+      }
+    }
+  },
+  "unsupported_sources": []
+}

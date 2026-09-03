@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 
 from app.agent.agents import AfterSalesAgent, CustomerAgent, RiskAgent
-from app.agent.routing.router import route_tools
+from app.agent.routing.router_v2 import route_tools_v2
 from app.agent.state import AgentResult, AgentState
 from app.agent.tools.tool_results import get_tool_result
 from app.agent.tools.tool_validation import validate_tool_chain, validate_tool_plan
@@ -49,7 +49,7 @@ class AgentOrchestrator:
         }
 
     def route(self, user_message: str) -> RouteDecision:
-        route = route_tools(user_message)
+        route = route_tools_v2(user_message)
         route.agent_plan = self.build_agent_plan(route)
         return route
 
@@ -122,18 +122,31 @@ class AgentOrchestrator:
         )
 
     def manual_review_blocks_auto_refund(self, state: AgentState) -> bool:
+        if (
+            state.manual_review is None
+            or state.refund is not None
+            or not state.route.need_refund_request
+        ):
+            return False
+
         risk = state.risk or {}
 
-        return bool(
-            state.manual_review is not None
-            and state.refund is None
-            and state.route.need_refund_request
-            and (
-                state.route.manual_review_required
-                or risk.get("review_required")
-            )
+        refund_result = get_tool_result(
+            state.tool_results,
+            "refund_apply",
         )
 
+        refund_requires_review = bool(
+            refund_result
+            and isinstance(refund_result.result, dict)
+            and refund_result.result.get("review_required")
+        )
+
+        return bool(
+            state.route.manual_review_required
+            or risk.get("review_required")
+            or refund_requires_review
+        )
     def decide_next_agent(self, state: AgentState) -> str | None:
         if state.blocked:
             return None

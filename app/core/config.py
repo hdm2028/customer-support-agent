@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 ENV_PATH = BASE_DIR / ".env"
 KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
 KNOWLEDGE_MANIFEST_PATH = BASE_DIR / "data" / "cache" / "knowledge_manifest.json"
+CHUNK_STRATEGY = os.getenv("CHUNK_STRATEGY", "fixed_256")
 
 
 def load_env_file(path: Path = ENV_PATH) -> None:
@@ -73,6 +74,24 @@ def env_flag(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
+def load_tool_timeout_overrides() -> dict[str, float]:
+    prefix = "TOOL_"
+    suffix = "_TIMEOUT_SECONDS"
+    overrides = {}
+
+    for key, value in os.environ.items():
+        if not key.startswith(prefix) or not key.endswith(suffix):
+            continue
+
+        tool_name = key[len(prefix):-len(suffix)].lower()
+        timeout_seconds = float(value)
+
+        if tool_name and timeout_seconds > 0:
+            overrides[tool_name] = timeout_seconds
+
+    return overrides
+
+
 @dataclass
 class Settings:
     app_name: str
@@ -106,6 +125,9 @@ class Settings:
     refund_lock_ttl_seconds: int
     refund_lock_wait_seconds: float
     refund_idempotency_ttl_seconds: int
+    tool_timeout_overrides: dict[str, float]
+    tool_retry_backoff_seconds: float
+    tool_timeout_worker_limit: int
 
     @property
     def has_llm_key(self) -> bool:
@@ -180,4 +202,13 @@ def get_settings() -> Settings:
         refund_lock_ttl_seconds=int(os.getenv("REFUND_LOCK_TTL_SECONDS", "15")),
         refund_lock_wait_seconds=float(os.getenv("REFUND_LOCK_WAIT_SECONDS", "3")),
         refund_idempotency_ttl_seconds=int(os.getenv("REFUND_IDEMPOTENCY_TTL_SECONDS", "86400")),
+        tool_timeout_overrides=load_tool_timeout_overrides(),
+        tool_retry_backoff_seconds=max(
+            0.0,
+            float(os.getenv("TOOL_RETRY_BACKOFF_SECONDS", "0.1")),
+        ),
+        tool_timeout_worker_limit=max(
+            1,
+            int(os.getenv("TOOL_TIMEOUT_WORKER_LIMIT", "16")),
+        ),
     )

@@ -14,7 +14,10 @@
         "ignored_duplicate_events": 0,
         "second_result": {
           "success": true,
-          "action": "refund_processing",
+          "action": "refund_event_noop",
+          "business_executed": false,
+          "duplicate_ignored": true,
+          "reason": "退款当前状态为 refund_processing，无需重复执行业务处理。",
           "refund_request": {
             "amount": 899.0,
             "reason": "refund_request",
@@ -22,18 +25,18 @@
             "user_id": "u009",
             "order_id": "10009",
             "next_step": "等待退款处理服务消费 MQ 消息。",
-            "refund_id": "R-9b52087516ad",
-            "created_at": "2026-08-30T14:09:08",
+            "refund_id": "R-23b8887216d1",
+            "created_at": "2026-08-31T16:07:33",
             "risk_level": "low",
-            "updated_at": "2026-08-30T14:09:17",
+            "updated_at": "2026-08-31T16:50:12",
             "eligibility": {
               "reason": "订单满足进入退款申请流程的基础条件。",
               "eligible": true,
               "refund_reason": "refund_request",
               "review_required": false
             },
-            "user_request": "订单 10009 我要退款。",
-            "mq_message_id": "MQ-23ac6715c47e",
+            "user_request": "订单10009我要退款。",
+            "mq_message_id": "MQ-1a0eaa569930",
             "processor_note": "退款任务已被业务处理服务消费，订单状态已更新为退款处理中。",
             "idempotency_key": "refund_apply:10009",
             "risk_assessment": {
@@ -52,32 +55,14 @@
               "review_required": false
             }
           },
-          "order": {
-            "notes": "待发货订单可能支持修改收货地址，但必须在仓库出库前由人工确认。",
-            "amount": 899.0,
-            "user_id": "u009",
-            "category": "母婴用品",
-            "order_id": "10009",
-            "user_name": "郑楠",
-            "signed_date": null,
-            "order_status": "退款处理中",
-            "product_name": "儿童安全座椅 B6",
-            "last_refund_id": "R-9b52087516ad",
-            "payment_status": "paid",
-            "shipping_status": "仓库正在拣货",
-            "warranty_months": 6,
-            "after_sales_status": "refund_processing",
-            "return_window_days": 7,
-            "can_refund_directly": false
-          },
           "notification": {
-            "notification_id": "N-76337fc9b76a",
+            "notification_id": "N-a0a73e0e5f3d",
             "status": "sent",
-            "created_at": "2026-08-30T14:09:18",
+            "created_at": "2026-08-31T17:03:51",
             "user_id": "u009",
             "channel": "system",
-            "content": "退款申请 R-9b52087516ad 已受理，订单进入退款处理中。",
-            "refund_id": "R-9b52087516ad"
+            "content": "退款申请 R-23b8887216d1 已受理，当前状态为 refund_processing。",
+            "refund_id": "R-23b8887216d1"
           }
         }
       },

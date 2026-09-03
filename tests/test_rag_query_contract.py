@@ -44,6 +44,14 @@ class RAGQueryBuilderTests(unittest.TestCase):
         self.assertIn("退款申请", query.lexical_query)
         self.assertNotIn("MQ", query.semantic_query)
         self.assertNotIn("人工审核", query.lexical_query)
+        self.assertEqual(
+            query.rerank_query,
+            "用户问题：我想申请退款\n"
+            "主要意图：退款\n"
+            "业务主题：退款申请",
+        )
+        self.assertNotIn("return_refund", query.rerank_query)
+        self.assertNotIn("refund_apply", query.rerank_query)
 
     def test_shipping_query_expands_from_topic(self) -> None:
         query = build_rag_query(
@@ -61,13 +69,19 @@ class RAGQueryBuilderTests(unittest.TestCase):
         route = make_route(
             "return_refund",
             "refund_eligibility",
-            related_topics=["shipping_exception", "product_failure"],
+            related_topics=[
+                "shipping_exception",
+                "product_failure",
+                "shipping_exception",
+            ],
         )
         query = build_rag_query(raw_query, route, [])
 
         self.assertEqual(query.semantic_query, raw_query)
         for term in ("退款资格", "物流异常", "商品破损"):
             self.assertIn(term, query.lexical_query)
+        self.assertIn("关联主题：物流异常；商品故障", query.rerank_query)
+        self.assertEqual(query.rerank_query.count("物流异常"), 1)
 
     def test_order_facts_are_added_without_second_lookup(self) -> None:
         route = make_route("return_refund", "refund_eligibility")
@@ -91,6 +105,11 @@ class RAGQueryBuilderTests(unittest.TestCase):
         self.assertIn("订单状态：已发货", query.semantic_query)
         self.assertIn("物流状态：运输中", query.semantic_query)
         self.assertNotIn("签收日期：None", query.semantic_query)
+        self.assertIn("订单状态：已发货", query.rerank_query)
+        self.assertIn("物流状态：运输中", query.rerank_query)
+        self.assertIn("商品名称：蓝牙耳机", query.rerank_query)
+        self.assertIn("商品类目：电子产品", query.rerank_query)
+        self.assertNotIn("None", query.rerank_query)
 
     def test_faq_without_order_result(self) -> None:
         route = make_route("membership", "membership_policy")
@@ -100,6 +119,7 @@ class RAGQueryBuilderTests(unittest.TestCase):
         self.assertIsNone(context.order_status)
         self.assertEqual(query.semantic_query, "会员有哪些权益？")
         self.assertIn("会员政策", query.lexical_query)
+        self.assertNotIn("人工处理", query.rerank_query)
 
     def test_handoff_semantics_are_preserved_without_mutating_route(self) -> None:
         route = make_route(
@@ -113,6 +133,7 @@ class RAGQueryBuilderTests(unittest.TestCase):
         self.assertTrue(route.handoff_required)
         self.assertIn("处理约束：需要人工处理", query.semantic_query)
         self.assertIn("人工处理", query.lexical_query)
+        self.assertIn("处理约束：需要人工处理", query.rerank_query)
 
     def test_semantic_router_validates_related_topics(self) -> None:
         semantic = _validate_semantic_result(
