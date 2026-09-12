@@ -1,0 +1,86 @@
+{
+  "requests": {
+    "completed_trace_count": 20,
+    "execution_failed_count": 0,
+    "duration_samples": 20,
+    "p50_ms": 20000,
+    "p95_ms": 20000,
+    "max_ms": 20000,
+    "scope": "completed_agent_workflows_not_answer_quality_or_all_http_requests"
+  },
+  "tools": {
+    "result_count": 20,
+    "failed_count": 20,
+    "failure_rate": 1.0,
+    "failure_kinds": {
+      "dependency_or_timeout": 10,
+      "business_or_logic": 10
+    },
+    "results_by_tool": {
+      "order_lookup": 20
+    },
+    "failures_by_tool": {
+      "order_lookup": 20
+    },
+    "p95_attempt_ms": null
+  },
+  "llm_usage": {
+    "observed_calls": 0,
+    "reported_calls": 0,
+    "unreported_calls": 0,
+    "traces_without_usage_instrumentation": 20,
+    "provider_reported_tokens": null,
+    "scope": "reported_chat_usage_only_excluding_embeddings_and_local_estimates"
+  },
+  "observed_at": "2026-09-08T18:15:19",
+  "window_seconds": 900,
+  "sample_limit": 10000,
+  "truncated": false,
+  "thresholds": {
+    "request_p95_ms": 15000.0,
+    "tool_failure_rate": 0.1,
+    "min_samples": 20.0,
+    "mq_backlog": 100.0,
+    "mq_age_seconds": 300.0,
+    "payment_stale_seconds": 900.0
+  },
+  "queue": {
+    "counts": {
+      "dead_letter": 1,
+      "pending": 1,
+      "processing": 1
+    },
+    "waiting_count": 1,
+    "oldest_waiting_seconds": 842206519.590292,
+    "expired_processing_count": 1
+  },
+  "stale_payment_count": 0,
+  "alerts": [
+    {
+      "code": "request_latency_high",
+      "value": 20000,
+      "threshold": 15000.0
+    },
+    {
+      "code": "tool_failure_rate_high",
+      "value": 1.0,
+      "threshold": 0.1
+    },
+    {
+      "code": "mq_oldest_waiting",
+      "value": 842206519.590292,
+      "threshold": 300.0
+    },
+    {
+      "code": "mq_lease_expired",
+      "value": 1,
+      "threshold": 1
+    },
+    {
+      "code": "mq_dead_letter",
+      "value": 1,
+      "threshold": 1
+    }
+  ],
+  "evidence_kind": "isolated_sqlite_fault_fixture_not_production_traffic"
+}

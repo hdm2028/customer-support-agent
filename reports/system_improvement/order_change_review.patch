@@ -1,0 +1,184 @@
+--- a/app/agent/response/fallback.py
++++ b/app/agent/response/fallback.py
+@@ -261,7 +261,7 @@
+             parts.append(
+                 f"已创建人工审核单 "
+                 f"{review.get('review_id')}，"
+-                "后续由人工客服复核后再执行高风险操作。"
++                "后续由人工客服复核后继续处理。"
+             )
+ 
+     if ticket_result and not ticket_result.success:
+--- a/app/agent/routing/decision.py
++++ b/app/agent/routing/decision.py
+@@ -131,13 +131,13 @@
+         ):
+             return True
+ 
+-        # 针对具体商品/订单询问
+-        # 是否符合退款条件
+-        if (
+-            semantic.topic
+-            == "refund_eligibility"
+-        ):
+-            return True
++        # 针对具体商品/订单询问
++        # 是否符合退款条件
++        if (
++            semantic.topic
++            == "refund_eligibility"
++        ):
++            return True
+ 
+         # refund_policy /
+         # refund_timing
+@@ -395,11 +395,12 @@
+     # 显式要求人工客服，
+     # 不一定意味着风险审核。
+     #
+-    # 只有风险/审核绕过
+-    # 才进入 manual review。
+-    manual_review_required = bool(
+-        review_bypass
+-        or legacy_handoff_required
++    # Order changes use the review continuation path even at low risk. Their
++    # completion must not depend on a particular wording matching a keyword.
++    manual_review_required = bool(
++        review_bypass
++        or legacy_handoff_required
++        or (is_execution and semantic.intent in {"cancel_order", "address_change"})
+     )
+ 
+     # --------------------------------
+@@ -412,7 +413,7 @@
+             need_refund_request
+             # Risk assessment can promote the route to a persisted review.
+             # Feedback/query semantics must not open that execution path.
+-            or (is_execution and semantic.intent == "complaint")
++            or (is_execution and semantic.intent in {"complaint", "cancel_order", "address_change"})
+             or review_bypass
+             or risky_action
+             or legacy_handoff_required
+--- a/tests/test_nonrefund_review_continuation.py
++++ b/tests/test_nonrefund_review_continuation.py
+@@ -1,4 +1,6 @@
+ import unittest
++import asyncio
++from pathlib import Path
+ from unittest.mock import patch
+ 
+ import test_refund_consistency as fixtures
+@@ -7,6 +9,9 @@
+ from app.services import review_continuation, refund_service
+ from app.storage import database as db
+ from app.tools.human_review import create_manual_review
++from app.agent.entry.agent_core import run_customer_support_agent, stream_customer_support_agent
++from app.agent.routing.semantic import SemanticRoute
++from app.observability import tracing
+ 
+ 
+ class NonRefundReviewTests(unittest.TestCase):
+@@ -14,11 +19,103 @@
+         self.fixture = fixtures.RefundConsistencyTests()
+         self.fixture.setUp()
+         self.addCleanup(self.fixture.doCleanups)
++        trace_path = patch.object(tracing, "TRACE_PATH", Path(self.fixture.tmp.name) / "trace.jsonl")
++        trace_path.start()
++        self.addCleanup(trace_path.stop)
+         token = current_principal.set(Principal("operator", "admin"))
+         self.addCleanup(current_principal.reset, token)
+ 
+     def review(self, action, order_id="10009"):
+         return create_manual_review(order_id, action, "high", ["需核实"], "用户请求人工继续处理").result
++
++    def user_request(self, action, message, *, user_id="u009", query=False, streamed=False):
++        semantic = SemanticRoute(intent=action, action_type="query" if query else "execute",
++                                 topic=("cancel_policy" if action == "cancel_order" else "address_change_policy") if query
++                                 else ("cancel_apply" if action == "cancel_order" else "address_change_apply"), source="llm")
++        token = current_principal.set(Principal(user_id, "customer"))
++        try:
++            with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=semantic):
++                if not streamed:
++                    return run_customer_support_agent(message, use_llm=False)
++                async def collect():
++                    events = [event async for event in stream_customer_support_agent(message, use_llm=False)]
++                    result = next(e["content"] for e in events if e["type"] == "done")
++                    self.assertEqual([e["content"] for e in events if e["type"] == "message"], [result["reply"]])
++                    return result
++                return asyncio.run(collect())
++        finally:
++            current_principal.reset(token)
++
++    def requested_review(self, result, action):
++        tools = result["tool_results"]
++        names = [item["tool_name"] for item in tools]
++        self.assertIn("risk_check", names)
++        self.assertIn("create_manual_review", names)
++        self.assertLess(names.index("risk_check"), names.index("create_manual_review"))
++        review = next(item["result"] for item in tools if item["tool_name"] == "create_manual_review")
++        self.assertEqual(review["review_type"], action)
++        self.assertEqual(review["status"], "pending_review")
++        self.assertEqual(review["context"]["route"]["intent"], action)
++        self.assertIn(review["review_id"], result["reply"])
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        return review
++
++    def test_semantic_cancel_alias_reaches_review_and_unpaid_approval(self):
++        before = db.get_order_from_db("10005")
++        result = self.user_request("cancel_order", "订单10005这单我不买了，帮我撤掉。", user_id="u005")
++        review = self.requested_review(result, "cancel_order")
++        self.assertEqual(review["user_id"], "u005")
++        self.assertEqual(db.get_order_from_db("10005"), before)
++        resolved = resolve_review(review["review_id"], "approve", "已核实用户要求停止未付款订单")
++        self.assertEqual(resolved["review"]["continuation"]["action"], "cancel_order")
++        self.assertEqual(db.get_order_from_db("10005")["order_status"], "已取消")
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        self.assertEqual(self.fixture.count("mq_messages"), 0)
++
++    def test_semantic_paid_cancel_alias_approval_creates_one_refund_event(self):
++        db.update_order_in_db("10009", {"shipping_status": "未发货"})
++        result = self.user_request("cancel_order", "帮我撤销10009这单。", streamed=True)
++        review = self.requested_review(result, "cancel_order")
++        self.assertEqual(db.get_order_from_db("10009")["order_status"], "待发货")
++        resolve_review(review["review_id"], "approve", "已向用户核实撤单并确认未发货")
++        replay = resolve_review(review["review_id"], "approve", "同一次确认重试")
++        self.assertTrue(replay["idempotent_replay"])
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++        self.assertEqual(self.fixture.count("mq_messages"), 1)
++        self.assertEqual(db.list_refund_requests_from_db()[0]["status"], "queued")
++
++    def test_semantic_address_alias_reaches_review_then_updates_confirmed_address(self):
++        db.update_order_in_db("10009", {"shipping_status": "未发货"})
++        before = db.get_order_from_db("10009")
++        address = "测试市向阳路18号"
++        result = self.user_request("address_change", "订单10009收件地点换成" + address, streamed=True)
++        review = self.requested_review(result, "address_change")
++        self.assertEqual(db.get_order_from_db("10009"), before)
++        self.assertIn(address, review["user_request"])
++        resolve_review(review["review_id"], "approve", "已与用户核实新地址和未发货状态", new_address=address)
++        self.assertEqual(db.get_order_from_db("10009")["shipping_address"], address)
++        self.assertEqual(self.fixture.count("mq_messages"), 0)
++
++    def test_semantic_change_review_rejection_and_late_shipping_do_not_change_order(self):
++        db.update_order_in_db("10009", {"shipping_status": "未发货"})
++        review = self.requested_review(self.user_request("cancel_order", "订单10009我想撤销这单。"), "cancel_order")
++        before = db.get_order_from_db("10009")
++        resolve_review(review["review_id"], "reject", "用户确认保留原订单")
++        self.assertEqual(db.get_order_from_db("10009"), before)
++        second = self.requested_review(self.user_request("address_change", "订单10009以后寄到测试市新路19号"), "address_change")
++        db.update_order_in_db("10009", {"shipping_status": "已发货", "order_status": "已发货"})
++        with self.assertRaises(ValueError):
++            resolve_review(second["review_id"], "approve", "页面打开后已发货", new_address="测试市新路19号")
++        self.assertEqual(db.get_order_from_db("10009").get("shipping_address"), before.get("shipping_address"))
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        self.assertEqual(self.fixture.count("mq_messages"), 0)
++
++    def test_semantic_change_cannot_open_review_for_another_users_order(self):
++        result = self.user_request("cancel_order", "帮我撤销10005这单。")
++        self.assertEqual([item["tool_name"] for item in result["tool_results"]], ["order_lookup"])
++        self.assertFalse(result["tool_results"][0]["success"])
++        self.assertEqual(self.fixture.count("manual_reviews"), 0)
++        self.assertEqual(self.fixture.count("tickets"), 0)
+ 
+     def test_unpaid_cancellation_completes_without_refund(self):
+         review = self.review("cancel_order", "10005")

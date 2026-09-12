@@ -1,0 +1,752 @@
+{
+  "tools": {
+    "a_passed": 41,
+    "b_passed": 41,
+    "total": 55,
+    "all_scores_equal": true,
+    "cases": [
+      {
+        "case_id": "tool_refund_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_refund_002",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_refund_003",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_refund_004",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_refund_005",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_002",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_003",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_004",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_005",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_006",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_order_007",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_policy_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_policy_002",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_policy_003",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_policy_004",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_policy_005",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_policy_006",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_contrast_refund_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_contrast_refund_002",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_contrast_quality_001",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_contrast_quality_002",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_contrast_progress_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_contrast_progress_002",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_unpaid_refund",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_duplicate_refund",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_payment_pending_refund",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_not_found_refund",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_missing_refund",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_complaint_only",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_complaint_refund",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_boundary_risk_medium",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_ticket_payment_exception",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_ticket_shipped_address",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_ticket_pending_cancel",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_ticket_recent_shipping",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_ticket_warranty_material",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_handoff_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_handoff_002",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_handoff_003",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_missing_ambiguous",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_missing_after_sales",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_customer_order",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_customer_risk",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_customer_manual",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_customer_ticket",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_customer_handoff",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_after_sales_policy",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_after_sales_risk",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_risk_order",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_risk_policy",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_risk_refund",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_risk_manual",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_risk_ticket",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "tool_permission_risk_handoff",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed"
+        ],
+        "score_equal": true
+      }
+    ]
+  },
+  "answer": {
+    "a_passed": 1,
+    "b_passed": 1,
+    "total": 4,
+    "all_scores_equal": true,
+    "cases": [
+      {
+        "case_id": "answer_refund_001",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed",
+          "deterministic_metrics"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "answer_refund_002",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed",
+          "deterministic_metrics"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "answer_refund_003",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "deterministic_metrics"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "answer_refund_004",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed",
+          "deterministic_metrics"
+        ],
+        "score_equal": true
+      }
+    ]
+  },
+  "e2e": {
+    "a_passed": 9,
+    "b_passed": 9,
+    "total": 12,
+    "all_scores_equal": true,
+    "cases": [
+      {
+        "case_id": "e2e_refund_001",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_002",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_003",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_004",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_005",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_006",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_007",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_008",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_009",
+        "same_case": true,
+        "a_passed": false,
+        "b_passed": false,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_010",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_011",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      },
+      {
+        "case_id": "e2e_refund_012",
+        "same_case": true,
+        "a_passed": true,
+        "b_passed": true,
+        "scoring_fields": [
+          "passed",
+          "checks"
+        ],
+        "score_equal": true
+      }
+    ]
+  }
+}

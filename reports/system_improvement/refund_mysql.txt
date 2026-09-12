@@ -1,0 +1,220 @@
+FFFFFFFFF                                                                [100%]
+================================== FAILURES ===================================
+__ RefundConsistencyTests.test_ack_failure_rolls_back_all_business_and_cache __
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_70dfd4bb530c47d1ba62d98e1f087385'")
+_ RefundConsistencyTests.test_consumer_crash_after_claim_is_recovered_after_lease _
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_26f18b34ac0d4d15bc0021948cddaf32'")
+_ RefundConsistencyTests.test_failed_message_retries_then_becomes_visible_dead_letter _
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_2d10e9921bf94245a0373ddfbc4d1ae4'")
+_ RefundConsistencyTests.test_first_concurrent_creation_has_one_refund_and_event _
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_4235e354a256440c8e73a62b46d67f89'")
+___ RefundConsistencyTests.test_order_failure_rolls_back_refund_transition ____
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_6f1e8cbd16904e59a6795f5e5caafbef'")
+_ RefundConsistencyTests.test_publish_failure_rolls_back_refund_and_retry_creates_once _
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_85a21832eba34d01a8f49fd3070fc4e3'")
+_ RefundConsistencyTests.test_simultaneous_duplicate_delivery_executes_business_once _
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_692b309092154c0bb29a2c5665e7d268'")
+_ RefundConsistencyTests.test_stale_worker_cannot_fail_or_execute_reclaimed_message _
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_56b037ae61984a30aa0cc03c321e9ab0'")
+__ RefundConsistencyTests.test_two_consumers_do_not_claim_same_live_message ___
+tests\test_refund_consistency.py:54: in setUp
+    cursor.execute(f"CREATE DATABASE `{schema}` CHARACTER SET utf8mb4")
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.OperationalError: (1044, "Access denied for user 'customer_support'@'127.0.0.1' to database 'support_test_3b57ae9572894aa4b5125f1a19f054ce'")
+=========================== short test summary info ===========================
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_ack_failure_rolls_back_all_business_and_cache
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_consumer_crash_after_claim_is_recovered_after_lease
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_failed_message_retries_then_becomes_visible_dead_letter
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_first_concurrent_creation_has_one_refund_and_event
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_order_failure_rolls_back_refund_transition
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_publish_failure_rolls_back_refund_and_retry_creates_once
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_simultaneous_duplicate_delivery_executes_business_once
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_stale_worker_cannot_fail_or_execute_reclaimed_message
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_two_consumers_do_not_claim_same_live_message
+9 failed in 0.89s

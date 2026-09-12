@@ -3,114 +3,73 @@ from app.agent.tools.tool_results import (
     is_low_confidence_evidence,
     is_system_tool_failure,
 )
-
-
-def _extract_policy_text(policy_item: dict) -> str:
-    """从 policy_search 单条结果中提取可用于回答的正文内容。"""
-
-    if not isinstance(policy_item, dict):
-        return str(policy_item)
-
-    candidates = (
-        "content",
-        "text",
-        "chunk",
-        "document",
-        "body",
-        "answer",
-        "summary",
-    )
-
-    for key in candidates:
-        value = policy_item.get(key)
-
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-
-    metadata = policy_item.get("metadata")
-
-    if isinstance(metadata, dict):
-        for key in candidates:
-            value = metadata.get(key)
-
-            if isinstance(value, str) and value.strip():
-                return value.strip()
-
-    return ""
-
-
-def _extract_policy_citation(policy_item: dict) -> str:
-    """从 policy_search 单条结果中提取来源信息。"""
-
-    if not isinstance(policy_item, dict):
-        return ""
-
-    citation = (
-        policy_item.get("citation")
-        or policy_item.get("source")
-        or policy_item.get("title")
-    )
-
-    if isinstance(citation, str) and citation.strip():
-        return citation.strip()
-
-    metadata = policy_item.get("metadata")
-
-    if isinstance(metadata, dict):
-        citation = (
-            metadata.get("citation")
-            or metadata.get("source")
-            or metadata.get("title")
-        )
-
-        if isinstance(citation, str) and citation.strip():
-            return citation.strip()
-
-    return ""
+from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
+from app.agent.routing.pending_task import can_retrieve_policy_while_clarifying
 
 
 def _build_policy_answer(policy_result) -> str:
-    """把 policy_search 的检索结果转换成确定性回答。"""
+    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
+    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
 
-    result = policy_result.result
 
-    if not isinstance(result, list) or not result:
-        return (
-            "已检索到售后政策，但当前没有可直接展示的政策正文，"
-            "建议补充具体问题后继续判断。"
-        )
+def refund_status_message(refund: dict) -> str:
+    """Describe the observed state, including replay, without claiming settlement."""
+    prefix = f"退款申请 {refund.get('refund_id')}"
+    messages = {
+        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
+        "pending_manual_review": "当前状态为待人工审核。",
+        "refund_processing": "正在处理中，尚未确认处理完成。",
+        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
+        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
+        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
+        "failed": "处理失败，请查看失败原因或联系人工客服。",
+        "rejected": "审核未通过，请查看审核说明。",
+        "cancelled": "已取消。",
+        "canceled": "已取消。",
+    }
+    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
 
-    policy_parts = []
 
-    # fallback 回复不需要把所有召回 chunk 全塞给用户，
-    # 取前两条高相关结果即可。
-    for item in result[:2]:
-        citation = _extract_policy_citation(item)
-        text = _extract_policy_text(item)
-
-        if citation and text:
-            policy_parts.append(
-                f"根据知识库来源《{citation}》：{text}"
-            )
-        elif text:
-            policy_parts.append(text)
-        elif citation:
-            policy_parts.append(
-                f"已检索到知识库来源《{citation}》，"
-                "但该条结果没有返回可直接展示的正文。"
-            )
-
-    if policy_parts:
-        return " ".join(policy_parts)
-
-    return (
-        "已检索到相关售后政策，但当前结果没有可直接展示的正文内容，"
-        "建议补充问题细节后继续判断。"
-    )
+def refund_outcome_reply(tool_results: list) -> str | None:
+    """Execution outcomes come from tool state, never from retrieved policy prose."""
+    result = get_tool_result(tool_results, "refund_apply")
+    if result is None:
+        return None
+    if result.success and isinstance(result.result, dict):
+        parts = [refund_status_message(result.result)]
+    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
+        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
+    else:
+        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
+        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
+    order = get_tool_result(tool_results, "order_lookup")
+    if order and order.success and isinstance(order.result, dict):
+        parts.append(f"关联订单：{order.result.get('order_id')}。")
+    review = get_tool_result(tool_results, "create_manual_review")
+    if review and review.success and isinstance(review.result, dict):
+        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
+    ticket = get_tool_result(tool_results, "create_ticket")
+    if ticket and ticket.success and isinstance(ticket.result, dict):
+        status = ticket.result.get("status")
+        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
+                 "pending_human_review": "工单草稿，待人工审核",
+                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
+                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
+        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
+    return "".join(parts)
 
 
 def build_fallback_answer(route, tool_results: list) -> str:
+    if route.topic == WITHDRAWAL_TOPIC:
+        return WITHDRAWAL_GUIDANCE
+
     if route.need_clarification:
+        if can_retrieve_policy_while_clarifying(route):
+            policy = get_tool_result(tool_results, "policy_search")
+            if policy:
+                explanation = (_build_policy_answer(policy) if policy.success else
+                               "本轮未取得可用的退款政策证据，不能据此判断退款资格。")
+                return explanation + "\n\n尚未核实具体订单的退款资格；如需核实您的订单，请提供订单号。"
         reply = (
             route.clarification_question
             or "请您补充订单号后，我再帮您继续处理。"
@@ -122,6 +81,12 @@ def build_fallback_answer(route, tool_results: list) -> str:
         return reply
 
     if route.handoff_required and not route.order_id:
+        handoff = get_tool_result(tool_results, "transfer_to_human")
+        if handoff and handoff.success:
+            from app.agent.response.grounded import handoff_receipt
+            return handoff_receipt(handoff.result)
+        if handoff and not handoff.success:
+            return "本轮未能确认人工工单已创建，请查询已有工单或稍后重试。"
         return (
             route.handoff_reason
             or "该问题需要人工客服进一步处理。"
@@ -144,6 +109,36 @@ def build_fallback_answer(route, tool_results: list) -> str:
             "我再继续查询售后政策并判断是否需要创建工单。"
         )
 
+    refund_reply = refund_outcome_reply(tool_results)
+    if refund_reply is not None:
+        return refund_reply
+
+    refund_decision = get_tool_result(tool_results, "refund_decision")
+    if (refund_decision and refund_decision.success and isinstance(refund_decision.result, dict)
+            and refund_decision.result.get("can_create") is False):
+        decision = refund_decision.result
+        if decision.get("existing_refund"):
+            reply = refund_status_message(decision["existing_refund"]) + "本轮未重复创建退款申请、审核单或工单，可在退款申请详情查看处理进度。"
+        elif decision.get("existing_review"):
+            review = decision["existing_review"]
+            label = {"pending_review": "待人工审核", "approved": "已通过", "rejected": "已拒绝", "cancelled": "已取消"}.get(review["status"], "请查看详情核实")
+            reply = (f"退款审核单 {review['review_id']} 已存在，当前状态：{label}。"
+                     "本轮未重复创建审核单或人工工单。")
+            if review["status"] == "pending_review":
+                reply += "审核通过前不会自动执行退款。"
+        elif decision.get("kind") == "order_after_sales":
+            reply = (f"订单 {decision['order_id']} 当前状态为{decision['order_status']}。{decision['reason']}"
+                     "本轮未查到有效退款申请记录，不能将订单售后状态当成已创建退款申请的凭证。"
+                     "本轮未新建申请；请查询现有售后进度，或联系人工核实关联记录。")
+        else:
+            reply = f"订单 {decision['order_id']}：{decision['reason']}本轮未创建退款申请或人工审核单。"
+        if decision.get("supplement_recorded"):
+            reply += "本轮补充说明已保存；补充材料不会自动改变已有审核决定。"
+        policy = get_tool_result(tool_results, "policy_search")
+        if policy and not policy.success:
+            reply += "本轮政策证据未能取得，以上状态判断依据查询到的业务记录。"
+        return reply
+
     policy_result = get_tool_result(
         tool_results,
         "policy_search",
@@ -162,11 +157,6 @@ def build_fallback_answer(route, tool_results: list) -> str:
     risk_result = get_tool_result(
         tool_results,
         "risk_check",
-    )
-
-    refund_result = get_tool_result(
-        tool_results,
-        "refund_apply",
     )
 
     manual_review_result = get_tool_result(
@@ -261,42 +251,6 @@ def build_fallback_answer(route, tool_results: list) -> str:
                     f"命中原因：{flags}。"
                 )
 
-    if refund_result and not refund_result.success:
-        result = refund_result.result
-
-        reason = (
-            result.get("reason")
-            if isinstance(result, dict)
-            else str(result)
-        )
-
-        parts.append(
-            f"退款申请暂未创建成功：{reason}"
-        )
-
-    if refund_result and refund_result.success:
-        refund = refund_result.result
-
-        if isinstance(refund, dict):
-            if (
-                refund.get("status")
-                == "pending_manual_review"
-            ):
-                parts.append(
-                    f"已创建退款申请 "
-                    f"{refund.get('refund_id')}，"
-                    "当前状态为待人工审核。"
-                )
-
-            else:
-                parts.append(
-                    f"已创建退款申请 "
-                    f"{refund.get('refund_id')}，"
-                    "并投递 MQ 消息 "
-                    f"{refund.get('mq_message_id')}，"
-                    "等待退款处理服务异步处理。"
-                )
-
     if (
         manual_review_result
         and manual_review_result.success
@@ -307,7 +261,7 @@ def build_fallback_answer(route, tool_results: list) -> str:
             parts.append(
                 f"已创建人工审核单 "
                 f"{review.get('review_id')}，"
-                "后续由人工客服复核后再执行高风险操作。"
+                "后续由人工客服复核后继续处理。"
             )
 
     if ticket_result and not ticket_result.success:
@@ -336,11 +290,8 @@ def build_fallback_answer(route, tool_results: list) -> str:
         handoff = handoff_result.result
 
         if isinstance(handoff, dict):
-            parts.append(
-                f"已生成转人工交接："
-                f"{handoff.get('handoff_summary')} "
-                "后续请人工客服继续处理。"
-            )
+            from app.agent.response.grounded import handoff_receipt
+            parts.append(handoff_receipt(handoff))
 
     if (
         chain_validation_result

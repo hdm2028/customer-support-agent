@@ -1,0 +1,55 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 DONE 0.0s
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 321B 0.0s done
+#1 DONE 0.4s
+
+#2 [internal] load metadata for docker.io/library/python:3.13-slim
+#2 DONE 0.9s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 340B done
+#3 DONE 0.4s
+
+#4 [internal] load build context
+#4 transferring context: 131.25kB 0.1s done
+#4 DONE 0.8s
+
+#5 [1/5] FROM docker.io/library/python:3.13-slim@sha256:9662417aace5ae7b8e2609cce472b72a8958e134ba372808abe9cc1a0c0125e6
+#5 resolve docker.io/library/python:3.13-slim@sha256:9662417aace5ae7b8e2609cce472b72a8958e134ba372808abe9cc1a0c0125e6
+#5 resolve docker.io/library/python:3.13-slim@sha256:9662417aace5ae7b8e2609cce472b72a8958e134ba372808abe9cc1a0c0125e6 1.0s done
+#5 DONE 1.2s
+
+#6 [3/5] COPY requirements.txt .
+#6 CACHED
+
+#7 [2/5] WORKDIR /app
+#7 CACHED
+
+#8 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [5/5] COPY . .
+#9 DONE 1.4s
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers 2.6s done
+#10 exporting manifest sha256:a01130316aae19d51edef6ca9519562e4761febe3ec4b9fe5a7415ee09b69753
+#10 exporting manifest sha256:a01130316aae19d51edef6ca9519562e4761febe3ec4b9fe5a7415ee09b69753 0.5s done
+#10 exporting config sha256:3fe4afb3eabaa3d69275ea6a1702406605697b9a23a43d131d6206e10b717e4f
+#10 exporting config sha256:3fe4afb3eabaa3d69275ea6a1702406605697b9a23a43d131d6206e10b717e4f 0.4s done
+#10 exporting attestation manifest sha256:01ac378abcb8b1061f1f4dc1001bed4fe861eebea151466231147f2ba4e720a0
+#10 exporting attestation manifest sha256:01ac378abcb8b1061f1f4dc1001bed4fe861eebea151466231147f2ba4e720a0 1.0s done
+#10 exporting manifest list sha256:3015e283dee0b44286843b5c5d036df3328ad58a4df9d3d60bdf04c7f2400318
+#10 exporting manifest list sha256:3015e283dee0b44286843b5c5d036df3328ad58a4df9d3d60bdf04c7f2400318 0.5s done
+#10 naming to docker.io/library/support-agent:release-check-cache-fixed-20260908
+#10 naming to docker.io/library/support-agent:release-check-cache-fixed-20260908 0.1s done
+#10 unpacking to docker.io/library/support-agent:release-check-cache-fixed-20260908
+#10 unpacking to docker.io/library/support-agent:release-check-cache-fixed-20260908 0.7s done
+#10 DONE 6.3s

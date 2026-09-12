@@ -603,6 +603,8 @@
           <p id="subtitle">Agent Orchestrator · Hybrid RAG · MySQL · Redis · MQ</p>
         </div>
         <div class="top-actions">
+          <input id="accessToken" type="password" autocomplete="off" placeholder="访问凭据（仅当前页面）" aria-label="访问凭据" />
+          <button class="btn" id="connectBtn" type="button">连接</button>
           <label class="toggle"><input id="streamToggle" type="checkbox" checked />流式</label>
           <label class="toggle"><input id="traceToggle" type="checkbox" checked />轨迹</label>
           <label class="toggle"><input id="llmToggle" type="checkbox" />LLM</label>
@@ -705,6 +707,86 @@
               <div class="trace" id="timingList">
                 <div class="soft-note">暂无耗时数据。</div>
               </div>
+            </div>
+          </section>
+
+          <section class="panel" id="ticketWorkbench">
+            <div class="panel-title">人工跟进工单</div>
+            <div class="panel-body">
+              <label for="ticketFilter">处理状态</label>
+              <select id="ticketFilter"><option value="all">全部工单</option><option value="open">待处理及处理中</option><option value="resolved">已结案</option></select>
+              <div class="top-actions">
+                <button class="btn" id="refreshTickets" type="button">刷新首页</button>
+                <button class="btn" id="previousTickets" type="button" disabled>上一页</button>
+                <button class="btn" id="nextTickets" type="button" disabled>下一页</button>
+              </div>
+              <p id="ticketPageStatus" role="status"></p>
+              <label for="ticketSelect">选择工单</label>
+              <select id="ticketSelect" style="width:100%"><option value="">请选择工单</option></select>
+              <pre id="ticketDetails" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:400px;overflow:auto">请选择工单查看处理进度。</pre>
+              <div id="ticketManagement" class="hidden">
+                <button class="btn" id="claimTicket" type="button" disabled>认领工单</button>
+                <label for="ticketOutcome">处理结果</label>
+                <select id="ticketOutcome">
+                  <option value="answered">已核实并答复</option><option value="rejected">诉求不予受理</option><option value="withdrawn">用户撤回诉求</option>
+                </select>
+                <label for="ticketNote">处理或交接说明（用户可查看）</label>
+                <textarea id="ticketNote" maxlength="2000" style="width:100%" placeholder="记录核实依据和处理结果"></textarea>
+                <button class="btn" id="resolveTicket" type="button" disabled>提交结案结果</button>
+                <label for="ticketAssignee">转派给</label>
+                <select id="ticketAssignee"><option value="">请选择新的处理人</option></select>
+                <button class="btn" id="reassignTicket" type="button" disabled>记录交接并转派</button>
+                <p class="soft-note">结案记录人工跟进结果。订单和退款操作请通过对应业务流程处理。</p>
+              </div>
+              <p id="ticketActionStatus" role="status"></p>
+            </div>
+          </section>
+
+          <section class="panel" id="reviewSupplementPanel">
+            <div class="panel-title">补充审核材料</div>
+            <div class="panel-body">
+              <label for="supplementReviewId">审核单号</label>
+              <input id="supplementReviewId" maxlength="64" placeholder="填写聊天回复中的审核单号" style="width:100%" />
+              <label for="supplementText">补充说明</label>
+              <textarea id="supplementText" maxlength="2000" style="width:100%" placeholder="补充需人工核实的情况或凭证说明"></textarea>
+              <button class="btn" id="submitSupplement" type="button">保存补充说明</button>
+              <p class="soft-note">补充内容会保留在审核单中，不会自动改变已经作出的决定。</p>
+              <p id="supplementStatus" role="status"></p>
+            </div>
+          </section>
+
+          <section class="panel hidden" id="reviewWorkbench">
+            <div class="panel-title">人工审核工作台</div>
+            <div class="panel-body">
+              <label for="reviewSelect">审核申请</label>
+              <select id="reviewSelect" style="width:100%"><option value="">请选择审核单</option></select>
+              <pre id="reviewDetails" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:400px;overflow:auto">请选择审核单查看诉求、证据及处理记录。</pre>
+              <label for="reviewNote">审核说明</label>
+              <textarea id="reviewNote" maxlength="2000" style="width:100%" placeholder="记录核实的凭证及批准或拒绝原因"></textarea>
+              <div id="reviewAddressFields" class="hidden">
+                <label for="reviewNewAddress">已向用户核实的新收货地址</label>
+                <textarea id="reviewNewAddress" maxlength="500" style="width:100%"></textarea>
+              </div>
+              <div class="top-actions">
+                <button class="btn" id="approveReview" type="button" disabled>批准</button>
+                <button class="btn" id="rejectReview" type="button" disabled>拒绝</button>
+                <button class="btn" id="queryReviewRefund" type="button" disabled>查询退款</button>
+                <button class="btn" id="reconcileReviewRefund" type="button" disabled>核对渠道结果</button>
+              </div>
+              <p id="reviewActionStatus" role="status"></p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">退款申请查询与撤销</div>
+            <div class="panel-body">
+              <label for="refundSelect">选择退款申请</label>
+              <select id="refundSelect" style="width:100%"><option value="">请选择退款申请</option></select>
+              <pre id="refundDetails" style="white-space:pre-wrap;overflow-wrap:anywhere">连接后可查询退款申请。</pre>
+              <label for="refundCancelNote">撤销原因</label>
+              <textarea id="refundCancelNote" maxlength="2000" style="width:100%"></textarea>
+              <button class="btn" id="cancelRefund" type="button" disabled>撤销这笔退款申请</button>
+              <p id="refundActionStatus" role="status"></p>
             </div>
           </section>
 
@@ -897,7 +979,7 @@
         rating.addEventListener("click", async (event) => {
           const button = event.target.closest("button[data-score]");
           if (!button || !state.conversationId) return;
-          await fetch("/feedback", {
+          await apiFetch("/feedback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1043,9 +1125,11 @@
         const token = state.tokenUsage || {};
         const latestMetric = state.dashboard.metrics[0] || {};
         const rows = [
-          ["Prompt", token.prompt_tokens_estimated ?? "-"],
-          ["Completion", token.completion_tokens_estimated ?? "-"],
-          ["Total", token.total_tokens_estimated ?? "-"],
+          ["上下文 token（估算）", token.prompt_tokens_estimated ?? "-"],
+          ["回复 token（估算）", token.completion_tokens_estimated ?? "-"],
+          ["总 token（估算）", token.total_tokens_estimated ?? "-"],
+          ["模型返回 token", token.provider_reported?.tokens?.total_tokens ?? "未返回"],
+          ["用量报告完整性", token.provider_reported ? `${token.provider_reported.reported_calls}/${token.provider_reported.call_count} 次调用` : "未知"],
           ["本轮耗时", doneContent?.duration_ms ? `${doneContent.duration_ms}ms` : latestMetric.duration_ms ? `${latestMetric.duration_ms}ms` : "-"],
           ["退款记录", state.dashboard.refunds.length],
           ["MQ 消息", state.dashboard.mq.length],
@@ -1119,7 +1203,7 @@
       }
 
       async function sendByStream(message, assistantBubble) {
-        const response = await fetch("/agent/stream", {
+        const response = await apiFetch("/agent/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1156,7 +1240,7 @@
       }
 
       async function sendByJson(message, assistantBubble) {
-        const response = await fetch("/agent/chat", {
+        const response = await apiFetch("/agent/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1197,10 +1281,389 @@
         }
       }
 
+      let currentRole = "customer";
+      let currentUserId = "";
+      let selectedTicket = null;
+      let ticketCursor = null;
+      let nextTicketCursor = null;
+      let ticketPreviousCursors = [];
+      let dashboardRequest = 0;
+      let availableOperators = [];
+      let identityEpoch = 0;
+      let selectedReview = null;
+      let pendingSupplement = null;
+
+      document.querySelector("#submitSupplement").addEventListener("click", async () => {
+        const epoch = identityEpoch;
+        const reviewId = document.querySelector("#supplementReviewId").value.trim();
+        const text = document.querySelector("#supplementText").value.trim();
+        const status = document.querySelector("#supplementStatus");
+        if (!reviewId || !text) { status.textContent = "请填写审核单号和补充说明。"; return; }
+        if (!pendingSupplement || pendingSupplement.review_id !== reviewId || pendingSupplement.text !== text) {
+          pendingSupplement = {review_id: reviewId, text, submission_id: crypto.randomUUID()};
+        }
+        const body = {...pendingSupplement};
+        document.querySelector("#submitSupplement").disabled = true;
+        try {
+          const result = await apiFetch("/review-supplements", {
+            method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+          }).then(r => r.json());
+          if (epoch !== identityEpoch || document.querySelector("#supplementReviewId").value.trim() !== reviewId ||
+              document.querySelector("#supplementText").value.trim() !== text) return;
+          status.textContent = result.review_status === "pending_review" ? "补充说明已保存，等待人工查看。" :
+            "补充说明已保存为审核后的记录，原决定未改变；如需继续处理，请联系人工客服。";
+          pendingSupplement = null;
+          document.querySelector("#supplementText").value = "";
+          if (selectedReview?.review_id === reviewId) await loadSelectedReview();
+        } catch (error) {
+          if (epoch === identityEpoch) status.textContent = error.message;
+        } finally {
+          if (epoch === identityEpoch) document.querySelector("#submitSupplement").disabled = false;
+        }
+      });
+
+      function reviewSummary(review) {
+        const context = review.context || {};
+        const order = context.order_snapshot || {};
+        const evidence = (context.policy_evidence || []).flat();
+        return [
+          `审核单：${review.review_id}　状态：${review.status}`,
+          `订单：${review.order_id || "未关联"}　风险：${review.risk_level}`,
+          `诉求：${review.user_request}`,
+          `风险原因：${(review.risk_flags || []).join("、") || "无"}`,
+          order.product_name ? `商品：${order.product_name}　金额：${order.amount}　订单状态：${order.order_status}` : "",
+          "\n最近对话：",
+          ...(context.history || []).map(m => `${m.role === "user" ? "用户" : "客服"}：${m.content}`),
+          "\n政策依据：",
+          ...(evidence.length ? evidence.map(e => `${e.citation || e.source || "来源未标记"}\n${e.text || e.content || "正文未保存"}`) : ["未保存政策证据，请补充核实后再决定。"]),
+          "\n后续补充：",
+          ...((review.supplements || []).length ? review.supplements.flatMap(s => [
+            `${s.submitted_at} · ${s.submitted_by || "申请人"} · ${s.review_status_at_submission === "pending_review" ? "审核中补充" : "决定作出后补充，不属于原决定依据"}`,
+            s.text,
+            ...(s.context?.history || []).map(m => `${m.role === "user" ? "用户" : "客服"}：${m.content}`),
+            ...(s.context?.policy_evidence || []).flat().map(e => `${e.citation || e.source || "来源未标记"}\n${e.text || e.content || "正文未保存"}`)
+          ]) : ["暂无补充材料。"]),
+          review.resolution ? `\n处理记录：${review.resolution.operator_id} · ${review.resolution.at}\n${review.resolution.note}` : "",
+          `\n下一步：${review.next_step || "等待审核"}`,
+        ].filter(Boolean).join("\n");
+      }
+
+      function refundSummary(refund) {
+        const observation = refund.last_payment_observation || {};
+        const labels = {queued: "申请已受理，等待处理", pending_manual_review: "等待人工审核", refund_processing: "处理中，尚未完成退款",
+          payment_submitting: "已提交支付处理", refund_unknown: "渠道结果待核实", refund_succeeded: "渠道已确认成功",
+          failed: "退款处理失败", rejected: "审核未通过", cancelled: "申请已撤销", canceled: "申请已撤销"};
+        return [`退款申请：${refund.refund_id}`, `状态：${labels[refund.status] || "待核实"}`, `金额：${refund.amount} ${refund.payment_currency || "CNY"}`,
+          `订单：${refund.order_id}`, `渠道凭证：${observation.provider_reference || "尚未确认"}`,
+          `核对时间：${observation.observed_at || "尚未查询"}`, `说明：${observation.reason || refund.cancellation?.note || "以实际处理状态为准"}`].join("\n");
+      }
+
+      let selectedRefund = null;
+      async function loadSelectedRefund() {
+        const epoch = identityEpoch;
+        const id = document.querySelector("#refundSelect").value;
+        selectedRefund = null;
+        document.querySelector("#cancelRefund").disabled = true;
+        if (!id) { document.querySelector("#refundDetails").textContent = "请选择退款申请。"; return; }
+        try {
+          const refund = (await apiFetch(`/refunds/${encodeURIComponent(id)}`).then(r => r.json())).data;
+          if (epoch !== identityEpoch || document.querySelector("#refundSelect").value !== id) return;
+          selectedRefund = refund;
+          document.querySelector("#refundDetails").textContent = refundSummary(selectedRefund);
+          document.querySelector("#cancelRefund").disabled = !["queued", "pending_manual_review", "refund_processing"].includes(selectedRefund.status)
+            || selectedRefund.reason === "approved_order_cancellation";
+        } catch (error) {
+          if (epoch === identityEpoch && document.querySelector("#refundSelect").value === id)
+            document.querySelector("#refundActionStatus").textContent = error.message;
+        }
+      }
+      function renderRefundChoices() {
+        const select = document.querySelector("#refundSelect");
+        const previous = select.value;
+        select.replaceChildren(new Option("请选择退款申请", ""));
+        for (const refund of state.dashboard.refunds) select.add(new Option(`${refund.refund_id} · 订单 ${refund.order_id}`, refund.refund_id));
+        if ([...select.options].some(o => o.value === previous)) select.value = previous;
+      }
+      document.querySelector("#refundSelect").addEventListener("change", () => {
+        document.querySelector("#refundCancelNote").value = "";
+        document.querySelector("#refundActionStatus").textContent = "";
+        loadSelectedRefund();
+      });
+      document.querySelector("#cancelRefund").addEventListener("click", async () => {
+        if (!selectedRefund) return;
+        const epoch = identityEpoch;
+        const id = selectedRefund.refund_id;
+        const isCurrent = () => epoch === identityEpoch && document.querySelector("#refundSelect").value === id;
+        const note = document.querySelector("#refundCancelNote").value.trim();
+        if (!note) { document.querySelector("#refundActionStatus").textContent = "请填写撤销原因。"; return; }
+        document.querySelector("#cancelRefund").disabled = true;
+        try {
+          await apiFetch(`/refunds/${encodeURIComponent(id)}/cancel`, {
+            method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({note})
+          });
+          if (!isCurrent()) return;
+          document.querySelector("#refundActionStatus").textContent = "退款申请已撤销。";
+          await refreshDashboard(); await loadSelectedRefund();
+        } catch (error) {
+          if (!isCurrent()) return;
+          document.querySelector("#refundActionStatus").textContent = error.message; await loadSelectedRefund();
+        }
+      });
+
+      function renderTicketChoices() {
+        document.querySelector("#ticketManagement").classList.toggle("hidden", currentRole !== "admin");
+        const assignees = document.querySelector("#ticketAssignee");
+        const oldAssignee = assignees.value;
+        assignees.replaceChildren(new Option("请选择新的处理人", ""));
+        for (const operator of availableOperators) assignees.add(new Option(operator, operator));
+        if ([...assignees.options].some(o => o.value === oldAssignee)) assignees.value = oldAssignee;
+        const select = document.querySelector("#ticketSelect");
+        const previous = select.value;
+        select.replaceChildren(new Option("请选择工单", ""));
+        for (const ticket of state.dashboard.tickets) {
+          select.add(new Option(`${ticket.ticket_id} · ${ticket.status} · ${ticket.issue_type}`, ticket.ticket_id));
+        }
+        if ([...select.options].some(o => o.value === previous)) select.value = previous;
+        if (!select.value) {
+          selectedTicket = null;
+          document.querySelector("#ticketDetails").textContent = "请选择工单。";
+          document.querySelector("#claimTicket").disabled = true;
+          document.querySelector("#resolveTicket").disabled = true;
+          document.querySelector("#reassignTicket").disabled = true;
+        }
+        document.querySelector("#previousTickets").disabled = ticketPreviousCursors.length === 0;
+        document.querySelector("#nextTickets").disabled = !nextTicketCursor;
+        document.querySelector("#ticketPageStatus").textContent = `第 ${ticketPreviousCursors.length + 1} 页，本页 ${state.dashboard.tickets.length} 条`;
+      }
+
+      function resetTicketPage() {
+        ticketCursor = null; nextTicketCursor = null; ticketPreviousCursors = [];
+      }
+      for (const [id, event] of [["ticketFilter", "change"], ["refreshTickets", "click"]]) {
+        document.querySelector(`#${id}`).addEventListener(event, () => { resetTicketPage(); refreshDashboard(); });
+      }
+      document.querySelector("#nextTickets").addEventListener("click", () => {
+        if (!nextTicketCursor) return;
+        ticketPreviousCursors.push(ticketCursor); ticketCursor = nextTicketCursor;
+        refreshDashboard();
+      });
+      document.querySelector("#previousTickets").addEventListener("click", () => {
+        if (!ticketPreviousCursors.length) return;
+        ticketCursor = ticketPreviousCursors.pop(); refreshDashboard();
+      });
+
+      async function loadSelectedTicket() {
+        const epoch = identityEpoch;
+        const id = document.querySelector("#ticketSelect").value;
+        selectedTicket = null;
+        document.querySelector("#claimTicket").disabled = true;
+        document.querySelector("#resolveTicket").disabled = true;
+        document.querySelector("#reassignTicket").disabled = true;
+        document.querySelector("#ticketDetails").textContent = id ? "正在读取工单…" : "请选择工单。";
+        if (!id) return;
+        const isCurrent = () => epoch === identityEpoch && document.querySelector("#ticketSelect").value === id;
+        try {
+          const ticket = (await apiFetch(`/tickets/${encodeURIComponent(id)}`).then(r => r.json())).data;
+          if (!isCurrent()) return;
+          selectedTicket = ticket;
+          const statuses = {pending_human_takeover: "等待人工接管", pending_human_review: "待人工处理", pending_manual_review: "待人工跟进", in_progress: "已认领，处理中", resolved: "已结案"};
+          const outcomes = {answered: "已核实并答复", rejected: "诉求不予受理", withdrawn: "用户撤回诉求"};
+          const lines = [`工单：${id}`, `订单：${ticket.order_id || "未关联"}`, `诉求：${ticket.user_request}`,
+            `状态：${statuses[ticket.status] || ticket.status}`, `处理人：${ticket.assigned_to || "待认领"}`, ticket.next_step || ""];
+          if (ticket.resolution) lines.push(`结果：${outcomes[ticket.resolution.outcome] || ticket.resolution.outcome}`, `说明：${ticket.resolution.note}`);
+          if (currentRole === "admin") {
+            if (ticket.review_id) lines.push(`来源审核：${ticket.review_id}`, `批准说明：${ticket.approval_note || ""}`);
+            if (ticket.context) lines.push("创建时上下文与证据：", JSON.stringify(ticket.context, null, 2));
+            if (ticket.audit) lines.push("操作记录：", JSON.stringify(ticket.audit, null, 2));
+          }
+          document.querySelector("#ticketDetails").textContent = lines.join("\n");
+          document.querySelector("#claimTicket").disabled = currentRole !== "admin" || !["pending_human_review", "pending_manual_review", "pending_human_takeover"].includes(ticket.status);
+          document.querySelector("#resolveTicket").disabled = currentRole !== "admin" || ticket.status !== "in_progress" || ticket.assigned_to !== currentUserId;
+          document.querySelector("#reassignTicket").disabled = currentRole !== "admin" || ticket.status !== "in_progress";
+        } catch (error) { if (isCurrent()) document.querySelector("#ticketActionStatus").textContent = error.message; }
+      }
+      document.querySelector("#ticketSelect").addEventListener("change", () => {
+        document.querySelector("#ticketNote").value = "";
+        document.querySelector("#ticketActionStatus").textContent = "";
+        document.querySelector("#ticketOutcome").value = "answered";
+        document.querySelector("#ticketAssignee").value = "";
+        loadSelectedTicket();
+      });
+      for (const [button, action] of [["claimTicket", "claim"], ["resolveTicket", "resolve"], ["reassignTicket", "reassign"]]) {
+        document.querySelector(`#${button}`).addEventListener("click", async () => {
+          if (!selectedTicket) return;
+          const epoch = identityEpoch;
+          const id = selectedTicket.ticket_id;
+          const isCurrent = () => epoch === identityEpoch && document.querySelector("#ticketSelect").value === id;
+          const body = {outcome: document.querySelector("#ticketOutcome").value, note: document.querySelector("#ticketNote").value.trim()};
+          if (action !== "claim" && !body.note) { document.querySelector("#ticketActionStatus").textContent = "请填写处理或交接说明。"; return; }
+          if (action === "reassign") {
+            body.target_user_id = document.querySelector("#ticketAssignee").value;
+            body.expected_assignee = selectedTicket.assigned_to;
+            if (!body.target_user_id) { document.querySelector("#ticketActionStatus").textContent = "请选择新的处理人。"; return; }
+          }
+          document.querySelector(`#${button}`).disabled = true;
+          try {
+            await apiFetch(`/admin/tickets/${encodeURIComponent(id)}/${action}`, {
+              method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(action === "claim" ? {} : body)
+            });
+            if (!isCurrent()) return;
+            document.querySelector("#ticketActionStatus").textContent = action === "claim" ? "已认领此工单。" : action === "reassign" ? "交接说明已记录，工单已转派。" : "结案结果已保存。";
+            await refreshDashboard();
+          } catch (error) { if (isCurrent()) document.querySelector("#ticketActionStatus").textContent = error.message; }
+          if (isCurrent()) await loadSelectedTicket();
+        });
+      }
+
+      function reviewRefundId(review) {
+        return review?.review_type === "refund" ? review.related_id : review?.continuation?.refund_id;
+      }
+
+      function renderReviewWorkbench() {
+        document.querySelector("#reviewWorkbench").classList.toggle("hidden", currentRole !== "admin");
+        const select = document.querySelector("#reviewSelect");
+        const previous = select.value;
+        select.replaceChildren(new Option("请选择审核单", ""));
+        for (const review of state.dashboard.reviews) {
+          select.add(new Option(`${review.review_id} · ${review.status} · ${review.order_id || "无订单"}`, review.review_id));
+        }
+        if ([...select.options].some(o => o.value === previous)) select.value = previous;
+      }
+
+      async function loadSelectedReview() {
+        const epoch = identityEpoch;
+        const id = document.querySelector("#reviewSelect").value;
+        selectedReview = null;
+        for (const name of ["approveReview", "rejectReview", "queryReviewRefund", "reconcileReviewRefund"]) document.querySelector(`#${name}`).disabled = true;
+        if (!id) { document.querySelector("#reviewDetails").textContent = "请选择审核单。"; return; }
+        try {
+          const review = (await apiFetch(`/manual-reviews/${encodeURIComponent(id)}`).then(r => r.json())).data;
+          if (epoch !== identityEpoch || document.querySelector("#reviewSelect").value !== id) return;
+          selectedReview = review;
+          document.querySelector("#reviewDetails").textContent = reviewSummary(selectedReview);
+          document.querySelector("#approveReview").disabled = selectedReview.status !== "pending_review";
+          document.querySelector("#rejectReview").disabled = selectedReview.status !== "pending_review";
+          const action = selectedReview.review_type === "risk_control" ? selectedReview.context?.route?.intent : selectedReview.review_type;
+          document.querySelector("#reviewAddressFields").classList.toggle("hidden", action !== "address_change");
+          document.querySelector("#queryReviewRefund").disabled = !reviewRefundId(selectedReview);
+          document.querySelector("#reconcileReviewRefund").disabled = !reviewRefundId(selectedReview);
+        } catch (error) {
+          if (epoch === identityEpoch && document.querySelector("#reviewSelect").value === id)
+            document.querySelector("#reviewActionStatus").textContent = error.message;
+        }
+      }
+      document.querySelector("#reviewSelect").addEventListener("change", () => {
+        document.querySelector("#reviewNewAddress").value = "";
+        document.querySelector("#reviewNote").value = "";
+        loadSelectedReview();
+      });
+      for (const [button, decision] of [["approveReview", "approve"], ["rejectReview", "reject"]]) {
+        document.querySelector(`#${button}`).addEventListener("click", async () => {
+          if (!selectedReview) return;
+          const epoch = identityEpoch;
+          const id = selectedReview.review_id;
+          const isCurrent = () => epoch === identityEpoch && document.querySelector("#reviewSelect").value === id;
+          const note = document.querySelector("#reviewNote").value.trim();
+          if (!note) { document.querySelector("#reviewActionStatus").textContent = "请先填写审核说明。"; return; }
+          document.querySelector(`#${button}`).disabled = true;
+          try {
+            const body = {decision, note, supplement_version: selectedReview.supplement_version || 0};
+            if (decision === "approve" && !document.querySelector("#reviewAddressFields").classList.contains("hidden")) {
+              body.new_address = document.querySelector("#reviewNewAddress").value.trim();
+            }
+            const result = await apiFetch(`/manual-reviews/${encodeURIComponent(id)}/resolve`, {
+              method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+            }).then(r => r.json());
+            if (!isCurrent()) return;
+            document.querySelector("#reviewActionStatus").textContent = result.review.next_step;
+            await refreshDashboard(); await loadSelectedReview();
+          } catch (error) {
+            if (!isCurrent()) return;
+            document.querySelector("#reviewActionStatus").textContent = error.message; await loadSelectedReview();
+          }
+        });
+      }
+      for (const [button, reconcile] of [["queryReviewRefund", false], ["reconcileReviewRefund", true]]) {
+        document.querySelector(`#${button}`).addEventListener("click", async () => {
+          if (!reviewRefundId(selectedReview)) return;
+          const epoch = identityEpoch;
+          const reviewId = selectedReview.review_id;
+          const isCurrent = () => epoch === identityEpoch && document.querySelector("#reviewSelect").value === reviewId;
+          const id = encodeURIComponent(reviewRefundId(selectedReview));
+          try {
+            const result = await apiFetch(reconcile ? `/admin/refunds/${id}/reconcile-payment` : `/refunds/${id}`, {method: reconcile ? "POST" : "GET"}).then(r => r.json());
+            if (!isCurrent()) return;
+            document.querySelector("#reviewDetails").textContent = refundSummary(result.data || result.refund);
+            document.querySelector("#reviewActionStatus").textContent = "退款状态已更新。";
+          } catch (error) { if (isCurrent()) document.querySelector("#reviewActionStatus").textContent = error.message; }
+        });
+      }
+      async function apiFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        const token = document.querySelector("#accessToken").value.trim();
+        if (token) headers.set("Authorization", `Bearer ${token}`);
+        const response = await fetch(url, { ...options, headers });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.detail || `请求失败 (${response.status})`);
+        }
+        return response;
+      }
+
+      document.querySelector("#connectBtn").addEventListener("click", async () => {
+        identityEpoch += 1;
+        const epoch = identityEpoch;
+        els.newChatBtn.click();
+        currentRole = "customer";
+        currentUserId = "";
+        availableOperators = [];
+        resetTicketPage();
+        document.querySelector("#ticketFilter").value = "all";
+        selectedTicket = null;
+        document.querySelector("#ticketNote").value = "";
+        document.querySelector("#ticketActionStatus").textContent = "";
+        document.querySelector("#ticketDetails").textContent = "请选择工单。";
+        document.querySelector("#claimTicket").disabled = true;
+        document.querySelector("#resolveTicket").disabled = true;
+        document.querySelector("#reassignTicket").disabled = true;
+        state.dashboard = { refunds: [], tickets: [], reviews: [], mq: [], metrics: [] };
+        renderMetrics();
+        selectedReview = null;
+        document.querySelector("#reviewDetails").textContent = "请选择审核单。";
+        pendingSupplement = null;
+        document.querySelector("#supplementReviewId").value = "";
+        document.querySelector("#supplementText").value = "";
+        document.querySelector("#supplementStatus").textContent = "";
+        document.querySelector("#submitSupplement").disabled = false;
+        document.querySelector("#reviewNote").value = "";
+        document.querySelector("#reviewNewAddress").value = "";
+        document.querySelector("#reviewAddressFields").classList.add("hidden");
+        selectedRefund = null;
+        document.querySelector("#refundSelect").replaceChildren(new Option("请选择退款申请", ""));
+        document.querySelector("#refundDetails").textContent = "请选择退款申请。";
+        document.querySelector("#refundCancelNote").value = "";
+        document.querySelector("#refundActionStatus").textContent = "";
+        document.querySelector("#cancelRefund").disabled = true;
+        document.querySelector("#reviewActionStatus").textContent = "";
+        renderReviewWorkbench();
+        renderTicketChoices();
+        try {
+          const identity = await apiFetch("/me").then(r => r.json());
+          if (epoch !== identityEpoch) return;
+          currentRole = identity.role;
+          currentUserId = identity.user_id;
+          await loadServiceInfo();
+          await refreshDashboard();
+        } catch (error) {
+          if (epoch !== identityEpoch) return;
+          setPill(els.serviceStatus, error.message, "danger");
+        }
+      });
+
       async function loadServiceInfo() {
         try {
           const [infoResponse, healthResponse] = await Promise.all([
-            fetch("/info"),
+            apiFetch("/info"),
             fetch("/health"),
           ]);
           const info = await infoResponse.json();
@@ -1211,21 +1674,31 @@
           els.cacheBackend.textContent = health.cache?.backend || (health.redis_enabled ? "redis" : "local");
           els.mqBackend.textContent = health.mq_backend || "-";
           els.llmKeyState.textContent = info.has_llm_key ? "已配置" : "本地回复";
-          setPill(els.serviceStatus, health.success ? "在线" : "异常", health.success ? "ok" : "danger");
+          setPill(els.serviceStatus, health.success ? "就绪" : "依赖未就绪", health.success ? "ok" : "danger");
         } catch (error) {
           setPill(els.serviceStatus, "离线", "danger");
         }
       }
 
       async function refreshDashboard() {
+        const epoch = identityEpoch;
+        const request = ++dashboardRequest;
+        document.querySelector("#previousTickets").disabled = true;
+        document.querySelector("#nextTickets").disabled = true;
+        const params = new URLSearchParams({limit: "20", status: document.querySelector("#ticketFilter").value});
+        if (ticketCursor) params.set("cursor", ticketCursor);
         try {
-          const [refunds, tickets, reviews, mq, metrics] = await Promise.all([
-            fetch("/refunds?limit=20").then((res) => res.json()),
-            fetch("/tickets?limit=20").then((res) => res.json()),
-            fetch("/manual-reviews?limit=20").then((res) => res.json()),
-            fetch("/mq/messages?limit=20").then((res) => res.json()),
-            fetch("/observability/metrics?limit=20").then((res) => res.json()),
+          const [refunds, tickets, reviews, mq, metrics, operators] = await Promise.all([
+            apiFetch("/refunds?limit=20").then((res) => res.json()),
+            apiFetch(`/tickets?${params}`).then((res) => res.json()),
+            currentRole === "admin" ? apiFetch("/manual-reviews?limit=20").then((res) => res.json()) : {},
+            currentRole === "admin" ? apiFetch("/mq/messages?limit=20").then((res) => res.json()) : {},
+            currentRole === "admin" ? apiFetch("/observability/metrics?limit=20").then((res) => res.json()) : {},
+            currentRole === "admin" ? apiFetch("/admin/operators").then((res) => res.json()) : {},
           ]);
+          if (epoch !== identityEpoch || request !== dashboardRequest) return;
+          nextTicketCursor = tickets.next_cursor;
+          availableOperators = operators.data || [];
           state.dashboard = {
             refunds: refunds.data || [],
             tickets: tickets.data || [],
@@ -1234,7 +1707,12 @@
             metrics: metrics.data || [],
           };
           renderMetrics();
+          renderReviewWorkbench();
+          renderRefundChoices();
+          renderTicketChoices();
         } catch (error) {
+          if (epoch !== identityEpoch || request !== dashboardRequest) return;
+          document.querySelector("#ticketPageStatus").textContent = `工单列表读取失败：${error.message}。请刷新首页重试。`;
           els.metricsList.innerHTML = `<div class="soft-note">指标读取失败。</div>`;
         }
       }
@@ -1281,8 +1759,7 @@
       if (state.conversationId) {
         els.conversationId.textContent = state.conversationId;
       }
-      loadServiceInfo();
-      refreshDashboard();
+      setPill(els.serviceStatus, "请先连接", "warn");
     </script>
   </body>
 </html>

@@ -1,0 +1,1611 @@
+# RAG Dev 场景设计；evidence_ref 在本文件 evidence_registry 中解析。
+design_version: "rag-dev-scope-2026-09-07"
+artifact_kind: "scenario_design_not_executable_cases"
+layer: "rag"
+basis:
+  - ".agents/skills/eval-dataset-builder/SKILL.md"
+  - ".agents/skills/eval-dataset-builder/templates/scenario.yaml"
+  - "data/README.md"
+  - "data/dataset_sources.md"
+  - "README.md"
+  - "data/eval/rag_eval.jsonl"
+  - "scripts/eval/eval_rag.py"
+  - "app/rag/query_context.py"
+  - "app/rag/query_builder.py"
+  - "app/rag/ranking.py"
+  - "app/agent/policies/evidence_guardrail.py"
+scope:
+  supported: "退款/退货政策检索及直接关联的订单取消、物流衔接、质量检测、风控人工审核、投诉资金边界；保留 V1 已有签收争议。范围从 V1 和评测入口推定，不代表已批准全业务扩展。"
+  pending:
+    - "签收争议是否长期保留为独立物流子域"
+    - "会员影响退款资格、支付同步异常是否另批纳入"
+    - "保修只作退款检测证据还是扩到完整维修/换新"
+    - "退款MQ政策咨询是否持续作为Dev目标"
+  excluded:
+    - "完整物流时效与工单业务"
+    - "独立支付/发票"
+    - "独立会员权益"
+    - "修改地址及商品型号数量"
+    - "完整维修/换新/保修期限"
+    - "独立投诉服务"
+    - "退款工具执行、数据库/MQ副作用、Router准确率及最终回答质量"
+  pending_not_counted_as_uncovered: true
+dataset_roles:
+  dev:
+    path: "data/eval/rag_eval.jsonl"
+    structure: "V1"
+    rows: 20
+    stored_split: "absent"
+    actual_role: "dev"
+  v2_reference:
+    path: "data/eval/rag_eval_holdout.jsonl"
+    structure: "rag-eval-v2"
+    rows: 60
+    stored_split: "holdout"
+    actual_role: "validation"
+    role_basis: "本轮用户明确指定；文件名和stored split保持不变。"
+    usage: "本轮仅读取行数/schema_version/split元数据，未读取逐案例失败报告；不作为补题来源。"
+counting:
+  scenarios: 24
+  covered: 8
+  weakly_covered: 11
+  uncovered: 5
+  existing_case_rows: 20
+  existing_rule_groups: 19
+  business_rule_groups: 23
+  additional_authority_diagnostic_groups: 1
+  merged_case_ids:
+    - "rag_refund_003"
+    - "rag_refund_014"
+  meaning: "覆盖描述输入与条件存在程度；不表示GT标签充分或系统通过。S023为跨既有业务规则的权威冲突诊断，不宣称新增业务能力。"
+template_adaptation: "沿用场景、前置条件、ground_truth、expected_behavior概念；共享证据注册表消除重复。模板recommended_cases=3和linguistic_variation默认值不作为数量或场景依据。本文件不含query、expected或可执行JSONL案例。"
+evaluator_contract:
+  input: "raw query 与提供的上下文直接构建检索；不执行Router、订单查询或退款动作。事实真实性由数据准备审查保障。"
+  effective_context: "primary_intent/topic/related_topics参与lexical/rerank和语义类别约束；order_status/shipping_status/product_name/product_category/signed_date参与三类查询；handoff_required增加人工处理文本。"
+  inactive: "action_type仅传入和回写；tags不读取。scenario_type/difficulty/context_mode为分片标签，不改变单例评分。"
+  v1: "expected_sources任一来源命中；expected_keywords全部子串可分散于TopK不同chunk，不绑定来源/section。另检查系统类别约束和guardrail。"
+  v2: "primary_targets任一目标的首个排名用于Hit@K/MRR；所有必须命中的独立义务各进入evidence_requirements，不能仅放supporting_targets。每个requirement必须在同一chunk同时满足来源、section、词约束；不同requirement可不同chunk满足，不能要求互斥分支同时成立。"
+  matching: "注册表的source+section绑定与每行matching_content一起构成检索断言设计；evidence_type仅诊断名称。落实时从该section提取准确短语，避免只用“不能/退款”等泛词，也避免把一个长段所有条件塞进单chunk。词匹配lower且去ASCII空格；来源精确匹配、section归一化相交。"
+  capacity: "候选20、默认最终5；若多个义务需超过5个不同chunk，应按真实条件拆分场景子条件，不删必需证据凑通过。"
+  limitations: "不能自动验证事实/蕴含/禁止答案/干扰源不出现/正式来源相对历史来源排名；匹配成功只说明检索代理指标满足。guardrail还检查首项score>=0.45、profile对应Top3来源和词命中，单例passed不是纯GT匹配。"
+  execution: "本轮未运行检索或evaluator，不报告系统通过率。"
+enum_mapping:
+  category: "设计标签，沿用模板，不是可执行scenario_type。"
+  mq_idempotency: "scenario_type=single_policy；evidence_type=refund_idempotency；不新增mq枚举。"
+  unknown_refund_result: "scenario_type=insufficient_information；evidence_type=refund_idempotency/human_review。"
+  negation: "scenario_type=semantic_confusion；没有负向证据排除的可执行字段。"
+  authority: "scenario_type=authority_conflict；evidence_type按退款资格等业务内容，未新增authority枚举。"
+evidence_registry:
+  R01:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款申请前置条件"
+    locator: "Markdown heading: ## 退款申请前置条件"
+    excerpt: "待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。"
+    evidence_type: "refund_application"
+  R02:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款资格判断"
+    locator: "Markdown heading: ## 退款资格判断"
+    excerpt: "只有满足对应退款条件后，才能继续进入退款申请流程。"
+    evidence_type: "refund_eligibility"
+  R03:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款申请"
+    locator: "Markdown heading: ## 退款申请"
+    excerpt: "同一订单、同一退款业务已经存在有效退款申请时，不应重复创建新的退款申请，而应返回已有退款申请的当前状态。"
+    evidence_type: "refund_idempotency"
+  R04:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款处理状态"
+    locator: "Markdown heading: ## 退款处理状态"
+    excerpt: "用户查询退款进度时，应以退款系统中的最新状态为准。"
+    evidence_type: "refund_state"
+  R05:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款人工审核"
+    locator: "Markdown heading: ## 退款人工审核"
+    excerpt: "人工审核完成前，客服只能告知用户退款正在审核，不能承诺退款已经完成。"
+    evidence_type: "refund_risk_review"
+  R06:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款异步处理"
+    locator: "Markdown heading: ## 退款异步处理"
+    excerpt: "即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。"
+    evidence_type: "refund_idempotency"
+  R07:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款失败"
+    locator: "Markdown heading: ## 退款失败"
+    excerpt: "如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。"
+    evidence_type: "refund_idempotency"
+  R08:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款到账"
+    locator: "Markdown heading: ## 退款到账"
+    excerpt: "退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。"
+    evidence_type: "refund_timing"
+  R09:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "重要限制"
+    locator: "Markdown heading: ## 重要限制"
+    excerpt: "- 绕过风险检查；"
+    evidence_type: "refund_risk_review"
+  R10:
+    source_type: "knowledge_base"
+    source: "退换货政策.md"
+    path: "data/knowledge/退换货政策.md"
+    section: "七天无理由退货"
+    locator: "Markdown heading: ## 七天无理由退货"
+    excerpt: "商品退回并完成质检后，系统进入退款流程。"
+    evidence_type: "refund_eligibility"
+  R11:
+    source_type: "knowledge_base"
+    source: "退换货政策.md"
+    path: "data/knowledge/退换货政策.md"
+    section: "不支持七天无理由退货的情况"
+    locator: "Markdown heading: ## 不支持七天无理由退货的情况"
+    excerpt: "如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。"
+    evidence_type: "refund_eligibility"
+  R12:
+    source_type: "knowledge_base"
+    source: "退换货政策.md"
+    path: "data/knowledge/退换货政策.md"
+    section: "质量问题退款"
+    locator: "Markdown heading: ## 质量问题退款"
+    excerpt: "不能仅根据用户描述直接认定商品属于质量问题。"
+    evidence_type: "product_quality"
+  R13:
+    source_type: "knowledge_base"
+    source: "退换货政策.md"
+    path: "data/knowledge/退换货政策.md"
+    section: "已发货订单"
+    locator: "Markdown heading: ## 已发货订单"
+    excerpt: "无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。"
+    evidence_type: "shipping_intercept"
+  R14:
+    source_type: "knowledge_base"
+    source: "商品售后规则.md"
+    path: "data/knowledge/商品售后规则.md"
+    section: "商品质量问题"
+    locator: "Markdown heading: ## 商品质量问题"
+    excerpt: "检测结果确认属于产品质量问题后，再根据对应政策决定后续处理方式，例如："
+    evidence_type: "product_quality"
+  R15:
+    source_type: "knowledge_base"
+    source: "商品售后规则.md"
+    path: "data/knowledge/商品售后规则.md"
+    section: "定制商品"
+    locator: "Markdown heading: ## 定制商品"
+    excerpt: "定制商品是否能够退款或者重新制作，需要根据实际问题和人工审核结果判断。"
+    evidence_type: "custom_product"
+  R16:
+    source_type: "knowledge_base"
+    source: "商品售后规则.md"
+    path: "data/knowledge/商品售后规则.md"
+    section: "退款"
+    locator: "Markdown heading: ## 退款"
+    excerpt: "商品售后规则负责判断当前问题应该进入哪种售后处理路径，不负责直接认定退款已经成功。"
+    evidence_type: "refund_eligibility"
+  R17:
+    source_type: "knowledge_base"
+    source: "商品售后规则.md"
+    path: "data/knowledge/商品售后规则.md"
+    section: "重要限制"
+    locator: "Markdown heading: ## 重要限制"
+    excerpt: "- 因历史案例存在相似处理结果就直接套用历史结果；"
+    evidence_type: "refund_eligibility"
+  R18:
+    source_type: "knowledge_base"
+    source: "物流配送政策.md"
+    path: "data/knowledge/物流配送政策.md"
+    section: "已签收但用户未收到"
+    locator: "Markdown heading: ## 已签收但用户未收到"
+    excerpt: "不能仅因为物流显示“已签收”就直接认定用户已经实际收到商品。"
+    evidence_type: "signed_not_received"
+  R19:
+    source_type: "knowledge_base"
+    source: "物流配送政策.md"
+    path: "data/knowledge/物流配送政策.md"
+    section: "物流赔付"
+    locator: "Markdown heading: ## 物流赔付"
+    excerpt: "涉及退款、赔付等资金操作时，需要按照对应售后政策以及风险控制流程执行。"
+    evidence_type: "refund_eligibility"
+  R20:
+    source_type: "knowledge_base"
+    source: "物流配送政策.md"
+    path: "data/knowledge/物流配送政策.md"
+    section: "用户拒收"
+    locator: "Markdown heading: ## 用户拒收"
+    excerpt: "商品退回仓库并完成确认后，再根据订单情况进入退款或者退货流程。"
+    evidence_type: "shipping_status"
+  R21:
+    source_type: "knowledge_base"
+    source: "订单取消与修改政策.md"
+    path: "data/knowledge/订单取消与修改政策.md"
+    section: "待支付订单"
+    locator: "Markdown heading: ## 待支付订单"
+    excerpt: "待支付订单通常可以由用户直接取消。"
+    evidence_type: "order_cancel"
+  R22:
+    source_type: "knowledge_base"
+    source: "订单取消与修改政策.md"
+    path: "data/knowledge/订单取消与修改政策.md"
+    section: "待发货订单"
+    locator: "Markdown heading: ## 待发货订单"
+    excerpt: "如果仓库已经开始拣货或者进入出库流程，取消操作可能失败。"
+    evidence_type: "order_cancel"
+  R23:
+    source_type: "knowledge_base"
+    source: "订单取消与修改政策.md"
+    path: "data/knowledge/订单取消与修改政策.md"
+    section: "已发货订单"
+    locator: "Markdown heading: ## 已发货订单"
+    excerpt: "订单已经发货后，不能按照普通待发货订单直接取消。"
+    evidence_type: "order_cancel"
+  R24:
+    source_type: "knowledge_base"
+    source: "人工审核SOP.md"
+    path: "data/knowledge/人工审核SOP.md"
+    section: "退款人工审核"
+    locator: "Markdown heading: ## 退款人工审核"
+    excerpt: "- 自动系统无法确认退款是否已经执行；"
+    evidence_type: "human_review"
+  R25:
+    source_type: "knowledge_base"
+    source: "投诉升级SOP.md"
+    path: "data/knowledge/投诉升级SOP.md"
+    section: "处理原则"
+    locator: "Markdown heading: ## 处理原则"
+    excerpt: "投诉升级不代表用户提出的要求一定成立。"
+    evidence_type: "complaint_escalation"
+  R26:
+    source_type: "knowledge_base"
+    source: "历史问题案例.md"
+    path: "data/knowledge/历史问题案例.md"
+    section: "案例三：七天内退货成功"
+    locator: "Markdown heading: ## 案例三：七天内退货成功"
+    excerpt: "商品保持完好，配件齐全，不影响二次销售。"
+    evidence_type: "refund_eligibility"
+  R27:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款失败"
+    locator: "Markdown heading: ## 退款失败"
+    excerpt: "对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。"
+    evidence_type: "refund_state"
+  R28:
+    source_type: "knowledge_base"
+    source: "退款政策.md"
+    path: "data/knowledge/退款政策.md"
+    section: "退款处理通知"
+    locator: "Markdown heading: ## 退款处理通知"
+    excerpt: "不能将 `PENDING`、`PROCESSING` 或 `MANUAL_REVIEW` 描述为退款已经成功。"
+    evidence_type: "refund_state"
+  R29:
+    source_type: "knowledge_base"
+    source: "退换货政策.md"
+    path: "data/knowledge/退换货政策.md"
+    section: "不支持七天无理由退货的情况"
+    locator: "Markdown heading: ## 不支持七天无理由退货的情况"
+    excerpt: "- 商品或主要配件缺失；"
+    evidence_type: "refund_eligibility"
+  R30:
+    source_type: "knowledge_base"
+    source: "商品售后规则.md"
+    path: "data/knowledge/商品售后规则.md"
+    section: "风险检查"
+    locator: "Markdown heading: ## 风险检查"
+    excerpt: "普通售后咨询和普通售后申请不需要默认进入风险检查。"
+    evidence_type: "refund_risk_review"
+scenarios:
+  -
+    scenario_id: "RAG-DEV-S001"
+    name: "待发货退款的订单事实与资格前置"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "state_conditioned"
+    difficulty: "medium"
+    context_mode: "fact_enriched"
+    category: "ambiguity"
+    priority: "p1"
+    preconditions:
+      - "已支付且待发货；是否拣货/出库会影响取消路径，不能把状态名称等同退款资格。"
+    input_mapping: "真实订单状态经 input_context.order_status 输入；支付确认及拣货细节如无独立字段，只能在原始输入说明。topic=refund_eligibility，related_topics 可含 cancel_policy。"
+    rules_and_exceptions:
+      - "必须确认资格后才进入申请"
+      - "先查订单状态、支付状态和已有申请"
+      - "已支付未出库可申请取消，但拣货后可能失败"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R02"
+      other_required_evidence_refs:
+        - "R01"
+        - "R22"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R02"
+        evidence_type: "refund_eligibility"
+        matching_content: "必须确认资格后才进入申请"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R01"
+        evidence_type: "refund_application"
+        matching_content: "先查订单状态、支付状态和已有申请"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R22"
+        evidence_type: "order_cancel"
+        matching_content: "已支付未出库可申请取消，但拣货后可能失败"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R21"
+        inapplicable_reason: "待支付直接取消没有资金退款；已支付不适用。"
+    existing_dev_case_ids:
+      - "rag_refund_001"
+    coverage: "weakly_covered"
+    evidence_gap: "001 只有泛化的订单/状态/退款申请词；未控制仓库分支和资格证据。"
+    variation_dimensions:
+      business_conditions: "变化尚未拣货与已经拣货，保留已支付事实；只能检索取消可能性和退款前置规则，不能预言业务执行结果。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S002"
+    name: "定制商品的普通无理由限制"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "exception_override"
+    difficulty: "medium"
+    context_mode: "explicit"
+    category: "boundary"
+    priority: "p2"
+    preconditions:
+      - "定制属性明确；无质量、错发或运输损坏等例外主张。"
+    input_mapping: "商品类型可经 product_category 提供，退货原因为不喜欢须在原始输入说明；topic=refund_eligibility。"
+    rules_and_exceptions:
+      - "定制商品排除普通无理由"
+      - "定制通常不支持无理由"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R11"
+      other_required_evidence_refs:
+        - "R15"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R11"
+        evidence_type: "refund_eligibility"
+        matching_content: "定制商品排除普通无理由"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R15"
+        evidence_type: "custom_product"
+        matching_content: "定制通常不支持无理由"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "普通商品的七天无理由条件不能直接覆盖定制商品。"
+    existing_dev_case_ids:
+      - "rag_refund_002"
+    coverage: "covered"
+    evidence_gap: "已有基本限制案例；尚未验证例外路线，另见 S021，不能把本行 covered 理解为整个定制售后已覆盖。"
+    variation_dimensions:
+      business_conditions: "保持普通无理由原因；仅补上下文呈现方式，不计新业务场景。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S003"
+    name: "质量问题主张与检测结论区分"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "cross_policy"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "用户描述故障或外观异常，尚无检测结论；即使确认质量问题，也只能按政策选择后续处理。"
+    input_mapping: "topic=refund_eligibility，related_topics=product_failure；描述与检测结论通过原始输入区分，没有 diagnosis 字段。"
+    rules_and_exceptions:
+      - "不能仅凭描述认定质量"
+      - "检测确认后才按政策选择售后处理"
+      - "满足相应退款条件后才申请"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R12"
+      other_required_evidence_refs:
+        - "R14"
+        - "R02"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R12"
+        evidence_type: "product_quality"
+        matching_content: "不能仅凭描述认定质量"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R14"
+        evidence_type: "product_quality"
+        matching_content: "检测确认后才按政策选择售后处理"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R02"
+        evidence_type: "refund_eligibility"
+        matching_content: "满足相应退款条件后才申请"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "质量问题请求不能直接套普通无理由退货。"
+    existing_dev_case_ids:
+      - "rag_refund_003"
+      - "rag_refund_014"
+    coverage: "weakly_covered"
+    evidence_gap: "003 与014共享检测前置规则；划痕是表述/现象变体，未建立独立可退款规则。来源 OR 无法强制资格与检测同时命中。"
+    variation_dimensions:
+      business_conditions: "区分仅用户主张、已检测确认、结论不明；不把划痕本身写成质量确诊。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S004"
+    name: "超七天无理由限制及质量检测出口"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "exception_override"
+    difficulty: "hard"
+    context_mode: "fact_enriched"
+    category: "boundary"
+    priority: "p1"
+    preconditions:
+      - "签收超过七天；无理由与质量问题原因导致不同处理路径。"
+    input_mapping: "signed_date 提供签收时长文本；原始输入给出申请原因，topic=refund_eligibility。"
+    rules_and_exceptions:
+      - "超七天不支持无理由，但质量主张仍可检测"
+      - "需要售后检测而不是直接确定退款"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R11"
+      other_required_evidence_refs:
+        - "R12"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R11"
+        evidence_type: "refund_eligibility"
+        matching_content: "超七天不支持无理由，但质量主张仍可检测"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R12"
+        evidence_type: "product_quality"
+        matching_content: "需要售后检测而不是直接确定退款"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "仅适用于期限内且其他条件满足的普通无理由规则。"
+    existing_dev_case_ids:
+      - "rag_refund_004"
+    coverage: "weakly_covered"
+    evidence_gap: "004 覆盖无质量问题的超期拒绝，未覆盖有质量主张仍可检测的条件切换。"
+    variation_dimensions:
+      business_conditions: "保持超期，变化无理由/质量主张；不生成精确第七天截止时刻，知识库未定义计时口径。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S005"
+    name: "明显使用且影响二次销售"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "exception_override"
+    difficulty: "medium"
+    context_mode: "explicit"
+    category: "boundary"
+    priority: "p2"
+    preconditions:
+      - "已明确影响二次销售，普通无理由申请；如主张质量问题仍需另走检测。"
+    input_mapping: "使用状态没有专用上下文字段，必须在原始输入说明；topic=refund_eligibility。"
+    rules_and_exceptions:
+      - "明显使用并影响二次销售属于排除条件"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R11"
+      other_required_evidence_refs: []
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R11"
+        evidence_type: "refund_eligibility"
+        matching_content: "明显使用并影响二次销售属于排除条件"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "七天以内不是充分条件。"
+    existing_dev_case_ids:
+      - "rag_refund_005"
+    coverage: "covered"
+    evidence_gap: "005 已有该独立排除条件；旧标签“影响商品二次销售”也可命中正向条件“不影响商品二次销售”，不能由子串匹配确认排除规则方向。"
+    variation_dimensions:
+      business_conditions: "只记录必要条件，不把不同商品外观词算新增场景。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先处理本行证据/事实/阈值待办；可生成部分以报告为准。"
+  -
+    scenario_id: "RAG-DEV-S006"
+    name: "已发货退款需物流拦截或退回衔接"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "cross_policy"
+    difficulty: "hard"
+    context_mode: "fact_enriched"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "已发货；拦截可能失败，后续依送达/拒收/退回状态处理。"
+    input_mapping: "order_status 与 shipping_status 为真实事实输入；topic=refund_policy，related_topics=shipping_exception。"
+    rules_and_exceptions:
+      - "无法拦截则等待送达或拒收再处理"
+      - "已发货不能按普通待发货直接取消"
+      - "退回仓库完成确认后按订单情况进入退款或退货流程"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R13"
+      other_required_evidence_refs:
+        - "R23"
+        - "R20"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R13"
+        evidence_type: "shipping_intercept"
+        matching_content: "无法拦截则等待送达或拒收再处理"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R23"
+        evidence_type: "order_cancel"
+        matching_content: "已发货不能按普通待发货直接取消"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R20"
+        evidence_type: "shipping_status"
+        matching_content: "退回仓库完成确认后按订单情况进入退款或退货流程"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R22"
+        inapplicable_reason: "待发货取消可能性不适用于已经发货。"
+    existing_dev_case_ids:
+      - "rag_refund_006"
+    coverage: "weakly_covered"
+    evidence_gap: "006 有拦截、送达、拒收词，但未约束多来源和条件分支，未提供事实上下文。"
+    variation_dimensions:
+      business_conditions: "变化拦截成功/失败及拒收后等待退回；必须分别要求物流与后续退货规则，不能只列 supporting。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S007"
+    name: "退款成功与资金到账延迟"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "single_policy"
+    difficulty: "easy"
+    context_mode: "minimal"
+    category: "happy_path"
+    priority: "p2"
+    preconditions:
+      - "一般到账咨询；成功处理不保证资金立即到账。"
+    input_mapping: "topic=refund_timing；若指定退款状态须在原始输入说明，不能借用 order_status 存退款状态。"
+    rules_and_exceptions:
+      - "原支付渠道及实际到账受渠道影响；SUCCEEDED不代表立即到账"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R08"
+      other_required_evidence_refs: []
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R08"
+        evidence_type: "refund_timing"
+        matching_content: "原支付渠道及实际到账受渠道影响；SUCCEEDED不代表立即到账"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R04"
+        inapplicable_reason: "退款状态成功的定义不能单独推出银行实际到账。"
+    existing_dev_case_ids:
+      - "rag_refund_007"
+    coverage: "covered"
+    evidence_gap: "007 有基本政策问题；“立即”不是禁止立即承诺的语义断言，评分只能检索证据。"
+    variation_dimensions:
+      business_conditions: "支付渠道类别变化可作语言/事实维度，不编具体到账天数。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S008"
+    name: "MQ 重复消费的退款幂等政策"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "single_policy"
+    difficulty: "medium"
+    context_mode: "explicit"
+    category: "happy_path"
+    priority: "p2"
+    preconditions:
+      - "相同退款任务因消息重试重复消费。"
+    input_mapping: "topic=refund_policy；MQ及重复消费背景从原始输入进入查询，没有消息状态字段。"
+    rules_and_exceptions:
+      - "MQ异步执行；相同任务重试消费不能重复退款"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R06"
+      other_required_evidence_refs: []
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R06"
+        evidence_type: "refund_idempotency"
+        matching_content: "MQ异步执行；相同任务重试消费不能重复退款"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R03"
+        inapplicable_reason: "创建申请去重不能替代执行阶段的重复消费幂等。"
+    existing_dev_case_ids:
+      - "rag_refund_008"
+    coverage: "covered"
+    evidence_gap: "008 覆盖 MQ/异步/幂等政策；未证明消费者实际幂等。"
+    variation_dimensions:
+      business_conditions: "不扩成消息队列可靠性执行测试；以后仅补创建与消费阶段混淆条件。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S009"
+    name: "未付款的退款请求转取消规则"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "cross_policy"
+    difficulty: "medium"
+    context_mode: "fact_enriched"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "订单确为待支付且没有实际付款；不适用于已扣款但支付状态同步异常。"
+    input_mapping: "order_status=待支付，topic=refund_eligibility，related_topics=cancel_policy；实际未支付需在输入事实说明。"
+    rules_and_exceptions:
+      - "待支付无实际资金，不创建退款申请"
+      - "待支付通常可直接取消"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R01"
+      other_required_evidence_refs:
+        - "R21"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R01"
+        evidence_type: "refund_application"
+        matching_content: "待支付无实际资金，不创建退款申请"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R21"
+        evidence_type: "order_cancel"
+        matching_content: "待支付通常可直接取消"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R03"
+        inapplicable_reason: "满足资格后创建退款申请不适用于无实际支付资金。"
+    existing_dev_case_ids:
+      - "rag_refund_009"
+    coverage: "weakly_covered"
+    evidence_gap: "009 有对应题目，但来源 OR 不保证取消和不创建退款两条都命中；缺事实注入对照。"
+    variation_dimensions:
+      business_conditions: "变化待支付与已支付待发货，对应 S001；支付同步异常为待确认扩展范围。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S010"
+    name: "已有有效退款申请时重复提交"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "single_policy"
+    difficulty: "medium"
+    context_mode: "explicit"
+    category: "happy_path"
+    priority: "p2"
+    preconditions:
+      - "同一订单同一业务已有有效申请；不泛化为不同退款业务永不允许。"
+    input_mapping: "topic=refund_apply；已有申请事实从原始输入给出，不能虚构 refund_id 上下文字段。"
+    rules_and_exceptions:
+      - "同一订单同一业务已有有效申请，不重复创建并返回当前状态"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R03"
+      other_required_evidence_refs: []
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R03"
+        evidence_type: "refund_idempotency"
+        matching_content: "同一订单同一业务已有有效申请，不重复创建并返回当前状态"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R27"
+        inapplicable_reason: "执行失败可安全重试不是允许再创建第二笔有效申请。"
+    existing_dev_case_ids:
+      - "rag_refund_010"
+    coverage: "covered"
+    evidence_gap: "010 已有基本请求；有效性和同一业务须在后续素材审查时明确。"
+    variation_dimensions:
+      business_conditions: "区分申请创建去重与任务重试，避免简单换问法。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S011"
+    name: "处理中进度咨询与再次申请意图干扰"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "semantic_confusion"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p1"
+    preconditions:
+      - "现有申请 PROCESSING；当前诉求为解释进度，出现过去申请或否定再次申请的信息。"
+    input_mapping: "topic=refund_policy；原始输入承担退款状态和否定语义；不通过 action_type 控制评分。"
+    rules_and_exceptions:
+      - "PROCESSING正在处理，进度以最新状态为准"
+      - "PROCESSING不能描述为成功"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R04"
+      other_required_evidence_refs:
+        - "R28"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R04"
+        evidence_type: "refund_state"
+        matching_content: "PROCESSING正在处理，进度以最新状态为准"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R28"
+        evidence_type: "refund_state"
+        matching_content: "PROCESSING不能描述为成功"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R03"
+        inapplicable_reason: "再次创建申请规则不是本次进度咨询的主证据；可辅助但不能替代状态解释。"
+    existing_dev_case_ids:
+      - "rag_refund_011"
+    coverage: "weakly_covered"
+    evidence_gap: "011 有处理中咨询，缺当前诉求/历史申请干扰对照；诊断维度不另计业务场景。"
+    variation_dimensions:
+      business_conditions: "保持 PROCESSING，变化历史动作与当前目标信息；需要状态定义及非成功通知条款共同命中。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S012"
+    name: "大额退款可能人工审核"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "single_policy"
+    difficulty: "medium"
+    context_mode: "minimal"
+    category: "happy_path"
+    priority: "p2"
+    preconditions:
+      - "大额退款或风险结果异常；人工审核不是必然失败。"
+    input_mapping: "topic=refund_policy；金额类别在原始输入说明，handoff_required 只可提供已知上游结论。"
+    rules_and_exceptions:
+      - "大额退款可能审核，审核不等于失败"
+      - "金额超过自动处理范围可进入退款人工审核"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R05"
+      other_required_evidence_refs:
+        - "R24"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R05"
+        evidence_type: "refund_risk_review"
+        matching_content: "大额退款可能审核，审核不等于失败"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R24"
+        evidence_type: "human_review"
+        matching_content: "金额超过自动处理范围可进入退款人工审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R03"
+        inapplicable_reason: "申请流程不代表所有大额退款可自动处理。"
+    existing_dev_case_ids:
+      - "rag_refund_012"
+    coverage: "covered"
+    evidence_gap: "012 对应大额触发；没有公开数值阈值，不能以任意金额判定必进审核。"
+    variation_dimensions:
+      business_conditions: "只用定性大额或明确已有审核状态；数值边界先补证据。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先处理本行证据/事实/阈值待办；可生成部分以报告为准。"
+  -
+    scenario_id: "RAG-DEV-S013"
+    name: "要求跳过风控的退款请求"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "exception_override"
+    difficulty: "medium"
+    context_mode: "explicit"
+    category: "boundary"
+    priority: "p2"
+    preconditions:
+      - "用户要求绕过必需的退款风控/人工审核。"
+    input_mapping: "topic=refund_policy；绕过诉求在原始输入出现，tags 不产生约束。"
+    rules_and_exceptions:
+      - "客服不能绕过风险检查或人工审核"
+      - "审核完成前不能承诺已完成"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R09"
+      other_required_evidence_refs:
+        - "R05"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R09"
+        evidence_type: "refund_risk_review"
+        matching_content: "客服不能绕过风险检查或人工审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R05"
+        evidence_type: "refund_risk_review"
+        matching_content: "审核完成前不能承诺已完成"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R03"
+        inapplicable_reason: "符合退款条件的正常申请条款不赋予跳过检查权限。"
+    existing_dev_case_ids:
+      - "rag_refund_013"
+    coverage: "covered"
+    evidence_gap: "013 已有绕过诉求；不能把关键词“不能”当作答案安全验证。"
+    variation_dimensions:
+      business_conditions: "维持已有基本覆盖；不因添加催促词重复计数。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S014"
+    name: "已签收但未收到的事实冲突"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "shipping_exception"
+    scenario_type: "state_conditioned"
+    difficulty: "hard"
+    context_mode: "fact_enriched"
+    category: "ambiguity"
+    priority: "p1"
+    preconditions:
+      - "最新物流显示签收，用户否认收到；需要核实签收信息。"
+    input_mapping: "primary_intent=shipping_exception，topic=shipping_exception；shipping_status 提供系统签收事实，原始输入保留用户陈述。"
+    rules_and_exceptions:
+      - "核实签收时间、地点、人员和代收；不能以系统签收认定实际收到"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R18"
+      other_required_evidence_refs: []
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R18"
+        evidence_type: "signed_not_received"
+        matching_content: "核实签收时间、地点、人员和代收；不能以系统签收认定实际收到"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "退货资格要求不能替代实际收货争议核实。"
+    existing_dev_case_ids:
+      - "rag_refund_015"
+    coverage: "weakly_covered"
+    evidence_gap: "015 为当前 Dev 唯一物流主意图保留场景；未做上下文事实对照。product_failure 关联主题的必要性未获该题事实支持。"
+    variation_dimensions:
+      business_conditions: "变化签收冲突、确认代收与仍无法核实；不据此扩展完整物流业务。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S015"
+    name: "运输损坏引出的退款资格与责任边界"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "cross_policy"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "用户主张运输损坏并请求退款；责任和检测结论尚未确定。"
+    input_mapping: "topic=refund_eligibility，related_topics 含 shipping_exception/product_failure；损坏归因仅作用户主张输入。"
+    rules_and_exceptions:
+      - "资金操作按售后政策及风控执行"
+      - "用户描述不能确诊，检测后再决定售后"
+      - "退款资格要依具体售后规则"
+    ground_truth:
+      status: "rule_located_facts_or_outcome_pending"
+      primary_evidence_ref: "R19"
+      other_required_evidence_refs:
+        - "R14"
+        - "R02"
+      evidence_sufficiency: "通用政策有依据；具体事实或确定结果不足，见evidence_gap。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R19"
+        evidence_type: "refund_eligibility"
+        matching_content: "资金操作按售后政策及风控执行"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R14"
+        evidence_type: "product_quality"
+        matching_content: "用户描述不能确诊，检测后再决定售后"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R02"
+        evidence_type: "refund_eligibility"
+        matching_content: "退款资格要依具体售后规则"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "普通无理由路径不能代替运输责任和质量检测。"
+    existing_dev_case_ids:
+      - "rag_refund_016"
+    coverage: "weakly_covered"
+    evidence_gap: "016 仅三泛词，无法证明多域证据；现有政策未给一般商品运输损坏必定退款或赔付比例。"
+    variation_dimensions:
+      business_conditions: "先补齐责任/检测事实，仅规划条件化规则检索；任何确定赔付、无条件退款标签暂停。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先处理本行证据/事实/阈值待办；可生成部分以报告为准。"
+  -
+    scenario_id: "RAG-DEV-S016"
+    name: "退回仓库与退款流程及到账阶段区分"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "cross_policy"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "退货物流已到仓，质检和资金状态可能不同；不能推定到仓即到账。"
+    input_mapping: "topic=refund_timing；到仓、质检、退款状态只能作为原始输入事实分开呈现。"
+    rules_and_exceptions:
+      - "退回且完成质检后进入退款流程"
+      - "退款成功不保证立即到账"
+    ground_truth:
+      status: "rule_located_facts_or_outcome_pending"
+      primary_evidence_ref: "R10"
+      other_required_evidence_refs:
+        - "R08"
+      evidence_sufficiency: "通用政策有依据；具体事实或确定结果不足，见evidence_gap。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R10"
+        evidence_type: "refund_eligibility"
+        matching_content: "退回且完成质检后进入退款流程"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R08"
+        evidence_type: "refund_timing"
+        matching_content: "退款成功不保证立即到账"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R04"
+        inapplicable_reason: "成功退款状态定义不能证明退货到仓时就已完成退款。"
+    existing_dev_case_ids:
+      - "rag_refund_017"
+    coverage: "weakly_covered"
+    evidence_gap: "017 有到仓题目但未说明质检/退款状态；GT只能支持继续确认阶段，不能断言某确定延迟原因。"
+    variation_dimensions:
+      business_conditions: "变化仅到仓、完成质检、退款已成功但资金未到；状态之间不凭空推导。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先处理本行证据/事实/阈值待办；可生成部分以报告为准。"
+  -
+    scenario_id: "RAG-DEV-S017"
+    name: "FAILED 的安全重试与结果不明边界"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "state_conditioned"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "退款执行失败；已确认可安全重试的系统异常与是否成功不明必须分开。"
+    input_mapping: "topic=refund_policy；失败原因及结果确认程度由原始输入说明，无 refund_status 上下文字段。"
+    rules_and_exceptions:
+      - "可安全重试系统异常按重试策略执行"
+      - "结果无法确认时禁止直接重复执行，先查实际状态或人工"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R27"
+      other_required_evidence_refs:
+        - "R07"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R27"
+        evidence_type: "refund_state"
+        matching_content: "可安全重试系统异常按重试策略执行"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R07"
+        evidence_type: "refund_idempotency"
+        matching_content: "结果无法确认时禁止直接重复执行，先查实际状态或人工"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R06"
+        inapplicable_reason: "MQ幂等不授权结果未知时盲目重试。"
+    existing_dev_case_ids:
+      - "rag_refund_018"
+    coverage: "weakly_covered"
+    evidence_gap: "018 已提失败重试，但 FAILED/退款/重复三词未强制区分安全重试和未知结果。"
+    variation_dimensions:
+      business_conditions: "变化确认失败且可安全重试、结果无法确认；具体重试次数/异常白名单需补证据。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先处理本行证据/事实/阈值待办；可生成部分以报告为准。"
+  -
+    scenario_id: "RAG-DEV-S018"
+    name: "高频退款可能人工审核"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "single_policy"
+    difficulty: "medium"
+    context_mode: "minimal"
+    category: "happy_path"
+    priority: "p2"
+    preconditions:
+      - "短期多次退款或高频退款；不虚构次数/时间窗阈值。"
+    input_mapping: "topic=refund_policy；频率类别仅通过原始输入，不把 action_type 当风险开关。"
+    rules_and_exceptions:
+      - "高频退款可能审核"
+      - "同一用户短期多次退款可进人工审核"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R05"
+      other_required_evidence_refs:
+        - "R24"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R05"
+        evidence_type: "refund_risk_review"
+        matching_content: "高频退款可能审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R24"
+        evidence_type: "human_review"
+        matching_content: "同一用户短期多次退款可进人工审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R30"
+        inapplicable_reason: "普通咨询无需默认风控不能用于否定已知异常特征的审核可能性。"
+    existing_dev_case_ids:
+      - "rag_refund_019"
+    coverage: "covered"
+    evidence_gap: "019 有独立高频触发案例；不同于大额触发，不合并为语言变体。"
+    variation_dimensions:
+      business_conditions: "仅定性频率；数字阈值须由业务规则确认。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先处理本行证据/事实/阈值待办；可生成部分以报告为准。"
+  -
+    scenario_id: "RAG-DEV-S019"
+    name: "投诉升级不覆盖退款资格与审核"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "cross_policy"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "明确投诉升级且涉及退款资金；投诉并不使诉求自动成立。"
+    input_mapping: "topic=refund_eligibility，related_topics=complaint；handoff_required 仅来自已知上游结论。"
+    rules_and_exceptions:
+      - "投诉升级不代表诉求成立"
+      - "投诉升级涉及资金操作可能人工审核"
+      - "满足资格后才可申请退款"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R25"
+      other_required_evidence_refs:
+        - "R05"
+        - "R02"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R25"
+        evidence_type: "complaint_escalation"
+        matching_content: "投诉升级不代表诉求成立"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R05"
+        evidence_type: "refund_risk_review"
+        matching_content: "投诉升级涉及资金操作可能人工审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R02"
+        evidence_type: "refund_eligibility"
+        matching_content: "满足资格后才可申请退款"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R03"
+        inapplicable_reason: "正常申请流程不能代替投诉相关审核条件。"
+    existing_dev_case_ids:
+      - "rag_refund_020"
+    coverage: "weakly_covered"
+    evidence_gap: "020 来源仅退款政策，未约束投诉处理原则；投诉/人工审核/不能不能证明跨域边界。"
+    variation_dimensions:
+      business_conditions: "保持资金诉求，变化投诉升级与普通不满；普通独立投诉业务仍不纳入。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S020"
+    name: "普通商品无理由退货的完整资格基线"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "state_conditioned"
+    difficulty: "medium"
+    context_mode: "fact_enriched"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "期限内普通商品，商品完好、配件齐全、包装无严重损坏、不影响二次销售。"
+    input_mapping: "signed_date/product_category 为上下文事实，其余条件在原始输入说明；topic=refund_eligibility。"
+    rules_and_exceptions:
+      - "7天内、商品完好、配件齐全、包装无严重损坏、不影响二次销售、非特殊商品；退回质检后退款"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R10"
+      other_required_evidence_refs: []
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R10"
+        evidence_type: "refund_eligibility"
+        matching_content: "7天内、商品完好、配件齐全、包装无严重损坏、不影响二次销售、非特殊商品；退回质检后退款"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R11"
+        inapplicable_reason: "定制或缺配件等排除情形不适用已确认完整条件的基线。"
+    existing_dev_case_ids: []
+    coverage: "uncovered"
+    evidence_gap: "V1 多为限制情形；001待发货退款不能替代已签收无理由的正向基线。"
+    variation_dimensions:
+      business_conditions: "先建立全部必要条件满足的基线，作为 S004/S005/S024 条件对照。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S021"
+    name: "定制商品的质量问题售后例外"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "exception_override"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "boundary"
+    priority: "p0"
+    preconditions:
+      - "定制商品有质量问题主张；不能因定制属性拒绝全部售后，也不能直接承诺退款。"
+    input_mapping: "product_category 表示定制；原始输入提供缺陷主张/检测结果，topic=refund_eligibility，related_topics=product_failure。"
+    rules_and_exceptions:
+      - "定制质量问题仍可售后；退款或重制依实际问题与人工审核"
+      - "检测确认后按政策处理"
+      - "退款资格仍需确认"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R15"
+      other_required_evidence_refs:
+        - "R14"
+        - "R02"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R15"
+        evidence_type: "custom_product"
+        matching_content: "定制质量问题仍可售后；退款或重制依实际问题与人工审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R14"
+        evidence_type: "product_quality"
+        matching_content: "检测确认后按政策处理"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R02"
+        evidence_type: "refund_eligibility"
+        matching_content: "退款资格仍需确认"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R11"
+        inapplicable_reason: "无理由排除不能覆盖质量问题的售后出口。"
+    existing_dev_case_ids: []
+    coverage: "uncovered"
+    evidence_gap: "002仅无理由限制；003/014未同时给定制属性，均不算本行对应案例。"
+    variation_dimensions:
+      business_conditions: "在 S002 定制属性不变时改变退货原因；具体退款或重制结论先获审核事实。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S022"
+    name: "退款结果无法确认时的查询与人工路径"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "insufficient_information"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p0"
+    preconditions:
+      - "无法确认是否已经执行成功；与确认 FAILED 的安全重试不同。"
+    input_mapping: "topic=refund_policy；不明结果由原始输入说明，不臆造订单状态；handoff_required 可用于已确认需人工的变体。"
+    rules_and_exceptions:
+      - "无法确认是否成功不得直接重复退款，应查询或人工"
+      - "无法确认是否已执行可进入退款人工审核"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R07"
+      other_required_evidence_refs:
+        - "R24"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R07"
+        evidence_type: "refund_idempotency"
+        matching_content: "无法确认是否成功不得直接重复退款，应查询或人工"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R24"
+        evidence_type: "human_review"
+        matching_content: "无法确认是否已执行可进入退款人工审核"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R27"
+        inapplicable_reason: "仅对可安全重试异常成立的条款不适用于结果未知。"
+    existing_dev_case_ids: []
+    coverage: "uncovered"
+    evidence_gap: "018仅失败，不能等同结果未知；011处理中也不是结果未知。"
+    variation_dimensions:
+      business_conditions: "变化系统无法确认、已查询但仍不明；必须先检索禁止重复执行与人工途径。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S023"
+    name: "历史退货结果与当前正式资格条件冲突"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "authority_conflict"
+    difficulty: "hard"
+    context_mode: "explicit"
+    category: "ambiguity"
+    priority: "p1"
+    preconditions:
+      - "引用历史成功结论，但当前订单未确认具备同样资格；只检索规则适用边界。"
+    input_mapping: "topic=refund_eligibility；历史结论和当前缺失条件在原始输入区分，不复制历史案例问句。"
+    rules_and_exceptions:
+      - "不能因历史案例结果相似而直接套用"
+      - "当前普通退货需符合商品完好、配件齐全等实际资格"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R17"
+      other_required_evidence_refs:
+        - "R10"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R17"
+        evidence_type: "refund_eligibility"
+        matching_content: "不能因历史案例结果相似而直接套用"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R10"
+        evidence_type: "refund_eligibility"
+        matching_content: "当前普通退货需符合商品完好、配件齐全等实际资格"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R26"
+        inapplicable_reason: "历史案例商品完好配件齐全；其成功不适用于条件未核实的新请求。"
+    existing_dev_case_ids: []
+    coverage: "uncovered"
+    evidence_gap: "004虽列历史来源，未构造历史结论与当前资格冲突；V1允许历史源单独命中，缺正式主证据要求。"
+    variation_dimensions:
+      business_conditions: "变化当前配件完整性或质检状态；只表达正式证据必须存在，不能声称现 evaluator 可比较权威排序。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "partial_authority_proxy"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不支持正式政策高于历史案例的相对排名或历史证据零召回断言。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"
+  -
+    scenario_id: "RAG-DEV-S024"
+    name: "期限内主要配件缺失的无理由例外"
+    layer: "rag"
+    capability: "条件化政策证据检索"
+    scope_status: "in_scope"
+    business_intent: "return_refund"
+    scenario_type: "exception_override"
+    difficulty: "medium"
+    context_mode: "explicit"
+    category: "boundary"
+    priority: "p1"
+    preconditions:
+      - "签收期限内但主要配件缺失；当前申请为普通无理由。"
+    input_mapping: "signed_date 可提供期限事实；配件状况须在原始输入提供，topic=refund_eligibility。"
+    rules_and_exceptions:
+      - "主要配件缺失原则上不支持无理由"
+      - "普通无理由要求配件齐全"
+    ground_truth:
+      status: "rule_located"
+      primary_evidence_ref: "R29"
+      other_required_evidence_refs:
+        - "R10"
+      evidence_sufficiency: "当前文字规则可定位；不等于旧标签语义/系统性能已验证。"
+    required_evidence_plan:
+      -
+        evidence_ref: "R29"
+        evidence_type: "refund_eligibility"
+        matching_content: "主要配件缺失原则上不支持无理由"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+      -
+        evidence_ref: "R10"
+        evidence_type: "refund_eligibility"
+        matching_content: "普通无理由要求配件齐全"
+        scoring_condition: "绑定注册表source及section并匹配本义务具体文本；所有当前分支必需义务均须独立进入evidence_requirements。"
+    distractor_evidence:
+      -
+        evidence_ref: "R10"
+        inapplicable_reason: "仅签收期限符合不能覆盖配件齐全条件；此证据同时包含基线与不适用推论。"
+    existing_dev_case_ids: []
+    coverage: "uncovered"
+    evidence_gap: "005只有使用影响二次销售；配件缺失是独立条件，不能替代本行。"
+    variation_dimensions:
+      business_conditions: "以 S020 为基线只变化主要配件有无；质量争议另归 S003，避免组合膨胀。"
+      linguistic_variation: "可在业务条件固定后少量设计；不增加场景计数。"
+    evaluator_expressibility:
+      status: "retrieval_proxy_only"
+      expression: "使用本行input_mapping和required_evidence_plan；必须证据包含主证据，不由supporting命中代替。"
+      unexpressed: "不判断具体退款/工单动作、事实真伪或最终回答是否遵守规则。"
+    generation:
+      status: "plan_only"
+      query_or_expected_generated: false
+      prerequisite: "先人工复核证据片段与当前chunk可匹配性；按真实条件设计，不指定条数。"

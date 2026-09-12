@@ -1,0 +1,105 @@
+========================================================================
+Answer Evaluation
+========================================================================
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-6_cgg9gc\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 4,
+  "passed_count": 1,
+  "failed_count": 3,
+  "deterministic_metrics": {
+    "correctness": 0.5,
+    "relevance": 1.0,
+    "completeness": 0.5,
+    "faithfulness_groundedness": 0.3333,
+    "hallucination_rate": 0.25
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "商品售后规则.md - 七天无理由退货"
+        ]
+      },
+      "actual": {
+        "reply": "本轮生成内容未通过证据核对，暂时不能据此判断政策适用条件。请补充具体问题或由人工核实。",
+        "matched_citations": []
+      },
+      "trace_id": "00e33c46-2911-4f22-83d0-af50737cf272",
+      "reason": "missing_expected_keywords=['退款', '订单']; grounding_failed=[]"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "退换货政策.md - 退款人工审核"
+        ]
+      },
+      "actual": {
+        "reply": "本轮可核实的政策内容：\n\n《退款政策.md - 退款人工审核》：\n退款处理成功后，资金通常按照原支付渠道退回。\n\n《退换货政策.md - 退款人工审核》：\n退款成功后，实际到账时间可能受到原支付渠道影响。\n\n《退换货政策.md - 退款人工审核》：\n平台完成退款操作不代表资金一定立即到账。\n\n《退换货政策.md - 退款人工审核》：\n如果退款状态已经显示成功，但用户长时间未收到退款，可以进一步查询支付渠道处理状态。",
+        "matched_citations": [
+          "退款政策.md - 退款人工审核",
+          "退换货政策.md - 退款人工审核"
+        ]
+      },
+      "trace_id": "8d25e359-3724-408f-ba42-a6511f3040e4",
+      "reason": "forbidden_keywords_present=['立即到账']"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "订单 10003，商品：定制刻字保温杯，当前订单状态：已签收。\n\n订单备注记录：定制商品通常不支持七天无理由退货，质量问题除外。\n\n本轮尚未取得足以回答此问题的政策片段，不能据此确认完整的政策条件。请补充具体问题或由人工核实。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "75627244-67bf-4404-a07d-3dfd4516f55f",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']"
+    }
+  ],
+  "report_name": "eval_answer",
+  "created_at": "2026-09-08T20:06:16"
+}
+report_path: C:\Users\DELL\AppData\Local\Temp\support-baseline-6_cgg9gc\reports\eval_answer.json
+========================================================================

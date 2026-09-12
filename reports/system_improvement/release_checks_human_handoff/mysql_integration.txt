@@ -1,0 +1,9 @@
+............s...s.....s............................................F.... [100%]
+================================== FAILURES ===================================
+_ HumanHandoffTests.test_orderless_handoff_is_owned_persisted_and_has_context_and_truthful_receipt _
+tests\test_human_handoff.py:56: in test_orderless_handoff_is_owned_persisted_and_has_context_and_truthful_receipt
+    self.assertIn(handoff["ticket_id"], reply)
+E   AssertionError: 'T-H-d0ccde6a5a1694a006f659f530697a07113d4d1a' not found in '该问题需要人工客服进一步处理。'
+=========================== short test summary info ===========================
+FAILED tests/test_human_handoff.py::HumanHandoffTests::test_orderless_handoff_is_owned_persisted_and_has_context_and_truthful_receipt
+1 failed, 68 passed, 3 skipped in 57.93s

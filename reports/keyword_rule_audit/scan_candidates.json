@@ -1,0 +1,3035 @@
+{
+  "scope": [
+    "app/**/*.py",
+    "scripts/**/*.py",
+    "main.py"
+  ],
+  "files_scanned": 159,
+  "note": "Broad static inventory; membership may be enum/schema validation, not a natural-language keyword rule. See manual report.",
+  "candidates": [
+    {
+      "file": "app/agent/orchestrator.py",
+      "line": 103,
+      "function": "apply_risk_result_to_route",
+      "kind": "membership_candidate",
+      "expression": "\"create_manual_review\" not in route.tool_plan"
+    },
+    {
+      "file": "app/core/config.py",
+      "line": 74,
+      "function": "env_flag",
+      "kind": "membership_candidate",
+      "expression": "value.strip().lower() in {\"1\", \"true\", \"yes\", \"y\", \"on\"}"
+    },
+    {
+      "file": "app/core/config.py",
+      "line": 24,
+      "function": "load_env_file",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.split(\"=\", 1)"
+    },
+    {
+      "file": "app/core/config.py",
+      "line": 21,
+      "function": "load_env_file",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.startswith(\"#\")"
+    },
+    {
+      "file": "app/core/config.py",
+      "line": 21,
+      "function": "load_env_file",
+      "kind": "membership_candidate",
+      "expression": "\"=\" not in line"
+    },
+    {
+      "file": "app/core/config.py",
+      "line": 83,
+      "function": "load_tool_timeout_overrides",
+      "kind": "text_or_regex_candidate",
+      "expression": "key.startswith(prefix)"
+    },
+    {
+      "file": "app/core/config.py",
+      "line": 83,
+      "function": "load_tool_timeout_overrides",
+      "kind": "text_or_regex_candidate",
+      "expression": "key.endswith(suffix)"
+    },
+    {
+      "file": "app/core/security.py",
+      "line": 112,
+      "function": "list_visible_records",
+      "kind": "membership_candidate",
+      "expression": "table not in {\"tickets\", \"refund_requests\", \"manual_reviews\"}"
+    },
+    {
+      "file": "app/core/security.py",
+      "line": 63,
+      "function": "__call__",
+      "kind": "membership_candidate",
+      "expression": "scope[\"path\"] in {\"/\", \"/health\", \"/live\", \"/ready\", \"/favicon.ico\"}"
+    },
+    {
+      "file": "app/core/security.py",
+      "line": 72,
+      "function": "__call__",
+      "kind": "text_or_regex_candidate",
+      "expression": "scope[\"path\"].startswith(ADMIN_PATHS)"
+    },
+    {
+      "file": "app/core/security.py",
+      "line": 33,
+      "function": "_configured_identities",
+      "kind": "membership_candidate",
+      "expression": "identity.get(\"role\") not in {\"customer\", \"admin\"}"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 22,
+      "function": "existing_after_sales_reason",
+      "kind": "membership_candidate",
+      "expression": "\"退货审核中\" in status"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 22,
+      "function": "existing_after_sales_reason",
+      "kind": "membership_candidate",
+      "expression": "\"退款\" in status"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 53,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"未收到\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 53,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"没收到\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 56,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"不想要\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 56,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"不要了\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 56,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"七天无理由\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 59,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"重复扣款\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 59,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"支付异常\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 59,
+      "function": "infer_refund_reason",
+      "kind": "membership_candidate",
+      "expression": "\"扣款\" in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 107,
+      "function": "evaluate_refund_eligibility",
+      "kind": "membership_candidate",
+      "expression": "\"定制\" in category"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 126,
+      "function": "evaluate_refund_eligibility",
+      "kind": "membership_candidate",
+      "expression": "\"已发货\" in order_status"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 44,
+      "function": "is_quality_or_fault_request",
+      "kind": "membership_candidate",
+      "expression": "keyword in user_request"
+    },
+    {
+      "file": "app/domain/refund_policy.py",
+      "line": 13,
+      "function": "require_confirmed_refund_payment",
+      "kind": "membership_candidate",
+      "expression": "status in (order.get(\"order_status\") or \"\")"
+    },
+    {
+      "file": "app/domain/risk_policy.py",
+      "line": 44,
+      "function": "evaluate_refund_risk",
+      "kind": "membership_candidate",
+      "expression": "keyword in user_request"
+    },
+    {
+      "file": "app/domain/risk_policy.py",
+      "line": 48,
+      "function": "evaluate_refund_risk",
+      "kind": "membership_candidate",
+      "expression": "keyword in user_request"
+    },
+    {
+      "file": "app/domain/risk_policy.py",
+      "line": 54,
+      "function": "evaluate_refund_risk",
+      "kind": "membership_candidate",
+      "expression": "user_keyword in user_request"
+    },
+    {
+      "file": "app/domain/risk_policy.py",
+      "line": 54,
+      "function": "evaluate_refund_risk",
+      "kind": "membership_candidate",
+      "expression": "order_keyword in shipping_status"
+    },
+    {
+      "file": "app/llm/llm_client.py",
+      "line": 91,
+      "function": "call_zhipu_chat_stream",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.startswith(\"data:\")"
+    },
+    {
+      "file": "app/mq/queue.py",
+      "line": 28,
+      "function": "fail_message",
+      "kind": "membership_candidate",
+      "expression": "message[\"status\"] in {\"done\", \"dead_letter\"}"
+    },
+    {
+      "file": "app/observability/operations.py",
+      "line": 60,
+      "function": "summarize_traces",
+      "kind": "membership_candidate",
+      "expression": "\"provider_reported\" not in usage"
+    },
+    {
+      "file": "app/observability/operations.py",
+      "line": 42,
+      "function": "summarize_traces",
+      "kind": "membership_candidate",
+      "expression": "type(duration) in (int, float)"
+    },
+    {
+      "file": "app/observability/operations.py",
+      "line": 119,
+      "function": "operational_summary",
+      "kind": "membership_candidate",
+      "expression": "row[\"status\"] in {\"pending\", \"failed\"}"
+    },
+    {
+      "file": "app/observability/operations.py",
+      "line": 55,
+      "function": "summarize_traces",
+      "kind": "text_or_regex_candidate",
+      "expression": "str(data.get(\"step\", \"\")).startswith(\"tool.\")"
+    },
+    {
+      "file": "app/observability/operations.py",
+      "line": 53,
+      "function": "summarize_traces",
+      "kind": "membership_candidate",
+      "expression": "error_type in {\"ToolTransientError\", \"ToolTimeout\"}"
+    },
+    {
+      "file": "app/observability/operations.py",
+      "line": 57,
+      "function": "summarize_traces",
+      "kind": "membership_candidate",
+      "expression": "type(elapsed) in (int, float)"
+    },
+    {
+      "file": "app/rag/embedding_client.py",
+      "line": 77,
+      "function": "tokenize",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.findall(r\"[a-zA-Z0-9]+\", text)"
+    },
+    {
+      "file": "app/rag/embedding_client.py",
+      "line": 80,
+      "function": "tokenize",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.findall(r\"[\\u4e00-\\u9fff]\", text)"
+    },
+    {
+      "file": "app/rag/embedding_client.py",
+      "line": 74,
+      "function": "tokenize",
+      "kind": "membership_candidate",
+      "expression": "keyword in text"
+    },
+    {
+      "file": "app/rag/embedding_client.py",
+      "line": 113,
+      "function": "keyword_score",
+      "kind": "membership_candidate",
+      "expression": "keyword not in query"
+    },
+    {
+      "file": "app/rag/embedding_client.py",
+      "line": 118,
+      "function": "keyword_score",
+      "kind": "membership_candidate",
+      "expression": "keyword_lower in source_lower"
+    },
+    {
+      "file": "app/rag/embedding_client.py",
+      "line": 121,
+      "function": "keyword_score",
+      "kind": "membership_candidate",
+      "expression": "keyword_lower in text_lower"
+    },
+    {
+      "file": "app/rag/enterprise_knowledge.py",
+      "line": 24,
+      "function": "build_enterprise_catalog",
+      "kind": "membership_candidate",
+      "expression": "chunk.source not in sources"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 19,
+      "function": "_guardrail_masks",
+      "kind": "text_or_regex_candidate",
+      "expression": "(query.rerank_query or '').startswith('用户问题：')"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 124,
+      "function": "_grams",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.findall(r'[\\u3400-\\u9fff]+|[A-Za-z0-9_]+', text.lower())"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 71,
+      "function": "_primary_continuation",
+      "kind": "membership_candidate",
+      "expression": "text[-1] in '。！？.!?；;'"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 75,
+      "function": "_primary_continuation",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.split(r'[。！？.!?\\n]', text)"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 104,
+      "function": "complete_primary_evidence",
+      "kind": "membership_candidate",
+      "expression": "continuation in selected"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 139,
+      "function": "_query_facets",
+      "kind": "text_or_regex_candidate",
+      "expression": "value.split('；')"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 204,
+      "function": "select_complementary_evidence",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.findall(r'《([^》]+)》', str(ranked[0].get('text', '')))"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 20,
+      "function": "_guardrail_masks",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.split(\n            r'\\n(?:主要意图|业务主题|关联主题|订单状态|物流状态|商品名称|商品类目|签收日期|处理约束)：',\n            query.rerank_query.removeprefix('用户问题：'), maxsplit=1,\n        )"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 137,
+      "function": "_query_facets",
+      "kind": "membership_candidate",
+      "expression": "label not in {'业务主题', '关联主题', '订单状态', '物流状态', '商品类目'}"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 175,
+      "function": "select_complementary_evidence",
+      "kind": "text_or_regex_candidate",
+      "expression": "value.split('；')"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 191,
+      "function": "select_complementary_evidence",
+      "kind": "membership_candidate",
+      "expression": "keyword in primary_text"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 25,
+      "function": "_guardrail_masks",
+      "kind": "membership_candidate",
+      "expression": "c.get('source') in profile['expected_sources']"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 51,
+      "function": "_coverage",
+      "kind": "membership_candidate",
+      "expression": "word in query_text"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 51,
+      "function": "_coverage",
+      "kind": "membership_candidate",
+      "expression": "word in text"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 58,
+      "function": "_coverage",
+      "kind": "membership_candidate",
+      "expression": "word in r['triggers']"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 120,
+      "function": "complete_primary_evidence",
+      "kind": "membership_candidate",
+      "expression": "c['chunk_id'] not in ids"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 141,
+      "function": "_query_facets",
+      "kind": "membership_candidate",
+      "expression": "grams not in facets"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 174,
+      "function": "select_complementary_evidence",
+      "kind": "membership_candidate",
+      "expression": "label in {'业务主题', '关联主题'}"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 193,
+      "function": "select_complementary_evidence",
+      "kind": "membership_candidate",
+      "expression": "facet not in facets"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 258,
+      "function": "select_complementary_evidence",
+      "kind": "membership_candidate",
+      "expression": "i not in selected"
+    },
+    {
+      "file": "app/rag/evidence_selection.py",
+      "line": 91,
+      "function": "_primary_continuation",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.match(r'[^\\n#]*[。！？.!?]', remainder)"
+    },
+    {
+      "file": "app/rag/hybrid_index.py",
+      "line": 160,
+      "function": "search",
+      "kind": "text_or_regex_candidate",
+      "expression": "self.vector_store.search(\n            query_vector=query_embedding,\n            top_k=self.vector_store.size(),\n        )"
+    },
+    {
+      "file": "app/rag/index_manager.py",
+      "line": 145,
+      "function": "_validate_candidate",
+      "kind": "membership_candidate",
+      "expression": "0 in dimensions"
+    },
+    {
+      "file": "app/rag/models.py",
+      "line": 20,
+      "function": "normalize_source",
+      "kind": "text_or_regex_candidate",
+      "expression": "normalized.startswith(\"./\")"
+    },
+    {
+      "file": "app/rag/query_context.py",
+      "line": 37,
+      "function": "resolve_embedding_query",
+      "kind": "membership_candidate",
+      "expression": "mode not in {\"\", \"route\"}"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 130,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "\"商品售后规则\" in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 138,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "\"订单取消与修改\" in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 140,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "\"支付与发票\" in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 142,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "\"会员权益\" in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 472,
+      "function": "rank_candidates",
+      "kind": "membership_candidate",
+      "expression": "mode not in {SEMANTIC_RERANK_MODE, SEMANTIC_CONSTRAINT_MODE}"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 121,
+      "function": "add",
+      "kind": "membership_candidate",
+      "expression": "category not in categories"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 334,
+      "function": "apply_business_evidence_constraint",
+      "kind": "membership_candidate",
+      "expression": "category not in evaluate_evidence_constraint(top, constraint)[\n            \"missing_categories\"\n        ]"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 100,
+      "function": "build_evidence_constraint",
+      "kind": "membership_candidate",
+      "expression": "category in categories"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 132,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "value in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 134,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "value in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 136,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "value in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 144,
+      "function": "candidate_evidence_categories",
+      "kind": "membership_candidate",
+      "expression": "value in source"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 160,
+      "function": "evaluate_evidence_constraint",
+      "kind": "membership_candidate",
+      "expression": "category in covered"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 161,
+      "function": "evaluate_evidence_constraint",
+      "kind": "membership_candidate",
+      "expression": "category not in covered"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 442,
+      "function": "rank_candidates",
+      "kind": "membership_candidate",
+      "expression": "evidence_selection not in {\"complete_primary\", \"complementary\"}"
+    },
+    {
+      "file": "app/rag/ranking.py",
+      "line": 342,
+      "function": "apply_business_evidence_constraint",
+      "kind": "membership_candidate",
+      "expression": "category in candidate_evidence_categories(candidate)"
+    },
+    {
+      "file": "app/rag/reranker.py",
+      "line": 81,
+      "function": "keyword_coverage_score",
+      "kind": "membership_candidate",
+      "expression": "keyword in query"
+    },
+    {
+      "file": "app/rag/reranker.py",
+      "line": 81,
+      "function": "keyword_coverage_score",
+      "kind": "membership_candidate",
+      "expression": "keyword in candidate_text"
+    },
+    {
+      "file": "app/rag/reranker.py",
+      "line": 63,
+      "function": "contains_any",
+      "kind": "membership_candidate",
+      "expression": "phrase in text"
+    },
+    {
+      "file": "app/rag/reranker.py",
+      "line": 71,
+      "function": "matched_items",
+      "kind": "membership_candidate",
+      "expression": "phrase in text"
+    },
+    {
+      "file": "app/rag/retriever.py",
+      "line": 84,
+      "function": "retrieve_candidates",
+      "kind": "text_or_regex_candidate",
+      "expression": "index.search(query, candidate_k=candidate_k)"
+    },
+    {
+      "file": "app/rag/retriever.py",
+      "line": 115,
+      "function": "retrieve",
+      "kind": "membership_candidate",
+      "expression": "resolved_mode in {SEMANTIC_RERANK_MODE, SEMANTIC_CONSTRAINT_MODE, SEMANTIC_FUSION_MODE}"
+    },
+    {
+      "file": "app/services/payments.py",
+      "line": 92,
+      "function": "_observe",
+      "kind": "membership_candidate",
+      "expression": "refund[\"status\"] in {\"refund_succeeded\", \"failed\"}"
+    },
+    {
+      "file": "app/services/payments.py",
+      "line": 96,
+      "function": "_observe",
+      "kind": "membership_candidate",
+      "expression": "refund[\"status\"] not in {\"payment_submitting\", \"refund_unknown\"}"
+    },
+    {
+      "file": "app/services/payments.py",
+      "line": 86,
+      "function": "_observe",
+      "kind": "membership_candidate",
+      "expression": "observation.state not in {\"processing\", \"succeeded\", \"failed\", \"unknown\"}"
+    },
+    {
+      "file": "app/services/payments.py",
+      "line": 126,
+      "function": "_query_or_submit",
+      "kind": "membership_candidate",
+      "expression": "refund[\"status\"] in {\"refund_succeeded\", \"failed\"}"
+    },
+    {
+      "file": "app/services/payments.py",
+      "line": 140,
+      "function": "_query_or_submit",
+      "kind": "membership_candidate",
+      "expression": "refund[\"status\"] not in {\"payment_submitting\", \"refund_unknown\", \"refund_succeeded\", \"failed\"}"
+    },
+    {
+      "file": "app/services/payments.py",
+      "line": 151,
+      "function": "_query_or_submit",
+      "kind": "membership_candidate",
+      "expression": "current[\"status\"] not in {\"refund_succeeded\", \"failed\"}"
+    },
+    {
+      "file": "app/services/refund_cancellation.py",
+      "line": 48,
+      "function": "cancel_refund",
+      "kind": "membership_candidate",
+      "expression": "refund[\"status\"] not in {\"queued\", \"pending_manual_review\", \"refund_processing\"}"
+    },
+    {
+      "file": "app/services/refund_cancellation.py",
+      "line": 65,
+      "function": "cancel_refund",
+      "kind": "membership_candidate",
+      "expression": "review.get(\"related_id\") not in {None, refund_id}"
+    },
+    {
+      "file": "app/services/refund_service.py",
+      "line": 96,
+      "function": "_process_refund_message",
+      "kind": "membership_candidate",
+      "expression": "current_status in {\"cancelled\", \"canceled\", \"rejected\", \"failed\", \"refund_succeeded\", \"refund_unknown\", \"payment_submitting\"}"
+    },
+    {
+      "file": "app/services/review_continuation.py",
+      "line": 11,
+      "function": "requested_action",
+      "kind": "membership_candidate",
+      "expression": "review.get(\"review_type\") in {\"cancel_order\", \"address_change\"}"
+    },
+    {
+      "file": "app/services/review_continuation.py",
+      "line": 20,
+      "function": "require_unshipped_order",
+      "kind": "membership_candidate",
+      "expression": "order.get(\"order_status\") not in {\"待支付\", \"待付款\", \"待发货\", \"待出库\", \"已支付\"}"
+    },
+    {
+      "file": "app/services/review_continuation.py",
+      "line": 26,
+      "function": "require_unshipped_order",
+      "kind": "membership_candidate",
+      "expression": "order.get(\"after_sales_status\") not in {None, \"\", \"none\"}"
+    },
+    {
+      "file": "app/services/review_continuation.py",
+      "line": 58,
+      "function": "continue_approved_review",
+      "kind": "membership_candidate",
+      "expression": "order.get(\"payment_status\") not in {\"paid\", \"unpaid\"}"
+    },
+    {
+      "file": "app/services/review_continuation.py",
+      "line": 14,
+      "function": "requested_action",
+      "kind": "membership_candidate",
+      "expression": "route.get(\"intent\") in {\"cancel_order\", \"address_change\"}"
+    },
+    {
+      "file": "app/services/review_continuation.py",
+      "line": 24,
+      "function": "require_unshipped_order",
+      "kind": "membership_candidate",
+      "expression": "marker in shipping"
+    },
+    {
+      "file": "app/services/review_service.py",
+      "line": 77,
+      "function": "resolve_review",
+      "kind": "membership_candidate",
+      "expression": "decision not in {\"approve\", \"reject\"}"
+    },
+    {
+      "file": "app/services/review_service.py",
+      "line": 42,
+      "function": "append_review_supplement",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.fullmatch(r\"[A-Za-z0-9_-]{8,100}\", submission_id)"
+    },
+    {
+      "file": "app/services/review_service.py",
+      "line": 119,
+      "function": "resolve_review",
+      "kind": "membership_candidate",
+      "expression": "\"退款\" in order.get(\"order_status\", \"\")"
+    },
+    {
+      "file": "app/services/review_service.py",
+      "line": 119,
+      "function": "resolve_review",
+      "kind": "membership_candidate",
+      "expression": "\"退货审核中\" in order.get(\"order_status\", \"\")"
+    },
+    {
+      "file": "app/services/ticket_service.py",
+      "line": 121,
+      "function": "reassign_ticket",
+      "kind": "membership_candidate",
+      "expression": "target_user_id not in configured_operators()"
+    },
+    {
+      "file": "app/services/ticket_service.py",
+      "line": 19,
+      "function": "list_tickets_page",
+      "kind": "membership_candidate",
+      "expression": "status not in {\"all\", \"open\", \"resolved\"}"
+    },
+    {
+      "file": "app/services/ticket_service.py",
+      "line": 101,
+      "function": "resolve_ticket",
+      "kind": "membership_candidate",
+      "expression": "outcome not in {\"answered\", \"rejected\", \"withdrawn\"}"
+    },
+    {
+      "file": "app/services/ticket_service.py",
+      "line": 92,
+      "function": "claim_ticket",
+      "kind": "membership_candidate",
+      "expression": "ticket[\"status\"] not in PENDING_STATUSES"
+    },
+    {
+      "file": "app/storage/database.py",
+      "line": 535,
+      "function": "_sqlite_get_active_refund_request_by_order_id_from_db",
+      "kind": "membership_candidate",
+      "expression": "refund_request.get(\"status\") not in inactive_statuses"
+    },
+    {
+      "file": "app/storage/database.py",
+      "line": 802,
+      "function": "_sqlite_save_agent_metric_to_db",
+      "kind": "membership_candidate",
+      "expression": "event.get(\"event_type\") in {\"error\", \"tool_failed\"}"
+    },
+    {
+      "file": "app/storage/mysql_database.py",
+      "line": 178,
+      "function": "parse_mysql_dsn",
+      "kind": "membership_candidate",
+      "expression": "parsed.scheme not in {\"mysql\", \"mysql+pymysql\"}"
+    },
+    {
+      "file": "app/storage/mysql_database.py",
+      "line": 561,
+      "function": "get_active_refund_request_by_order_id_from_mysql",
+      "kind": "membership_candidate",
+      "expression": "refund_request.get(\"status\") not in inactive_statuses"
+    },
+    {
+      "file": "app/storage/mysql_database.py",
+      "line": 824,
+      "function": "save_agent_metric_to_mysql",
+      "kind": "membership_candidate",
+      "expression": "event.get(\"event_type\") in {\"error\", \"tool_failed\"}"
+    },
+    {
+      "file": "app/storage/mysql_database.py",
+      "line": 410,
+      "function": "upsert_order",
+      "kind": "text_or_regex_candidate",
+      "expression": "statement.split(\"ON DUPLICATE KEY UPDATE\", 1)"
+    },
+    {
+      "file": "app/storage/transactions.py",
+      "line": 120,
+      "function": "lock_record",
+      "kind": "membership_candidate",
+      "expression": "(table, key) not in {(\"refund_requests\", \"refund_id\"), (\"mq_messages\", \"message_id\"), (\"orders\", \"order_id\"), (\"manual_reviews\", \"review_id\"), (\"tickets\", \"ticket_id\")}"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 133,
+      "function": "_is_transient_dependency_error",
+      "kind": "text_or_regex_candidate",
+      "expression": "module_name.startswith(\"redis\")"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 133,
+      "function": "_is_transient_dependency_error",
+      "kind": "membership_candidate",
+      "expression": "error_name in {\n        \"ConnectionError\",\n        \"TimeoutError\",\n        \"BusyLoadingError\",\n    }"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 140,
+      "function": "_is_transient_dependency_error",
+      "kind": "text_or_regex_candidate",
+      "expression": "module_name.startswith(\"pymysql\")"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 140,
+      "function": "_is_transient_dependency_error",
+      "kind": "membership_candidate",
+      "expression": "error_name in {\n        \"OperationalError\",\n        \"InterfaceError\",\n    }"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 145,
+      "function": "_is_transient_dependency_error",
+      "kind": "membership_candidate",
+      "expression": "error_code in {1205, 1213, 2002, 2003, 2006, 2013}"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 149,
+      "function": "_is_transient_dependency_error",
+      "kind": "membership_candidate",
+      "expression": "marker in str(error).lower()"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 77,
+      "function": "sanitize_trace_value",
+      "kind": "membership_candidate",
+      "expression": "marker in normalized_key"
+    },
+    {
+      "file": "app/tools/executor.py",
+      "line": 410,
+      "function": "_execute_callback",
+      "kind": "membership_candidate",
+      "expression": "error_type in policy.retry_on"
+    },
+    {
+      "file": "app/tools/human_review.py",
+      "line": 145,
+      "function": "transfer_to_human",
+      "kind": "membership_candidate",
+      "expression": "getattr(error, \"sqlite_errorcode\", None) in {\n            sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY, sqlite3.SQLITE_CONSTRAINT_UNIQUE}"
+    },
+    {
+      "file": "app/tools/human_review.py",
+      "line": 76,
+      "function": "create_manual_review",
+      "kind": "membership_candidate",
+      "expression": "saved.get(\"related_id\") not in {None, related_id}"
+    },
+    {
+      "file": "app/tools/policy.py",
+      "line": 15,
+      "function": "configured_evidence_selection",
+      "kind": "membership_candidate",
+      "expression": "mode not in {\"\", \"complementary\"}"
+    },
+    {
+      "file": "app/tools/registry.py",
+      "line": 331,
+      "function": "validate_tool_arguments",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in TOOL_HANDLERS"
+    },
+    {
+      "file": "app/tools/registry.py",
+      "line": 346,
+      "function": "can_agent_use_tool",
+      "kind": "membership_candidate",
+      "expression": "tool_name in AGENT_TOOL_PERMISSIONS.get(agent_key, set())"
+    },
+    {
+      "file": "app/tools/registry.py",
+      "line": 336,
+      "function": "validate_tool_arguments",
+      "kind": "membership_candidate",
+      "expression": "arguments.get(name) in (None, \"\")"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 32,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(\n    r\"[\\u3400-\\u9fff]\"\n    r\"|[A-Za-z]+(?:['-][A-Za-z]+)*\"\n    r\"|\\d+(?:\\.\\d+)?\"\n    r\"|[^\\s]\"\n)"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 41,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(\n    r\"^(#{1,6})\\s+(.+?)\\s*$\"\n)"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 54,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(\n    r\"^(#{2,6})\\s+(.+?)\\s*$\",\n    re.MULTILINE,\n)"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 400,
+      "function": "choose_chunk_strategy",
+      "kind": "membership_candidate",
+      "expression": "name not in CHUNK_STRATEGIES"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 424,
+      "function": "_split_oversized",
+      "kind": "text_or_regex_candidate",
+      "expression": "HEADING_RE.match(\n        text.splitlines()[0].strip()\n    )"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 611,
+      "function": "chunk_document",
+      "kind": "text_or_regex_candidate",
+      "expression": "strategy.name.startswith(\"fixed_\")"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 104,
+      "function": "_section_blocks",
+      "kind": "text_or_regex_candidate",
+      "expression": "HEADING_RE.match(\n            line.rstrip(\"\\r\\n\")\n        )"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 143,
+      "function": "_section_blocks",
+      "kind": "text_or_regex_candidate",
+      "expression": "HEADING_RE.match(first)"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 278,
+      "function": "_fixed_chunk_section_title",
+      "kind": "text_or_regex_candidate",
+      "expression": "HEADING_RE.match(\n            line.rstrip(\"\\r\\n\")\n        )"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 73,
+      "function": "token_spans",
+      "kind": "text_or_regex_candidate",
+      "expression": "TOKEN_RE.finditer(text)"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 310,
+      "function": "_markdown_section_positions",
+      "kind": "text_or_regex_candidate",
+      "expression": "SECTION_HEADING_RE.finditer(text)"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 385,
+      "function": "_fixed_chunk_covered_sections",
+      "kind": "membership_candidate",
+      "expression": "title not in covered"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 445,
+      "function": "_split_oversized",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.split(\n            r\"\\n\\s*\\n\",\n            body_text,\n        )"
+    },
+    {
+      "file": "app/rag/ingestion/chunker.py",
+      "line": 456,
+      "function": "_split_oversized",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.split(\n                r\"(?<=[。！？.!?])\\s*\",\n                body_text,\n            )"
+    },
+    {
+      "file": "app/rag/ingestion/discovery.py",
+      "line": 51,
+      "function": "discover_files",
+      "kind": "membership_candidate",
+      "expression": "suffix not in SUPPORTED_SUFFIXES"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 14,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(r\"^[一二三四五六七八九十]+、\\S+\")"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 15,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(r\"^(\\d+(?:\\.\\d+)+\\s+[^：:。]+)(?:[：:].*)?$\")"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 72,
+      "function": "_clean_pdf_text",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(r\"(?<=\\d)\\s+(?=\\d)\", \"\", text)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 116,
+      "function": "_parse_numbered_heading",
+      "kind": "text_or_regex_candidate",
+      "expression": "NUMBERED_HEADING_RE.match(text)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 123,
+      "function": "_parse_numbered_heading",
+      "kind": "membership_candidate",
+      "expression": "\"：\" in heading"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 126,
+      "function": "_parse_numbered_heading",
+      "kind": "membership_candidate",
+      "expression": "\":\" in heading"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 71,
+      "function": "_clean_pdf_text",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(r\"\\s+\", \" \", text)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 106,
+      "function": "_is_top_heading",
+      "kind": "text_or_regex_candidate",
+      "expression": "TOP_HEADING_RE.match(text)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 137,
+      "function": "_is_minor_heading",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.endswith(suffix)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 172,
+      "function": "append_document",
+      "kind": "text_or_regex_candidate",
+      "expression": "section.split(\" / \")"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 124,
+      "function": "_parse_numbered_heading",
+      "kind": "text_or_regex_candidate",
+      "expression": "heading.split(\"：\", 1)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 127,
+      "function": "_parse_numbered_heading",
+      "kind": "text_or_regex_candidate",
+      "expression": "heading.split(\":\", 1)"
+    },
+    {
+      "file": "app/rag/ingestion/loader.py",
+      "line": 110,
+      "function": "_is_top_heading",
+      "kind": "text_or_regex_candidate",
+      "expression": "text.endswith(suffix)"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 13,
+      "function": "_parse_front_matter_value",
+      "kind": "membership_candidate",
+      "expression": "stripped.lower() in {\"true\", \"false\", \"null\"}"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 16,
+      "function": "_parse_front_matter_value",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.startswith((\"[\", \"{\", '\"'))"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 101,
+      "function": "classify_document",
+      "kind": "membership_candidate",
+      "expression": "\"客服SOP\" in source"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 64,
+      "function": "parse_markdown_front_matter",
+      "kind": "membership_candidate",
+      "expression": "\":\" not in stripped"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 67,
+      "function": "parse_markdown_front_matter",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.split(\":\", 1)"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 61,
+      "function": "parse_markdown_front_matter",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.startswith(\"#\")"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 80,
+      "function": "classify_document",
+      "kind": "membership_candidate",
+      "expression": "keyword in source"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 87,
+      "function": "classify_document",
+      "kind": "membership_candidate",
+      "expression": "keyword in source"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 94,
+      "function": "classify_document",
+      "kind": "membership_candidate",
+      "expression": "keyword in source"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 108,
+      "function": "classify_document",
+      "kind": "membership_candidate",
+      "expression": "keyword in source"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 131,
+      "function": "metadata_for_path",
+      "kind": "text_or_regex_candidate",
+      "expression": "normalized_source.startswith(normalized_prefix + \"/\")"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 20,
+      "function": "_parse_front_matter_value",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.startswith(\"[\")"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 20,
+      "function": "_parse_front_matter_value",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.endswith(\"]\")"
+    },
+    {
+      "file": "app/rag/ingestion/metadata.py",
+      "line": 23,
+      "function": "_parse_front_matter_value",
+      "kind": "text_or_regex_candidate",
+      "expression": "inner.split(\",\")"
+    },
+    {
+      "file": "app/agent/agents/after_sales.py",
+      "line": 234,
+      "function": "create_manual_review",
+      "kind": "membership_candidate",
+      "expression": "state.route.intent in {\"cancel_order\", \"address_change\"}"
+    },
+    {
+      "file": "app/agent/entry/durable_runtime.py",
+      "line": 78,
+      "function": "_view",
+      "kind": "membership_candidate",
+      "expression": "\"result\" in values"
+    },
+    {
+      "file": "app/agent/entry/durable_runtime.py",
+      "line": 126,
+      "function": "run",
+      "kind": "membership_candidate",
+      "expression": "event[\"type\"] in {\"done\", \"paused\"}"
+    },
+    {
+      "file": "app/agent/entry/durable_runtime.py",
+      "line": 99,
+      "function": "events",
+      "kind": "membership_candidate",
+      "expression": "\"result\" in snapshot.values"
+    },
+    {
+      "file": "app/agent/entry/workflow.py",
+      "line": 517,
+      "function": "build_agent_workflow",
+      "kind": "text_or_regex_candidate",
+      "expression": "graph.compile(checkpointer=checkpointer)"
+    },
+    {
+      "file": "app/agent/entry/workflow.py",
+      "line": 155,
+      "function": "work",
+      "kind": "membership_candidate",
+      "expression": "pending_kind in {\"cancel\", \"replace\"}"
+    },
+    {
+      "file": "app/agent/entry/workflow.py",
+      "line": 226,
+      "function": "work",
+      "kind": "membership_candidate",
+      "expression": "\"new_address\" not in required_slots"
+    },
+    {
+      "file": "app/agent/policies/evidence_guardrail.py",
+      "line": 69,
+      "function": "detect_policy_profile",
+      "kind": "membership_candidate",
+      "expression": "route.action_type in {\"query\", \"execute\", \"handoff\"}"
+    },
+    {
+      "file": "app/agent/policies/evidence_guardrail.py",
+      "line": 63,
+      "function": "contains_any",
+      "kind": "membership_candidate",
+      "expression": "normalize_text(keyword) in normalized"
+    },
+    {
+      "file": "app/agent/policies/evidence_guardrail.py",
+      "line": 146,
+      "function": "validate_policy_evidence",
+      "kind": "membership_candidate",
+      "expression": "source in profile[\"expected_sources\"]"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 81,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "\"订单\" not in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 82,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "\"我的\" not in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 83,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "\"我买\" not in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 87,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 92,
+      "function": "is_risky_operation",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 96,
+      "function": "is_risky_operation",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 99,
+      "function": "is_risky_operation",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/fallback_policy.py",
+      "line": 80,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/guardrails.py",
+      "line": 23,
+      "function": "check_user_input",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/guardrails.py",
+      "line": 30,
+      "function": "contains_risky_action",
+      "kind": "membership_candidate",
+      "expression": "keyword in message"
+    },
+    {
+      "file": "app/agent/policies/ticket_policy.py",
+      "line": 28,
+      "function": "extract_shipping_time",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r\"\\d{4}-\\d{2}-\\d{2}(?: \\d{2}:\\d{2})?\", shipping_status)"
+    },
+    {
+      "file": "app/agent/policies/ticket_policy.py",
+      "line": 135,
+      "function": "evaluate_ticket_creation",
+      "kind": "membership_candidate",
+      "expression": "\"待发货\" not in order_status"
+    },
+    {
+      "file": "app/agent/policies/ticket_policy.py",
+      "line": 106,
+      "function": "evaluate_ticket_creation",
+      "kind": "membership_candidate",
+      "expression": "\"已签收\" in shipping_status"
+    },
+    {
+      "file": "app/agent/policies/ticket_policy.py",
+      "line": 113,
+      "function": "evaluate_ticket_creation",
+      "kind": "membership_candidate",
+      "expression": "\"未超过48\" in notes"
+    },
+    {
+      "file": "app/agent/policies/ticket_policy.py",
+      "line": 113,
+      "function": "evaluate_ticket_creation",
+      "kind": "membership_candidate",
+      "expression": "\"未超过 48\" in notes"
+    },
+    {
+      "file": "app/agent/response/fallback.py",
+      "line": 234,
+      "function": "build_fallback_answer",
+      "kind": "membership_candidate",
+      "expression": "risk.get(\"risk_level\") in {\n                \"medium\",\n                \"high\",\n            }"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 7,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(r\"\\bMQ\\b|消息队列|幂等|重试策略|重复消费|数据库|SQL\", re.IGNORECASE)"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 67,
+      "function": "validate_selection",
+      "kind": "text_or_regex_candidate",
+      "expression": "text.startswith(\"```\")"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 68,
+      "function": "validate_selection",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.fullmatch(r\"```(?:json)?\\s*([\\s\\S]*?)\\s*```\", text)"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 12,
+      "function": "needs_grounded_reply",
+      "kind": "membership_candidate",
+      "expression": "item.tool_name in _BUSINESS_TOOLS"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 25,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.finditer(r\"\\S[\\s\\S]*?(?=\\n[ \\t]*\\n|\\Z)\", text)"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 33,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "paragraph.startswith(\"#\")"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 84,
+      "function": "validate_selection",
+      "kind": "membership_candidate",
+      "expression": "item in allowed"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 120,
+      "function": "render_grounded_reply",
+      "kind": "membership_candidate",
+      "expression": "item[\"text\"] not in texts"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 34,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(r\"^#+\\s*\", \"\", paragraph)"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 36,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "paragraph.endswith((\"：\", \":\"))"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 41,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "_INTERNAL.search(paragraph)"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 47,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r\"[。！？；.!?;]$\", paragraph)"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 38,
+      "function": "policy_excerpts",
+      "kind": "text_or_regex_candidate",
+      "expression": "following[0].lstrip().startswith(\"#\")"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 82,
+      "function": "validate_selection",
+      "kind": "membership_candidate",
+      "expression": "item not in allowed"
+    },
+    {
+      "file": "app/agent/response/grounded.py",
+      "line": 123,
+      "function": "render_grounded_reply",
+      "kind": "text_or_regex_candidate",
+      "expression": "citation.endswith(heading)"
+    },
+    {
+      "file": "app/agent/routing/conversation_context.py",
+      "line": 33,
+      "function": "is_short_followup",
+      "kind": "membership_candidate",
+      "expression": "keyword in cleaned"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 202,
+      "function": "requires_policy",
+      "kind": "membership_candidate",
+      "expression": "semantic.topic\n        in POLICY_TOPICS"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 261,
+      "function": "requires_ticket",
+      "kind": "membership_candidate",
+      "expression": "semantic.intent\n        in {\n            \"address_change\",\n            \"cancel_order\",\n            \"shipping_exception\",\n            \"warranty_repair\",\n            \"complaint\",\n            \"payment_invoice\",\n        }"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 152,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "semantic.topic\n            in {\n                \"shipping_status\",\n                \"shipping_delay\",\n                \"shipping_exception\",\n                \"lost_package\",\n            }"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 175,
+      "function": "requires_order_id",
+      "kind": "membership_candidate",
+      "expression": "semantic.topic\n            in {\n                \"payment_status\",\n                \"payment_failed\",\n                \"duplicate_charge\",\n                \"invoice_apply\",\n                \"invoice_change\",\n            }"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 214,
+      "function": "requires_policy",
+      "kind": "membership_candidate",
+      "expression": "semantic.topic\n        in REFUND_EXECUTION_TOPICS"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 81,
+      "function": "requests_review_bypass",
+      "kind": "membership_candidate",
+      "expression": "pattern in text"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 403,
+      "function": "build_route_decision",
+      "kind": "membership_candidate",
+      "expression": "semantic.intent in {\"cancel_order\", \"address_change\"}"
+    },
+    {
+      "file": "app/agent/routing/decision.py",
+      "line": 416,
+      "function": "build_route_decision",
+      "kind": "membership_candidate",
+      "expression": "semantic.intent in {\"complaint\", \"cancel_order\", \"address_change\"}"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 111,
+      "function": "_extract_json_object",
+      "kind": "text_or_regex_candidate",
+      "expression": "cleaned.startswith(\"```\")"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 276,
+      "function": "_validate_semantic_result",
+      "kind": "membership_candidate",
+      "expression": "intent not in VALID_INTENTS"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 282,
+      "function": "_validate_semantic_result",
+      "kind": "membership_candidate",
+      "expression": "action_type\n        not in VALID_ACTION_TYPES"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 290,
+      "function": "_validate_semantic_result",
+      "kind": "membership_candidate",
+      "expression": "topic not in VALID_TOPICS"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 112,
+      "function": "_extract_json_object",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(\n            r\"^```(?:json)?\\s*\",\n            \"\",\n            cleaned,\n            flags=re.IGNORECASE,\n        )"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 119,
+      "function": "_extract_json_object",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(\n            r\"\\s*```$\",\n            \"\",\n            cleaned,\n        )"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 246,
+      "function": "_validate_semantic_result",
+      "kind": "membership_candidate",
+      "expression": "related_topic not in VALID_TOPICS"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 254,
+      "function": "_validate_semantic_result",
+      "kind": "membership_candidate",
+      "expression": "related_topic not in related_topics"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 328,
+      "function": "_validate_with_auxiliary_policy",
+      "kind": "membership_candidate",
+      "expression": "v.strip() in VALID_TOPICS"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 327,
+      "function": "_validate_with_auxiliary_policy",
+      "kind": "membership_candidate",
+      "expression": "v.strip() not in VALID_TOPICS"
+    },
+    {
+      "file": "app/agent/routing/llm_router.py",
+      "line": 369,
+      "function": "infer_semantic_route",
+      "kind": "membership_candidate",
+      "expression": "original in allowed"
+    },
+    {
+      "file": "app/agent/routing/parsing.py",
+      "line": 5,
+      "function": "extract_order_id",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r\"(?<!\\d)\\d{4,}(?!\\d)\", user_message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 11,
+      "function": "cancels_pending_request",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(r\"[\\s，,。！!；;]\", \"\", message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 12,
+      "function": "cancels_pending_request",
+      "kind": "membership_candidate",
+      "expression": "cleaned in {\"算了\", \"算了取消申请\", \"取消申请\", \"取消刚才的申请\", \"取消刚才的操作\",\n                       \"不申请了\", \"先不退了\", \"不用处理了\", \"不改了\", \"先不改了\"}"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 23,
+      "function": "pending_message_kind",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r\"订单(?:号)?\\s*(?:是|为|[:：])?\\s*(\\d{4,})\", message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 29,
+      "function": "pending_message_kind",
+      "kind": "membership_candidate",
+      "expression": "\"new_address\" in missing"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 57,
+      "function": "is_address_change_request",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(r\"(?:不用|不再|先别|别|不)(?:修改|更改|改)(?:收货)?地址\", \"\", user_message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 7,
+      "function": "is_address_question",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r\"[?？]|是否|能否|能不能|可不可以|怎么|如何|为什么|什么|吗[。！!\\s]*$\", message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 27,
+      "function": "pending_message_kind",
+      "kind": "membership_candidate",
+      "expression": "\"order_id\" in missing"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 27,
+      "function": "pending_message_kind",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.fullmatch(r\"\\s*(?:订单(?:号)?\\s*(?:是|为|:|：)?\\s*)?\\d{4,}[。\\s]*\", message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 92,
+      "function": "extract_new_address",
+      "kind": "membership_candidate",
+      "expression": "prefix in user_message"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 106,
+      "function": "extract_new_address",
+      "kind": "membership_candidate",
+      "expression": "\"new_address\" in missing_slots"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 255,
+      "function": "build_clarification_question",
+      "kind": "membership_candidate",
+      "expression": "\"order_id\" in missing_slots"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 256,
+      "function": "build_clarification_question",
+      "kind": "membership_candidate",
+      "expression": "\"new_address\" in missing_slots"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 296,
+      "function": "apply_slot_requirements",
+      "kind": "membership_candidate",
+      "expression": "\"order_id\" not in final_required_slots"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 59,
+      "function": "is_address_change_request",
+      "kind": "membership_candidate",
+      "expression": "keyword in user_message"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 93,
+      "function": "extract_new_address",
+      "kind": "text_or_regex_candidate",
+      "expression": "user_message.split(prefix, 1)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 151,
+      "function": "collect_slots",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r\"订单(?:号)?\\s*(?:是|为|[:：])?\\s*\\d{4,}\", user_message)"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 33,
+      "function": "pending_message_kind",
+      "kind": "membership_candidate",
+      "expression": "word in message"
+    },
+    {
+      "file": "app/agent/routing/pending_task.py",
+      "line": 290,
+      "function": "apply_slot_requirements",
+      "kind": "membership_candidate",
+      "expression": "slot not in {\"order_id\", \"new_address\"}"
+    },
+    {
+      "file": "app/agent/routing/refund_withdrawal.py",
+      "line": 11,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(\n    r\"(?:撤销|撤回|取消)\\s*(?:(?:订单\\s*\\d+\\s*的?|这(?:一)?笔|该|刚才的|之前的|我的)\\s*)?\"\n    r\"(?:退款|退货退款)(?:申请)?|(?:退款|退货退款)申请\\s*(?:撤销|撤回|取消)\"\n)"
+    },
+    {
+      "file": "app/agent/routing/refund_withdrawal.py",
+      "line": 19,
+      "function": "mentions_refund_withdrawal",
+      "kind": "text_or_regex_candidate",
+      "expression": "_WITHDRAWAL.search(message)"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 42,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"create_ticket\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 52,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"risk_check\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 59,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"refund_apply\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 35,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"order_lookup\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 38,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"policy_search\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 38,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"order_lookup\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 43,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"order_lookup\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 49,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"ticket_decision\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 53,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"order_lookup\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 60,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"order_lookup\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 66,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"risk_check\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 72,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"create_manual_review\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 72,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"risk_check\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 87,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"create_ticket\" in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 46,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"policy_search\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 63,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "\"policy_search\" not in tool_names"
+    },
+    {
+      "file": "app/agent/tools/tool_validation.py",
+      "line": 81,
+      "function": "validate_tool_chain",
+      "kind": "membership_candidate",
+      "expression": "name in {\"policy_search\", \"ticket_decision\", \"create_ticket\"}"
+    },
+    {
+      "file": "scripts/dev/durable_graph_demo.py",
+      "line": 84,
+      "function": "demo_route",
+      "kind": "membership_candidate",
+      "expression": "\"申请退款10009\" in query"
+    },
+    {
+      "file": "scripts/dev/durable_graph_demo.py",
+      "line": 89,
+      "function": "demo_route",
+      "kind": "membership_candidate",
+      "expression": "\"查询订单10009\" in query"
+    },
+    {
+      "file": "scripts/dev/durable_graph_demo.py",
+      "line": 37,
+      "function": "isolated_env",
+      "kind": "membership_candidate",
+      "expression": "key.lower() in names"
+    },
+    {
+      "file": "scripts/dev/local_test_mysql.py",
+      "line": 46,
+      "function": "configure_env",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.strip().startswith(\"TEST_MYSQL_DSN=\")"
+    },
+    {
+      "file": "scripts/dev/local_test_mysql.py",
+      "line": 47,
+      "function": "configure_env",
+      "kind": "membership_candidate",
+      "expression": "line.split(\"=\", 1)[1].strip().strip('\\\"\\'') not in (\"\", dsn)"
+    },
+    {
+      "file": "scripts/dev/local_test_mysql.py",
+      "line": 49,
+      "function": "configure_env",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.strip().startswith(\"TEST_MYSQL_DSN=\")"
+    },
+    {
+      "file": "scripts/dev/local_test_mysql.py",
+      "line": 47,
+      "function": "configure_env",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.split(\"=\", 1)"
+    },
+    {
+      "file": "scripts/dev/smoke_durable_graph.py",
+      "line": 51,
+      "function": "request",
+      "kind": "text_or_regex_candidate",
+      "expression": "line.startswith(\"data: \")"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 274,
+      "function": "active_order_refunds",
+      "kind": "membership_candidate",
+      "expression": "str(refund.get(\"status\", \"\")).lower() not in inactive_statuses"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 294,
+      "function": "dangerous_tool_misuse",
+      "kind": "membership_candidate",
+      "expression": "tool_name in forbidden_set"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 226,
+      "function": "precision_recall_f1_by_label",
+      "kind": "membership_candidate",
+      "expression": "label in expected"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 226,
+      "function": "precision_recall_f1_by_label",
+      "kind": "membership_candidate",
+      "expression": "label in actual"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 228,
+      "function": "precision_recall_f1_by_label",
+      "kind": "membership_candidate",
+      "expression": "label not in expected"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 228,
+      "function": "precision_recall_f1_by_label",
+      "kind": "membership_candidate",
+      "expression": "label in actual"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 230,
+      "function": "precision_recall_f1_by_label",
+      "kind": "membership_candidate",
+      "expression": "label in expected"
+    },
+    {
+      "file": "scripts/eval/common.py",
+      "line": 230,
+      "function": "precision_recall_f1_by_label",
+      "kind": "membership_candidate",
+      "expression": "label not in actual"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 208,
+      "function": "numeric_rank",
+      "kind": "membership_candidate",
+      "expression": "value in NOT_AVAILABLE"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 321,
+      "function": "build_rank_comparison",
+      "kind": "membership_candidate",
+      "expression": "movement in {\"promoted\", \"recovered_to_top5\"}"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 324,
+      "function": "build_rank_comparison",
+      "kind": "membership_candidate",
+      "expression": "movement in {\"demoted\", \"dropped_from_top5\"}"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 327,
+      "function": "build_rank_comparison",
+      "kind": "membership_candidate",
+      "expression": "hybrid_to_c0 in {\"demoted\", \"dropped_from_top5\"}"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 70,
+      "function": "without_fields",
+      "kind": "membership_candidate",
+      "expression": "key not in fields"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 249,
+      "function": "optional_scenario_fields",
+      "kind": "membership_candidate",
+      "expression": "result.get(field) not in NOT_AVAILABLE"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 330,
+      "function": "build_rank_comparison",
+      "kind": "membership_candidate",
+      "expression": "movement in {\"promoted\", \"recovered_to_top5\"}"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 411,
+      "function": "query_contract_audit",
+      "kind": "membership_candidate",
+      "expression": "\"None\" in rerank_query"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 411,
+      "function": "query_contract_audit",
+      "kind": "membership_candidate",
+      "expression": "\"null\" in rerank_query.lower()"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 416,
+      "function": "query_contract_audit",
+      "kind": "membership_candidate",
+      "expression": "\"需要人工处理\" in rerank_query"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 453,
+      "function": "hypothesis_assessment",
+      "kind": "membership_candidate",
+      "expression": "result.get(field) not in NOT_AVAILABLE"
+    },
+    {
+      "file": "scripts/eval/compare_rag_semantic_queries.py",
+      "line": 419,
+      "function": "query_contract_audit",
+      "kind": "membership_candidate",
+      "expression": "key in rerank_query"
+    },
+    {
+      "file": "scripts/eval/eval_answer.py",
+      "line": 37,
+      "function": "contains_all",
+      "kind": "membership_candidate",
+      "expression": "keyword not in reply"
+    },
+    {
+      "file": "scripts/eval/eval_answer.py",
+      "line": 42,
+      "function": "contains_none",
+      "kind": "membership_candidate",
+      "expression": "keyword in reply"
+    },
+    {
+      "file": "scripts/eval/eval_answer.py",
+      "line": 52,
+      "function": "check_groundedness",
+      "kind": "membership_candidate",
+      "expression": "citation in reply"
+    },
+    {
+      "file": "scripts/eval/eval_answer.py",
+      "line": 59,
+      "function": "check_relevance",
+      "kind": "membership_candidate",
+      "expression": "keyword in reply"
+    },
+    {
+      "file": "scripts/eval/eval_answer.py",
+      "line": 61,
+      "function": "check_relevance",
+      "kind": "membership_candidate",
+      "expression": "token in reply"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 188,
+      "function": "check_rag",
+      "kind": "membership_candidate",
+      "expression": "\"policy_search\" not in case.get(\"expected_tools\", [])"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 204,
+      "function": "check_risk",
+      "kind": "membership_candidate",
+      "expression": "\"risk_check\" not in case.get(\"expected_tools\", [])"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 224,
+      "function": "check_refund",
+      "kind": "membership_candidate",
+      "expression": "\"refund_apply\" in case.get(\"expected_tools\", [])"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 374,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "\"refund_apply\" not in case.get(\"expected_tools\", [])"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 214,
+      "function": "check_risk",
+      "kind": "membership_candidate",
+      "expression": "\"risk_level\" not in assessment"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 310,
+      "function": "check_reply",
+      "kind": "membership_candidate",
+      "expression": "phrase not in reply"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 313,
+      "function": "check_reply",
+      "kind": "membership_candidate",
+      "expression": "phrase in reply"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 338,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "refund_id not in active_ids"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 82,
+      "function": "expected_agent_keys",
+      "kind": "membership_candidate",
+      "expression": "key not in keys"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 109,
+      "function": "check_agents",
+      "kind": "membership_candidate",
+      "expression": "key not in actual"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 119,
+      "function": "require_before",
+      "kind": "membership_candidate",
+      "expression": "first in actual_tools"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 119,
+      "function": "require_before",
+      "kind": "membership_candidate",
+      "expression": "second in actual_tools"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 169,
+      "function": "check_tool_arguments",
+      "kind": "membership_candidate",
+      "expression": "\"order_id\" in arguments"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 346,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "new_refund_rows not in {0, 1}"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 179,
+      "function": "check_tool_arguments",
+      "kind": "membership_candidate",
+      "expression": "expected_order_id not in user_request"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 181,
+      "function": "check_tool_arguments",
+      "kind": "membership_candidate",
+      "expression": "\"risk_assessment\" not in arguments"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 356,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "mq_message_id in mq_ids"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 362,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "\"database\" in error"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 362,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "\"refund rows\" in error"
+    },
+    {
+      "file": "scripts/eval/eval_e2e.py",
+      "line": 362,
+      "function": "check_database_and_mq",
+      "kind": "membership_candidate",
+      "expression": "\"duplicate active\" in error"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 158,
+      "function": "validate_v2_case",
+      "kind": "membership_candidate",
+      "expression": "case.get(\"split\") not in {\"dev\", \"holdout\"}"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 164,
+      "function": "validate_v2_case",
+      "kind": "membership_candidate",
+      "expression": "case.get(\"scenario_type\") not in VALID_SCENARIO_TYPES"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 170,
+      "function": "validate_v2_case",
+      "kind": "membership_candidate",
+      "expression": "case.get(\"difficulty\") not in VALID_DIFFICULTIES"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 176,
+      "function": "validate_v2_case",
+      "kind": "membership_candidate",
+      "expression": "case.get(\"context_mode\") not in VALID_CONTEXT_MODES"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 434,
+      "function": "source_exists",
+      "kind": "membership_candidate",
+      "expression": "key in kb_index[\"sources\"]"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 268,
+      "function": "validate_v2_case",
+      "kind": "membership_candidate",
+      "expression": "evidence_type not in VALID_EVIDENCE_TYPES"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 291,
+      "function": "validate_cases",
+      "kind": "membership_candidate",
+      "expression": "case_id in seen_case_ids"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 865,
+      "function": "first_expected_rank",
+      "kind": "membership_candidate",
+      "expression": "item.get(\"source\")\n            in sources"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 1345,
+      "function": "evidence_requirement_matches",
+      "kind": "membership_candidate",
+      "expression": "result.get(\n            \"source\"\n        )\n        not in acceptable_sources"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 340,
+      "function": "extract_markdown_sections",
+      "kind": "text_or_regex_candidate",
+      "expression": "stripped.startswith(\"#\")"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 401,
+      "function": "build_knowledge_reference_index",
+      "kind": "membership_candidate",
+      "expression": "key not in sources"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 941,
+      "function": "keyword_evidence_report",
+      "kind": "membership_candidate",
+      "expression": "_normalized(\n            term\n        )\n        in combined"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 950,
+      "function": "keyword_evidence_report",
+      "kind": "membership_candidate",
+      "expression": "term not in matched"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 1145,
+      "function": "_result_sections",
+      "kind": "membership_candidate",
+      "expression": "normalized\n            not in normalized_seen"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 413,
+      "function": "build_knowledge_reference_index",
+      "kind": "membership_candidate",
+      "expression": "\"/\" not in source"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 1379,
+      "function": "evidence_requirement_matches",
+      "kind": "membership_candidate",
+      "expression": "_normalized(\n                term\n            )\n            in text"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 1399,
+      "function": "evidence_requirement_matches",
+      "kind": "membership_candidate",
+      "expression": "_normalized(\n                term\n            )\n            in text"
+    },
+    {
+      "file": "scripts/eval/eval_rag.py",
+      "line": 1419,
+      "function": "evidence_requirement_matches",
+      "kind": "membership_candidate",
+      "expression": "_normalized(\n                term\n            )\n            in text"
+    },
+    {
+      "file": "scripts/eval/eval_rag_chunk_strategy_ablation.py",
+      "line": 185,
+      "function": "strategy_definition",
+      "kind": "membership_candidate",
+      "expression": "name in {\"markdown\", \"type_aware\"}"
+    },
+    {
+      "file": "scripts/eval/eval_rag_chunk_strategy_ablation.py",
+      "line": 153,
+      "function": "retrieve_candidates",
+      "kind": "text_or_regex_candidate",
+      "expression": "index.search(query, candidate_k=candidate_k)"
+    },
+    {
+      "file": "scripts/eval/eval_rag_chunk_strategy_ablation.py",
+      "line": 671,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "report[\"kb_version\"] in seen_kb_versions"
+    },
+    {
+      "file": "scripts/eval/eval_rag_chunk_strategy_ablation.py",
+      "line": 380,
+      "function": "build_summary",
+      "kind": "membership_candidate",
+      "expression": "result.get(\"candidate_expected_rank\") not in {None, \"N/A\"}"
+    },
+    {
+      "file": "scripts/eval/eval_rag_chunk_strategy_ablation.py",
+      "line": 523,
+      "function": "build_summary",
+      "kind": "membership_candidate",
+      "expression": "strategy in evaluable_strategies"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 133,
+      "function": "build_split_union_candidates",
+      "kind": "text_or_regex_candidate",
+      "expression": "index.vector_store.search(\n        query_vector=query_vector,\n        top_k=index.vector_store.size(),\n    )"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 236,
+      "function": "build_split_union_candidates",
+      "kind": "membership_candidate",
+      "expression": "chunk_id in vector_ranks"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 238,
+      "function": "build_split_union_candidates",
+      "kind": "membership_candidate",
+      "expression": "chunk_id in lexical_ranks"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 347,
+      "function": "build_shared_semantic_rankings",
+      "kind": "membership_candidate",
+      "expression": "chunk_id not in seen_chunk_ids"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 481,
+      "function": "run_experiment",
+      "kind": "text_or_regex_candidate",
+      "expression": "index.search(query, candidate_k=CANDIDATE_K)"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 503,
+      "function": "run_experiment",
+      "kind": "membership_candidate",
+      "expression": "mode in {SPLIT_SEMANTIC_MODE, SPLIT_FUSION_MODE}"
+    },
+    {
+      "file": "scripts/eval/eval_rag_split_retrieval_ablation.py",
+      "line": 506,
+      "function": "run_experiment",
+      "kind": "membership_candidate",
+      "expression": "mode in {\n                EXPANDED_SPLIT_SEMANTIC_MODE,\n                EXPANDED_SPLIT_FUSION_MODE,\n            }"
+    },
+    {
+      "file": "scripts/eval/eval_routing_v2.py",
+      "line": 181,
+      "function": "run_single_case",
+      "kind": "membership_candidate",
+      "expression": "\"need_clarification\"\n        in expected_route"
+    },
+    {
+      "file": "scripts/eval/eval_routing_v2.py",
+      "line": 311,
+      "function": "build_report",
+      "kind": "membership_candidate",
+      "expression": "\"need_clarification\"\n            in result[\n                \"expected\"\n            ][\"route\"]"
+    },
+    {
+      "file": "scripts/eval/eval_tools.py",
+      "line": 54,
+      "function": "check_tool_selection",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in actual_tools"
+    },
+    {
+      "file": "scripts/eval/eval_tools.py",
+      "line": 84,
+      "function": "check_arguments",
+      "kind": "text_or_regex_candidate",
+      "expression": "key.endswith(\"_contains\")"
+    },
+    {
+      "file": "scripts/eval/eval_tools.py",
+      "line": 114,
+      "function": "execution_success",
+      "kind": "membership_candidate",
+      "expression": "item.get(\"tool_name\") in expected_tools"
+    },
+    {
+      "file": "scripts/eval/eval_tools.py",
+      "line": 64,
+      "function": "check_argument_rule",
+      "kind": "membership_candidate",
+      "expression": "item in actual_text"
+    },
+    {
+      "file": "scripts/eval/eval_tools.py",
+      "line": 163,
+      "function": "run_agent_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name in set(case.get(\"forbidden_tools\", []))"
+    },
+    {
+      "file": "scripts/eval/generate_report.py",
+      "line": 89,
+      "function": "risk_summary",
+      "kind": "membership_candidate",
+      "expression": "\"high\" in actual_risk_levels"
+    },
+    {
+      "file": "scripts/eval/live_reply_mode.py",
+      "line": 6,
+      "function": "install",
+      "kind": "membership_candidate",
+      "expression": "evaluator.__name__ not in {\"scripts.eval.eval_answer\", \"scripts.eval.eval_e2e\"}"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 15,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(r'不会|不能|不可以|不得|不代表|不意味着|不保证|不承诺|无法保证|无法承诺|尚未|并未|并非|不是')"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 16,
+      "function": "<module>",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.compile(r'[。！？!?；;，,\\n]')"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 24,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.finditer(re.escape(phrase), reply)"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 25,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "BOUNDARY.split(reply[:found.start()])"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 26,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "NEGATION.finditer(prefix)"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 54,
+      "function": "rescore",
+      "kind": "text_or_regex_candidate",
+      "expression": "row['reason'].split('; ')"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 33,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r'[不未非无否难\"“”‘’\\'：:]', gap)"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 34,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r'[不未非无否难]', prefix[:marker.start()])"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 35,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.search(r'[\"“”‘’\\']|如果|假设|假如|若', prefix)"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 36,
+      "function": "forbidden_occurrences",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.match(r'[^。！!；;\\n]*[？?]', reply[found.end():])"
+    },
+    {
+      "file": "scripts/eval/negation_aware_answer.py",
+      "line": 54,
+      "function": "rescore",
+      "kind": "text_or_regex_candidate",
+      "expression": "r.startswith('forbidden_keywords_present=')"
+    },
+    {
+      "file": "scripts/eval/rag_dev_b01_replay.py",
+      "line": 144,
+      "function": "diagnose",
+      "kind": "text_or_regex_candidate",
+      "expression": "row['case_id'].endswith(('002','004','005'))"
+    },
+    {
+      "file": "scripts/eval/rag_dev_b01_replay.py",
+      "line": 133,
+      "function": "diagnose",
+      "kind": "membership_candidate",
+      "expression": "i in masks[j]"
+    },
+    {
+      "file": "scripts/eval/rag_semantic_context_ab.py",
+      "line": 86,
+      "function": "main",
+      "kind": "text_or_regex_candidate",
+      "expression": "index.search(query, candidate_k=20)"
+    },
+    {
+      "file": "scripts/eval/rag_semantic_context_ab.py",
+      "line": 107,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "x not in a_ids"
+    },
+    {
+      "file": "scripts/eval/rag_semantic_context_ab.py",
+      "line": 108,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "x not in b_ids"
+    },
+    {
+      "file": "scripts/eval/run_five_layer_eval.py",
+      "line": 81,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "'__pycache__' not in path.parts"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 93,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "\"routing_v2\" in args.suites"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 43,
+      "function": "classify_fallback",
+      "kind": "membership_candidate",
+      "expression": "s in reason"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 45,
+      "function": "classify_fallback",
+      "kind": "membership_candidate",
+      "expression": "s in reason"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 62,
+      "function": "visit",
+      "kind": "text_or_regex_candidate",
+      "expression": "routing_reason.startswith(\"LLM semantic routing failed:\")"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 59,
+      "function": "visit",
+      "kind": "membership_candidate",
+      "expression": "item not in fallbacks"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 64,
+      "function": "visit",
+      "kind": "membership_candidate",
+      "expression": "item not in fallbacks"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 95,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "s not in {\"answer\", \"e2e\"}"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 124,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "\"__pycache__\" not in path.parts"
+    },
+    {
+      "file": "scripts/eval/run_isolated_baseline.py",
+      "line": 207,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "k in report"
+    },
+    {
+      "file": "scripts/eval/summarize_five_layer_eval.py",
+      "line": 80,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "'deterministic_metrics' in report"
+    },
+    {
+      "file": "scripts/eval/summarize_five_layer_eval.py",
+      "line": 79,
+      "function": "main",
+      "kind": "text_or_regex_candidate",
+      "expression": "k.endswith(('accuracy', '_rate'))"
+    },
+    {
+      "file": "scripts/eval/summarize_five_layer_eval.py",
+      "line": 61,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "term in c.get('error_type', '').lower()"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 59,
+      "function": "normalized_query",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.sub(r\"[\\W_]+\", \"\", query.lower())"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 94,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "mode not in VALID_MODES"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 97,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "\"expected_tools\" in case"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 98,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "\"expected_tools_contains\" in case"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 166,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "\"policy_search\" in expected_tools"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 71,
+      "function": "add_duplicate_errors",
+      "kind": "membership_candidate",
+      "expression": "raw_value in (None, \"\")"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 126,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in contract"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 129,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in expected_tools"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 172,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "\"query\" in policy_fields"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 184,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "agent_key not in AGENT_TOOL_PERMISSIONS"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 186,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in contract"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 195,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name in contract"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 221,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "\"dangerous_negative\" in categories"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 230,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "str(order_id) not in order_ids"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 230,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "\"not_found\" not in categories"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 175,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "field not in policy_fields"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 188,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name in AGENT_TOOL_PERMISSIONS.get(agent_key, set())"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 245,
+      "function": "validate_permission_matrix",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in allowed_tools"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 324,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "\"duplicate id\" in error"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 325,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "\"duplicate query\" in error"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 158,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "tool_name not in expected_arguments"
+    },
+    {
+      "file": "scripts/eval/validate_tool_eval_dataset.py",
+      "line": 206,
+      "function": "validate_case",
+      "kind": "membership_candidate",
+      "expression": "arguments.get(name) in (None, \"\")"
+    },
+    {
+      "file": "scripts/eval/verify_grounded_rag_replies.py",
+      "line": 24,
+      "function": "quoted_chunks",
+      "kind": "membership_candidate",
+      "expression": "chunk[\"chunk_id\"] in grouped"
+    },
+    {
+      "file": "scripts/eval/verify_grounded_rag_replies.py",
+      "line": 63,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "c[\"text\"].strip() in messages[-1][\"content\"]"
+    },
+    {
+      "file": "scripts/eval/verify_policy_evidence_bridge.py",
+      "line": 45,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "c['text'].strip() in model_evidence"
+    },
+    {
+      "file": "scripts/eval/verify_semantic_context_policy.py",
+      "line": 44,
+      "function": "main",
+      "kind": "membership_candidate",
+      "expression": "c[\"text\"].strip() in prompt"
+    },
+    {
+      "file": "scripts/maintenance/check_release.py",
+      "line": 21,
+      "function": "source_files",
+      "kind": "membership_candidate",
+      "expression": "\"__pycache__\" not in path.parts"
+    },
+    {
+      "file": "scripts/maintenance/database_backup.py",
+      "line": 112,
+      "function": "mysql_snapshot",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.fullmatch(r\"[A-Za-z][A-Za-z0-9_]{0,63}\", options[\"database\"])"
+    },
+    {
+      "file": "scripts/maintenance/database_backup.py",
+      "line": 138,
+      "function": "mysql_restore",
+      "kind": "text_or_regex_candidate",
+      "expression": "re.fullmatch(r\"[A-Za-z][A-Za-z0-9_]{0,63}\", new_database)"
+    },
+    {
+      "file": "scripts/reliability/test_high_risk_review.py",
+      "line": 60,
+      "function": "run_case",
+      "kind": "membership_candidate",
+      "expression": "risk.get(\"risk_level\") not in case[\"expected_risk_levels\"]"
+    },
+    {
+      "file": "scripts/reliability/test_high_risk_review.py",
+      "line": 67,
+      "function": "run_case",
+      "kind": "membership_candidate",
+      "expression": "flag not in risk.get(\"risk_flags\", [])"
+    },
+    {
+      "file": "scripts/reliability/test_service_degradation.py",
+      "line": 93,
+      "function": "run_case",
+      "kind": "membership_candidate",
+      "expression": "tool in tools"
+    },
+    {
+      "file": "scripts/reliability/test_service_degradation.py",
+      "line": 96,
+      "function": "run_case",
+      "kind": "membership_candidate",
+      "expression": "phrase in reply"
+    },
+    {
+      "file": "scripts/reliability/test_tool_failure.py",
+      "line": 94,
+      "function": "run_case",
+      "kind": "membership_candidate",
+      "expression": "tool in tools"
+    },
+    {
+      "file": "scripts/reliability/test_tool_failure.py",
+      "line": 97,
+      "function": "run_case",
+      "kind": "membership_candidate",
+      "expression": "phrase in reply"
+    }
+  ]
+}

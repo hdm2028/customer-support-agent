@@ -1,15 +1,10 @@
 from app.agent.policies.ticket_policy import evaluate_ticket_creation
-from app.agent.routing.router import get_issue_type
+from app.agent.routing.labels import get_issue_type
 from app.agent.state import AgentResult, AgentState
 from app.agent.tools.tool_results import get_tool_result
 from app.core.schemas import RouteDecision, ToolResult
-from app.domain.refund_policy import (
-    days_since_signed,
-    evaluate_refund_eligibility,
-    infer_refund_reason,
-    is_quality_or_fault_request,
-)
 from app.tools.executor import execute_agent_tool, safe_tool_call
+from app.tools.human_review import review_context_scope
 
 
 class AfterSalesAgent:
@@ -151,18 +146,19 @@ class AfterSalesAgent:
                 error=decision.get("reason"),
             )
 
-        result = execute_agent_tool(
-            agent_key=self.key,
-            tool_name="create_ticket",
-            arguments={
-                "order_id": state.order_id,
-                "issue_type": issue_type,
-                "user_request": state.user_message,
-                "priority": decision["priority"],
-            },
-            trace=state.trace,
-            fallback_action="retry_or_handoff_to_human",
-        )
+        with review_context_scope(state):
+            result = execute_agent_tool(
+                agent_key=self.key,
+                tool_name="create_ticket",
+                arguments={
+                    "order_id": state.order_id,
+                    "issue_type": issue_type,
+                    "user_request": state.user_message,
+                    "priority": decision["priority"],
+                },
+                trace=state.trace,
+                fallback_action="retry_or_handoff_to_human",
+            )
 
         return AgentResult(
             agent=self.key,
@@ -228,20 +224,22 @@ class AfterSalesAgent:
     def create_manual_review(self, state: AgentState) -> AgentResult:
         risk = state.risk or {}
         refund = state.refund or {}
-        result = execute_agent_tool(
-            agent_key=self.key,
-            tool_name="create_manual_review",
-            arguments={
-                "order_id": state.order_id,
-                "review_type": "refund" if state.route.need_refund_request else "risk_control",
-                "risk_level": risk.get("risk_level", state.route.risk_level),
-                "risk_flags": risk.get("risk_flags", state.route.risk_flags),
-                "user_request": state.user_message,
-                "related_id": refund.get("refund_id"),
-            },
-            trace=state.trace,
-            fallback_action="manual_queue",
-        )
+        with review_context_scope(state):
+            result = execute_agent_tool(
+                agent_key=self.key,
+                tool_name="create_manual_review",
+                arguments={
+                    "order_id": state.order_id,
+                    "review_type": "refund" if state.route.need_refund_request else
+                                   state.route.intent if state.route.action_type == "execute" and state.route.intent in {"cancel_order", "address_change"} else "risk_control",
+                    "risk_level": risk.get("risk_level", state.route.risk_level),
+                    "risk_flags": risk.get("risk_flags", state.route.risk_flags),
+                    "user_request": state.user_message,
+                    "related_id": refund.get("refund_id"),
+                },
+                trace=state.trace,
+                fallback_action="manual_queue",
+            )
 
         return AgentResult(
             agent=self.key,
@@ -252,17 +250,18 @@ class AfterSalesAgent:
         )
 
     def transfer_to_human(self, state: AgentState) -> AgentResult:
-        result = execute_agent_tool(
-            agent_key=self.key,
-            tool_name="transfer_to_human",
-            arguments={
-                "reason": state.route.handoff_reason or "用户要求人工客服或该场景需要人工接管。",
-                "user_request": state.user_message,
-                "priority": "high" if state.route.risk_level == "high" else "normal",
-            },
-            trace=state.trace,
-            fallback_action="manual_queue",
-        )
+        with review_context_scope(state):
+            result = execute_agent_tool(
+                agent_key=self.key,
+                tool_name="transfer_to_human",
+                arguments={
+                    "reason": state.route.handoff_reason or "用户要求人工客服或该场景需要人工接管。",
+                    "user_request": state.user_message,
+                    "priority": "high" if state.route.risk_level == "high" else "normal",
+                },
+                trace=state.trace,
+                fallback_action="manual_queue",
+            )
 
         return AgentResult(
             agent=self.key,

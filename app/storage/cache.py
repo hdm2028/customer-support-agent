@@ -57,12 +57,16 @@ class InMemoryTTLCache:
 
 
 class RedisJsonCache:
-    """Redis JSON 缓存封装。redis 包不存在或 Redis 不可用时不会影响主流程。"""
+    """Redis JSON cache with bounded I/O; callers decide which failures may degrade."""
 
     def __init__(self, redis_url: str) -> None:
         import redis
+        from redis.backoff import NoBackoff
+        from redis.retry import Retry
 
-        self.client = redis.Redis.from_url(redis_url, decode_responses=True)
+        self.client = redis.Redis.from_url(redis_url, decode_responses=True,
+                                          socket_connect_timeout=1, socket_timeout=1,
+                                          retry=Retry(NoBackoff(), 0))
         self.client.ping()
 
     def get(self, key: str) -> str | None:

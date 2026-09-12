@@ -1,0 +1,35 @@
+{
+  "fallbacks": [
+    {
+      "case_id": "tool_order_004",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_apply_status'",
+      "category": "model_output_contract"
+    },
+    {
+      "case_id": "tool_policy_002",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_policy'",
+      "category": "model_output_contract"
+    },
+    {
+      "case_id": "tool_boundary_complaint_refund",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+      "category": "model_output_contract"
+    },
+    {
+      "case_id": "tool-eval-tool_order_004-61bc5ef9319e448f87db02e369139be6",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_apply_status'",
+      "category": "model_output_contract"
+    },
+    {
+      "case_id": "tool-eval-tool_policy_002-74e77d2acf884189906021662abee8ce",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_policy'",
+      "category": "model_output_contract"
+    },
+    {
+      "case_id": "tool-eval-tool_boundary_complaint_refund-23c9110610454cccae65289bc8080905",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+      "category": "model_output_contract"
+    }
+  ],
+  "note": "Original scores are unchanged. A dependency-affected failure is not proof of a routing or business logic defect. Other failures require stage-level inspection."
+}

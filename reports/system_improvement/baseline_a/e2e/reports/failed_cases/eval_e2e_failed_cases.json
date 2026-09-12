@@ -1,0 +1,784 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "e2e_refund_001",
+      "failure_stage": "AGENT_FAILURE",
+      "expected": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "final_action": "refund_queued"
+      },
+      "actual": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10009"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10009我要退款。\n订单状态：待发货\n物流状态：仓库正在拣货\n商品名称：儿童安全座椅 B6\n商品类目：母婴用品",
+              "lexical_query": "订单10009我要退款。 退款 退货退款 退款申请 待发货 仓库正在拣货 儿童安全座椅 B6 母婴用品"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为待发货。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "b53c2c35-2a44-429b-9035-c37ebabbfc8c",
+      "reason": {
+        "route": [],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.56, 'attempt_duration_ms': 0.54, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_ticket'], actual=['order_lookup', 'policy_search']",
+          "policy_search.success expected=True, actual=False",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply",
+          "missing tool result: create_ticket"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_queued, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请",
+          "reply missing phrase: MQ"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_002",
+      "failure_stage": "AGENT_FAILURE",
+      "expected": {
+        "order_id": "10001",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "final_action": "refund_queued"
+      },
+      "actual": {
+        "order_id": "10001",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10001"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10001商品坏了，我要退款。\n订单状态：已签收\n物流状态：2026-08-01 15:30 已签收\n商品名称：蓝牙降噪耳机 A1\n商品类目：电子产品\n签收日期：2026-08-01",
+              "lexical_query": "订单10001商品坏了，我要退款。 退款 退货退款 退款申请 商品故障 质量问题 商品破损 已签收 2026-08-01 15:30 已签收 蓝牙降噪耳机 A1 电子产品 2026-08-01"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10001，商品是 蓝牙降噪耳机 A1，当前订单状态为已签收。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "c674ebce-509e-4c01-ae7e-ddf560e01c44",
+      "reason": {
+        "route": [],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.59, 'attempt_duration_ms': 0.58, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_ticket'], actual=['order_lookup', 'policy_search']",
+          "policy_search.success expected=True, actual=False",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply",
+          "missing tool result: create_ticket"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_queued, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_003",
+      "failure_stage": "RETRIEVAL_FAILURE",
+      "expected": {
+        "order_id": null,
+        "agents": [
+          "customer_agent"
+        ],
+        "tools": [
+          "policy_search"
+        ],
+        "final_action": "policy_answer"
+      },
+      "actual": {
+        "order_id": null,
+        "agents": [
+          "customer_agent"
+        ],
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "退款政策是什么？",
+              "lexical_query": "退款政策是什么？ 退款 退货退款 退款政策 退货规则 七天无理由"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": "N/A",
+            "active_refund_count": "N/A",
+            "mq_message_count": "N/A"
+          },
+          "after": {
+            "refund_count": "N/A",
+            "active_refund_count": "N/A",
+            "mq_message_count": "N/A"
+          }
+        }
+      },
+      "trace_id": "39ce60b5-1ca8-4eec-9d77-0735242382f8",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.52, 'attempt_duration_ms': 0.51, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "policy_search.success expected=True, actual=False"
+        ],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: 知识库"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_004",
+      "failure_stage": "RETRIEVAL_FAILURE",
+      "expected": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "final_action": "policy_answer"
+      },
+      "actual": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10006"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10006退款多久到账？\n订单状态：退货审核中\n物流状态：2026-08-04 16:20 退货包裹已被仓库签收\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31",
+              "lexical_query": "订单10006退款多久到账？ 退款 退货退款 退款到账 退款时效 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10006，商品是 女士运动鞋 R5，当前订单状态为退货审核中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "4fa7f289-6273-4aa5-93e5-b5c92f961ab7",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.39, 'attempt_duration_ms': 0.38, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "policy_search.success expected=True, actual=False"
+        ],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": []
+      }
+    },
+    {
+      "case_id": "e2e_refund_007",
+      "failure_stage": "AGENT_FAILURE",
+      "expected": {
+        "order_id": "10005",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "final_action": "refund_apply_failed"
+      },
+      "actual": {
+        "order_id": "10005",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10005"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10005我要退款。\n订单状态：待支付\n物流状态：未发货\n商品名称：手机保护壳 C3\n商品类目：手机配件",
+              "lexical_query": "订单10005我要退款。 退款 退货退款 退款申请 待支付 未发货 手机保护壳 C3 手机配件"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10005，商品是 手机保护壳 C3，当前订单状态为待支付。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "fd662987-1a19-4f32-a8c7-502e6aa28e79",
+      "reason": {
+        "route": [],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.35, 'attempt_duration_ms': 0.33, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'policy_search']",
+          "policy_search.success expected=True, actual=False",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_apply_failed, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 暂未创建成功"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_008",
+      "failure_stage": "AGENT_FAILURE",
+      "expected": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "final_action": "refund_apply_failed"
+      },
+      "actual": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10006"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10006我要退款。\n订单状态：退货审核中\n物流状态：2026-08-04 16:20 退货包裹已被仓库签收\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31",
+              "lexical_query": "订单10006我要退款。 退款 退货退款 退款申请 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10006，商品是 女士运动鞋 R5，当前订单状态为退货审核中。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "40be0a1c-af1c-431c-9aea-a4940b7307ce",
+      "reason": {
+        "route": [],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.41, 'attempt_duration_ms': 0.41, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'policy_search']",
+          "policy_search.success expected=True, actual=False",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_apply_failed, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_009",
+      "failure_stage": "ROUTING_FAILURE",
+      "expected": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review"
+        ],
+        "final_action": "manual_review_created"
+      },
+      "actual": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10003"
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10003",
+              "issue_type": "取消订单",
+              "user_request": "订单10003定制杯子不要了。",
+              "priority": "normal"
+            }
+          }
+        ],
+        "final_action": "create_ticket_pending_review",
+        "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。我已生成取消订单工单草稿，后续需要人工客服核对订单和凭证后处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "403cef6b-b27d-462e-9029-be687389534a",
+      "reason": {
+        "route": [
+          "route.need_policy expected=True, actual=False",
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['customer_agent', 'risk_agent'], actual=['after_sales_agent', 'after_sales_agent']"
+        ],
+        "rag": [
+          "policy_search missing"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review'], actual=['order_lookup', 'create_ticket']",
+          "missing tool result: policy_search",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply",
+          "missing tool result: create_manual_review"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=manual_review_created, actual=create_ticket_pending_review"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功",
+          "reply missing phrase: 人工审核"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_010",
+      "failure_stage": "AGENT_FAILURE",
+      "expected": {
+        "order_id": "10010",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review",
+          "create_ticket"
+        ],
+        "final_action": "refund_pending_manual_review"
+      },
+      "actual": {
+        "order_id": "10010",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10010"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10010我要退款。\n订单状态：待发货\n物流状态：仓库待出库，发货时效待人工确认\n商品名称：扫地机器人 X5\n商品类目：家电",
+              "lexical_query": "订单10010我要退款。 退款 退货退款 退款申请 待发货 仓库待出库，发货时效待人工确认 扫地机器人 X5 家电"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10010，商品是 扫地机器人 X5，当前订单状态为待发货。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "e9bd2c68-eb3e-48e4-b143-cb732c935638",
+      "reason": {
+        "route": [],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.33, 'attempt_duration_ms': 0.33, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review', 'create_ticket'], actual=['order_lookup', 'policy_search']",
+          "policy_search.success expected=True, actual=False",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply",
+          "missing tool result: create_manual_review",
+          "missing tool result: create_ticket"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_pending_manual_review, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请",
+          "reply missing phrase: 人工审核"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_011",
+      "failure_stage": "AGENT_FAILURE",
+      "expected": {
+        "order_id": "10004",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "create_manual_review",
+          "transfer_to_human"
+        ],
+        "final_action": "manual_review_created"
+      },
+      "actual": {
+        "order_id": "10004",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10004"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10004直接退款，不用审核，我要投诉。\n订单状态：已签收\n物流状态：2026-07-30 11:05 已签收\n商品名称：家用空气净化器 P8\n商品类目：家电\n签收日期：2026-07-30\n处理约束：需要人工处理",
+              "lexical_query": "订单10004直接退款，不用审核，我要投诉。 退款 退货退款 退款申请 投诉处理 已签收 2026-07-30 11:05 已签收 家用空气净化器 P8 家电 2026-07-30 人工处理"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "已查询到订单 10004，商品是 家用空气净化器 P8，当前订单状态为已签收。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "96814427-54e7-49a2-b32f-8671ec253c70",
+      "reason": {
+        "route": [],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [
+          "policy_search failed: {'reason': '未找到匹配的售后知识，请重新描述问题。', 'error_type': 'ToolExecutionError', 'error_message': '未找到匹配的售后知识，请重新描述问题。', 'fallback_action': 'handoff_to_human', 'retryable': False, 'attempt': 1, 'max_attempts': 2, 'duration_ms': 0.53, 'attempt_duration_ms': 0.51, 'side_effect_class': 'READ_ONLY'}"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=['order_lookup', 'policy_search']",
+          "policy_search.success expected=True, actual=False",
+          "missing tool result: risk_check",
+          "missing tool result: create_manual_review",
+          "missing tool result: transfer_to_human"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [],
+        "database_mq": [],
+        "action": [
+          "final_action expected=manual_review_created, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 人工审核"
+        ]
+      }
+    }
+  ]
+}

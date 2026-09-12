@@ -1,0 +1,39 @@
+--- a/app/agent/routing/llm_router.py
++++ b/app/agent/routing/llm_router.py
+@@ -305,26 +305,6 @@
+         confidence=confidence,
+         reason=reason,
+         source="llm",
+-    )
+-
+-
+-def _fallback_semantic_route(
+-    reason: str,
+-) -> SemanticRoute:
+-    """
+-    LLM 调用失败、JSON 解析失败、
+-    schema 校验失败时的安全 fallback。
+-
+-    fallback 不执行任何具体业务动作。
+-    """
+-
+-    return SemanticRoute(
+-        intent="general_support",
+-        action_type="unknown",
+-        topic="general_question",
+-        confidence=0.0,
+-        reason=reason,
+-        source="fallback",
+     )
+ 
+ 
+--- a/app/services/payments.py
++++ b/app/services/payments.py
+@@ -6,7 +6,6 @@
+ import os
+ from typing import Literal, Protocol
+ 
+-from app.core.security import authorize_order
+ from app.domain.refund_policy import require_confirmed_refund_payment
+ from app.services.review_service import decode_payload, require_operator
+ from app.storage.database import (get_refund_request_from_db, save_notification_to_db,

@@ -1,0 +1,231 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "D:\\python-project\\客服agent\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 4,
+  "passed_count": 3,
+  "failed_count": 1,
+  "deterministic_metrics": {
+    "correctness": 0.75,
+    "relevance": 1.0,
+    "completeness": 0.75,
+    "faithfulness_groundedness": 1.0,
+    "hallucination_rate": 0.0
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": [
+          "退换货政策.md - 不支持七天无理由退货的情况",
+          "退换货政策.md - 七天无理由退货",
+          "退换货政策.md - 退款与退货政策",
+          "物流规则.md - 物流异常与退款",
+          "物流配送政策.md - 物流异常"
+        ]
+      },
+      "actual": {
+        "reply": "订单 10003，商品：定制刻字保温杯，当前订单状态：已签收。\n\n订单备注记录：定制商品通常不支持七天无理由退货，质量问题除外。\n\n本轮可核实的政策内容：\n\n《退换货政策.md - 不支持七天无理由退货的情况》（已签收订单）：\n符合七天无理由退货条件的，可以创建退货申请。\n\n《退换货政策.md - 退款与退货政策》（适用范围）：\n特殊商品、定制商品以及明确标注不支持无理由退货的商品，按照对应商品规则处理。\n\n《退换货政策.md - 退款与退货政策》（七天无理由退货）：\n用户自商品签收之日起 7 天内，可以申请七天无理由退货。\n\n申请七天无理由退货需要满足以下条件：\n\n- 商品保持完好；\n- 商品配件齐全；\n- 商品包装不存在严重损坏；\n- 不影响商品二次销售；\n- 商品不属于不支持七天无理由退货的特殊商品。\n\n《退换货政策.md - 不支持七天无理由退货的情况》：\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。",
+        "matched_citations": [
+          "退换货政策.md - 不支持七天无理由退货的情况",
+          "退换货政策.md - 退款与退货政策"
+        ]
+      },
+      "trace_id": "2d2028ab-b817-4acc-b6ba-f30faf1c9ae8",
+      "reason": "missing_expected_keywords=['知识库']"
+    }
+  ],
+  "results": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "退款",
+        "订单",
+        "不能"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "商品售后规则.md - 七天无理由退货",
+        "退款政策.md - 退款政策",
+        "退款政策.md - 重要限制",
+        "退款政策.md - 退款到账"
+      ],
+      "matched_citations": [
+        "退款政策.md - 退款人工审核",
+        "商品售后规则.md - 七天无理由退货",
+        "退款政策.md - 退款政策",
+        "退款政策.md - 重要限制",
+        "退款政策.md - 退款到账"
+      ],
+      "trace_id": "be556e53-2b30-4d57-b60f-b8dd1dc09e17",
+      "reply": "本轮可核实的政策内容：\n\n《退款政策.md - 退款人工审核》（退款失败）：\n退款任务执行失败时，应记录失败状态和失败原因。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n《退款政策.md - 退款人工审核》（退款到账）：\n退款处理成功后，资金通常按照原支付渠道退回。\n\n《商品售后规则.md - 七天无理由退货》（退款）：\n商品售后处理最终涉及退款时，应按照《退款政策》继续执行。\n\n退款申请创建、退款状态、人工审核以及退款到账等规则以《退款政策》为准。\n\n《退款政策.md - 退款政策》（退款申请前置条件）：\n退款申请必须关联有效订单。\n\n涉及具体订单退款时，需要先查询订单，确认订单号、订单状态、支付状态以及是否已经存在退款申请。\n\n待支付订单没有实际支付资金，不创建退款申请，用户可以直接取消订单。\n\n客服不能在没有订单信息或者订单状态不明确的情况下承诺退款已经完成。\n\n《退款政策.md - 退款政策》（退款资格判断）：\n创建退款申请前，需要先确认用户是否满足对应的退款条件。\n\n《退款政策.md - 重要限制》：\n具体退款结果必须以退款系统和实际业务执行结果为准。\n\n《退款政策.md - 退款到账》：\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。\n\n《退款政策.md - 退款到账》（退款处理通知）：\n退款状态发生重要变化后，可以通过系统通知用户当前处理进度。\n\n通知内容应以退款系统中的真实状态为准。\n\n不能将 `PENDING`、`PROCESSING` 或 `MANUAL_REVIEW` 描述为退款已经成功。\n\n《退款政策.md - 退款到账》（重要限制）：\n客服 Agent 可以查询退款政策、解释退款流程以及发起符合权限的退款申请。",
+      "reason": "passed",
+      "notes": "政策回答需要基于 RAG 来源，不能像已经执行退款一样表述。",
+      "literal_passed": true,
+      "forbidden_occurrences": []
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "到账",
+        "支付渠道"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "立即到账",
+        "已经退款",
+        "已为您退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "退换货政策.md - 退款人工审核",
+        "退款政策.md - 重要限制",
+        "退款政策.md - 退款到账",
+        "退款政策.md - 退款处理状态"
+      ],
+      "matched_citations": [
+        "退换货政策.md - 退款人工审核",
+        "退款政策.md - 退款到账"
+      ],
+      "trace_id": "545170b4-294b-48e7-8190-5570c829625d",
+      "reply": "本轮可核实的政策内容：\n\n《退换货政策.md - 退款人工审核》（退款到账时间）：\n退款成功后，实际到账时间可能受到原支付渠道影响。\n\n平台完成退款操作不代表资金一定立即到账。\n\n《退款政策.md - 退款到账》：\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。",
+      "reason": "passed",
+      "notes": "到账咨询应解释渠道差异，不承诺立即到账。",
+      "literal_passed": false,
+      "forbidden_occurrences": [
+        {
+          "phrase": "立即到账",
+          "start": 83,
+          "end": 87,
+          "explicitly_denied": true
+        },
+        {
+          "phrase": "立即到账",
+          "start": 185,
+          "end": 189,
+          "explicitly_denied": true
+        }
+      ]
+    },
+    {
+      "case_id": "answer_refund_003",
+      "query": "直接给我退款，不要审核。",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": "N/A",
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "订单号",
+        "人工"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "绕过审核"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [],
+      "matched_citations": [],
+      "trace_id": "ac5581fa-cf73-4929-a148-3220a84930b4",
+      "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。用户要求绕过正常审核流程，需要人工审核。",
+      "reason": "passed",
+      "notes": "高风险退款请求缺订单号时应追问并提示人工审核。",
+      "literal_passed": true,
+      "forbidden_occurrences": []
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "10003",
+        "知识库"
+      ],
+      "missing_keywords": [
+        "知识库"
+      ],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "可以直接退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退换货政策.md - 不支持七天无理由退货的情况",
+        "退换货政策.md - 七天无理由退货",
+        "退换货政策.md - 退款与退货政策",
+        "物流规则.md - 物流异常与退款",
+        "物流配送政策.md - 物流异常"
+      ],
+      "matched_citations": [
+        "退换货政策.md - 不支持七天无理由退货的情况",
+        "退换货政策.md - 退款与退货政策"
+      ],
+      "trace_id": "2d2028ab-b817-4acc-b6ba-f30faf1c9ae8",
+      "reply": "订单 10003，商品：定制刻字保温杯，当前订单状态：已签收。\n\n订单备注记录：定制商品通常不支持七天无理由退货，质量问题除外。\n\n本轮可核实的政策内容：\n\n《退换货政策.md - 不支持七天无理由退货的情况》（已签收订单）：\n符合七天无理由退货条件的，可以创建退货申请。\n\n《退换货政策.md - 退款与退货政策》（适用范围）：\n特殊商品、定制商品以及明确标注不支持无理由退货的商品，按照对应商品规则处理。\n\n《退换货政策.md - 退款与退货政策》（七天无理由退货）：\n用户自商品签收之日起 7 天内，可以申请七天无理由退货。\n\n申请七天无理由退货需要满足以下条件：\n\n- 商品保持完好；\n- 商品配件齐全；\n- 商品包装不存在严重损坏；\n- 不影响商品二次销售；\n- 商品不属于不支持七天无理由退货的特殊商品。\n\n《退换货政策.md - 不支持七天无理由退货的情况》：\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。",
+      "reason": "missing_expected_keywords=['知识库']",
+      "notes": "特殊商品退款咨询不能承诺直接退款。",
+      "literal_passed": false,
+      "forbidden_occurrences": []
+    }
+  ],
+  "scoring_version": "explicit-denial-v1",
+  "original_passed_count": 2,
+  "interpretation": "Scoring correction on the same saved replies, not a system quality improvement",
+  "original_report": "reports\\five_layer_optimization_20260909\\live_b\\answer_e2e\\answer\\reports\\eval_answer.json"
+}

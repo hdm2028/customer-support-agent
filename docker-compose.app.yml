@@ -1,0 +1,33 @@
+x-runtime: &runtime
+  image: ${SUPPORT_IMAGE:?Set SUPPORT_IMAGE to an immutable image digest}
+  env_file: .env
+  environment:
+    DATABASE_BACKEND: mysql
+    SEED_DEMO_DATA: "false"
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 45s
+  volumes:
+    - support_traces:/app/data/traces
+
+services:
+  api:
+    <<: *runtime
+    ports:
+      - "127.0.0.1:${SUPPORT_PORT:-8012}:8012"
+    command: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8012"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8012/live', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+  refund-worker:
+    <<: *runtime
+    command: ["python", "-m", "scripts.maintenance.refund_worker"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  support_traces:

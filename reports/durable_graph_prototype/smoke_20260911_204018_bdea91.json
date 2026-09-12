@@ -1,0 +1,9 @@
+{
+  "started_at": "2026-09-11T12:40:18.548163+00:00",
+  "workspace": "D:\\python-project\\客服agent\\reports\\durable_graph_prototype\\runtime\\20260911_204018_bdea91",
+  "scope": "runtime smoke only; fixed routing fixtures, local RAG, SQLite, no model/payment API",
+  "checks": [],
+  "success": false,
+  "error": "TimeoutError: Demo server not ready; inspect D:\\python-project\\客服agent\\reports\\durable_graph_prototype\\20260911_204018_bdea91_before_restart.log",
+  "duration_seconds": 40.099
+}

@@ -15,12 +15,6 @@ def has_failed_order_lookup(tool_results: list[ToolResult]) -> bool:
     return bool(order_result and not order_result.success)
 
 
-def has_failed_policy_search(tool_results: list[ToolResult]) -> bool:
-    policy_result = get_tool_result(tool_results, "policy_search")
-
-    return bool(policy_result and not policy_result.success)
-
-
 def is_system_tool_failure(tool_result: ToolResult | None) -> bool:
     if not tool_result or tool_result.success:
         return False

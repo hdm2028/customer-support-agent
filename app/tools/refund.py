@@ -6,7 +6,8 @@ from app.concurrency.refund_guard import (
     wait_for_refund_idempotency,
 )
 from app.core.schemas import ToolResult
-from app.domain.refund_policy import evaluate_refund_eligibility, infer_refund_reason
+from app.domain.refund_policy import (evaluate_refund_eligibility, infer_refund_reason,
+                                      RefundPaymentNotConfirmed, require_confirmed_refund_payment)
 from app.domain.risk_policy import evaluate_refund_risk
 from app.mq.queue import REFUND_CREATED_TOPIC, publish_message
 from app.storage.database import (
@@ -16,6 +17,29 @@ from app.storage.database import (
     update_refund_request_in_db,
 )
 from app.storage.store import get_order_by_id
+from app.storage.transactions import lock_record, transaction
+import json
+
+
+def _persist_refund_and_event(payload: dict) -> dict:
+    # MQ is a table in the same database: commit the intent and event together.
+    with transaction():
+        # Re-read under the write lock: the earlier order lookup/cache is only
+        # a snapshot and payment may have changed before persistence.
+        row = lock_record("orders", "order_id", payload["order_id"])
+        if row is None:
+            raise RefundPaymentNotConfirmed("订单不存在，无法核实支付状态，未创建退款。")
+        order = row["payload"] if isinstance(row["payload"], dict) else json.loads(row["payload"])
+        require_confirmed_refund_payment(order)
+        saved = save_refund_request_to_db(payload)
+        message = publish_message(REFUND_CREATED_TOPIC, {
+            "refund_id": saved["refund_id"], "order_id": saved["order_id"],
+            "user_id": saved.get("user_id"),
+            "review_required": payload["eligibility"]["review_required"],
+        })
+        saved["mq_message_id"] = message["message_id"]
+        update_refund_request_in_db(saved["refund_id"], {"mq_message_id": message["message_id"]})
+        return saved
 
 
 def _create_refund_request_unlocked(
@@ -59,7 +83,7 @@ def _create_refund_request_unlocked(
 
     status = "pending_manual_review" if eligibility["review_required"] else "queued"
     try:
-        refund_request = save_refund_request_to_db(
+        refund_request = _persist_refund_and_event(
             {
                 "order_id": order_id,
                 "idempotency_key": f"refund_apply:{order_id}",
@@ -74,6 +98,11 @@ def _create_refund_request_unlocked(
                 "next_step": "等待退款处理服务消费 MQ 消息。",
             }
         )
+    except RefundPaymentNotConfirmed as error:
+        return ToolResult(tool_name="refund_apply", success=False, result={
+            "reason": str(error), "refund_reason": infer_refund_reason(user_request),
+            "review_required": False, "fallback_action": "verify_payment_status",
+        })
     except Exception:
         existing_refund = get_active_refund_request_by_order_id_from_db(order_id)
         if existing_refund is not None:
@@ -85,22 +114,6 @@ def _create_refund_request_unlocked(
             )
 
         raise
-    mq_message = publish_message(
-        REFUND_CREATED_TOPIC,
-        {
-            "refund_id": refund_request["refund_id"],
-            "order_id": order_id,
-            "user_id": order.get("user_id"),
-            "review_required": eligibility["review_required"],
-        },
-    )
-
-    refund_request["mq_message_id"] = mq_message["message_id"]
-    update_refund_request_in_db(
-        refund_request["refund_id"],
-        {"mq_message_id": mq_message["message_id"]},
-    )
-
     return ToolResult(
         tool_name="refund_apply",
         success=True,
@@ -113,6 +126,9 @@ def refund_apply(
     user_request: str,
     risk_assessment: dict | None = None,
 ) -> ToolResult:
+    from app.core.security import current_principal
+    if current_principal.get() is not None:
+        get_order_by_id(order_id)  # Ownership is checked before cached replay.
     cached_refund = get_refund_idempotency(order_id)
     if cached_refund is not None:
         return ToolResult(
@@ -178,11 +194,14 @@ def refund_apply(
         )
 
         if result.success and isinstance(result.result, dict):
-            result.result["idempotent_replay"] = False
-            result.result["concurrency_control"] = {
-                "strategy": "redis_lock_and_idempotency",
-                "status": "created_by_lock_owner",
-            }
+            # A different process can win the database unique-key race even
+            # when this process owns its local lock. Preserve that replay.
+            result.result.setdefault("idempotent_replay", False)
+            if not result.result["idempotent_replay"]:
+                result.result["concurrency_control"] = {
+                    "strategy": "redis_lock_and_idempotency",
+                    "status": "created_by_lock_owner",
+                }
             cache_refund_idempotency(order_id, result.result)
 
         return result

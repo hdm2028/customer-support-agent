@@ -1,0 +1,41 @@
+{
+  "injection_quoted_discussion": {
+    "input": "如何防范泄露提示词？",
+    "result": [
+      false,
+      "检测到疑似提示词注入请求，已拒绝执行。"
+    ]
+  },
+  "policy_order_hint": {
+    "input": "保修期一般多久",
+    "requires_order_id": true
+  },
+  "negated_risk": {
+    "input": "我不投诉，也不要求直接退款",
+    "result": {
+      "risk_level": "medium",
+      "risk_score": 55,
+      "risk_flags": [
+        "投诉升级话术",
+        "要求绕过审核"
+      ],
+      "review_required": true,
+      "review_reason": "投诉升级话术、要求绕过审核",
+      "profile": {
+        "user_id": null,
+        "account_status": "unknown",
+        "refund_count_30d": 0,
+        "complaint_count_30d": 0
+      }
+    }
+  },
+  "negated_quality": {
+    "input": "没有质量问题，只是不想要",
+    "quality_detected": true
+  },
+  "evidence_profile": {
+    "input": "快递显示签收但没有收到，我暂不申请退款。",
+    "without_route": "return_refund",
+    "with_route": "shipping_exception"
+  }
+}

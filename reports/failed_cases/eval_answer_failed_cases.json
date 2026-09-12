@@ -1,6 +1,30 @@
 {
   "failed_cases": [
     {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "3f6ac8bb-9071-4674-9188-da80cdbb58d8",
+      "reason": "missing_expected_keywords=['退款', '订单']; grounding_failed=['policy_search did not return citations']"
+    },
+    {
       "case_id": "answer_refund_002",
       "query": "退款一般多久能到账？",
       "expected": {
@@ -13,20 +37,40 @@
           "已经退款",
           "已为您退款"
         ],
-        "citations": [
-          "退款政策.md - 退款人工审核",
-          "退款政策.md - 重要限制"
-        ]
+        "citations": []
       },
       "actual": {
-        "reply": "根据知识库来源《退款政策.md - 退款人工审核》：以下情况可能进入人工审核：\n\n- 大额退款；\n- 高频退款；\n- 账户行为异常；\n- 风险检查结果异常；\n- 用户描述与订单实际状态冲突；\n- 投诉升级并涉及资金操作；\n- 自动流程无法确认退款处理结果。\n\n进入人工审核不代表退款一定失败。\n\n人工审核完成前，客服只能告知用户退款正在审核，不能承诺退款已经完成。 根据知识库来源《退款政策.md - 重要限制》：客服 Agent 可以查询退款政策、解释退款流程以及发起符合权限的退款申请。\n\n客服 Agent 不能：\n\n- 绕过退款资格判断；\n- 绕过风险检查；\n- 绕过人工审核；\n- 在状态未知时重复执行退款；\n- 将退款申请创建成功描述为退款到账成功。\n\n具体退款结果必须以退款系统和实际业务执行结果为准。",
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
         "matched_citations": [
-          "退款政策.md - 退款人工审核",
-          "退款政策.md - 重要限制"
+          "policy_search did not return citations"
         ]
       },
-      "trace_id": "5ba0dfea-564a-4b38-9901-9af140497f31",
-      "reason": "missing_expected_keywords=['支付渠道']"
+      "trace_id": "f4ae2b24-a5d2-464f-980e-c532ef6765ac",
+      "reason": "missing_expected_keywords=['到账', '支付渠道']; grounding_failed=['policy_search did not return citations']"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "5e3fdcc7-40ae-41dc-b0d6-6d751b92c205",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']"
     }
   ]
 }

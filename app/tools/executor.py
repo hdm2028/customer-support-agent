@@ -1,5 +1,6 @@
 import sqlite3
 import threading
+from contextvars import copy_context
 import time
 from dataclasses import replace
 from queue import Empty, Queue
@@ -9,6 +10,7 @@ from typing import Any, Callable
 from app.core.config import get_settings
 from app.core.schemas import ToolResult
 from app.observability.tracing import add_trace_event, timed_step
+from app.tools.middleware import ToolCall, ToolHandler, compose, active_task_tools
 from app.tools.registry import (
     READ_ONLY,
     ToolRuntimePolicy,
@@ -287,7 +289,8 @@ def _run_with_timeout(callback: Callable[[], Any], timeout_seconds: float) -> An
             worker_slots.release()
 
     worker = threading.Thread(
-        target=invoke,
+        target=copy_context().run,
+        args=(invoke,),
         name="tool-runtime-worker",
         daemon=True,
     )
@@ -336,6 +339,7 @@ def _normalize_failed_result(
     payload.setdefault("error_message", _failure_message(result.result))
     payload.setdefault("fallback_action", fallback_action)
     payload.setdefault("retryable", False)
+    payload["failure_origin"] = "tool_result"
     payload.update(runtime_metadata)
 
     if policy.fail_closed:
@@ -357,6 +361,7 @@ def _runtime_failure_result(
     runtime_metadata: dict[str, Any],
 ) -> ToolResult:
     payload = {
+        "failure_origin": "runtime_exception",
         "error_type": error_type,
         "error_message": str(error),
         "reason": f"{tool_name} 工具调用失败，已进入降级处理。",
@@ -467,105 +472,95 @@ def _execute_callback(
     raise AssertionError("tool attempt loop completed without a result")
 
 
+def _result_trace_middleware(call: ToolCall, call_next: ToolHandler) -> ToolResult:
+    result = call_next(call)
+    add_tool_result_trace(call.trace, result, call.runtime_metadata)
+    add_tool_failure_trace(call.trace, result)
+    return result
+
+
+def _permission_middleware(call: ToolCall, call_next: ToolHandler) -> ToolResult:
+    allowed = active_task_tools.get()
+    in_scope = allowed is None or call.tool_name in allowed
+    if in_scope and (not call.enforce_agent_permissions or can_agent_use_tool(call.agent_key, call.tool_name)):
+        return call_next(call)
+    add_tool_call_trace(call.trace, call.tool_name, call.arguments, attempt=1, policy=call.policy)
+    call.runtime_metadata = {
+        "attempt": 1, "max_attempts": 1, "duration_ms": 0.0,
+        "retryable": False, "side_effect_class": call.policy.side_effect_class,
+    }
+    return _runtime_failure_result(
+        call.tool_name,
+        error=ToolPermissionDenied(f"{call.agent_key} 无权调用 {call.tool_name}。" if in_scope
+                                   else f"当前任务不允许调用 {call.tool_name}。"),
+        error_type="ToolPermissionDenied", retryable=False,
+        fallback_action="reject_tool_call", policy=call.policy,
+        runtime_metadata=call.runtime_metadata,
+    )
+
+
+def _timing_middleware(call: ToolCall, call_next: ToolHandler) -> ToolResult:
+    if call.trace and call.record_timing:
+        return timed_step(call.trace, f"tool.{call.tool_name}", lambda: call_next(call),
+                          {"tool_name": call.tool_name})
+    return call_next(call)
+
+
+def _runtime_middleware(call: ToolCall, call_next: ToolHandler) -> ToolResult:
+    result, call.runtime_metadata = _execute_callback(
+        call.tool_name, lambda: call_next(call), arguments=call.arguments,
+        trace=call.trace, fallback_action=call.fallback_action, runtime_policy=call.policy,
+    )
+    return result
+
+
+def _dispatch_tool(call: ToolCall):
+    return call.callback()
+
+
+# Results (including permission denials) pass through one trace exit. Permission
+# is checked before starting a worker. Timing covers the whole retry budget.
+_TOOL_PIPELINE = compose(
+    (_result_trace_middleware, _permission_middleware, _timing_middleware, _runtime_middleware),
+    _dispatch_tool,
+)
+
+
+def _call_tool(tool_name, arguments, callback, *, trace, fallback_action,
+               runtime_policy, agent_key=None, enforce_agent_permissions=False, record_timing=True):
+    return _TOOL_PIPELINE(ToolCall(
+        tool_name=tool_name, arguments=arguments, callback=callback,
+        policy=_resolve_runtime_policy(tool_name, runtime_policy), trace=trace,
+        fallback_action=fallback_action, agent_key=agent_key,
+        enforce_agent_permissions=enforce_agent_permissions, record_timing=record_timing,
+    ))
+
+
 def safe_tool_call(
-    tool_name: str,
-    callback,
-    fallback_action: str | None = None,
-    *,
-    trace: dict | None = None,
-    arguments: dict | None = None,
+    tool_name: str, callback, fallback_action: str | None = None, *,
+    trace: dict | None = None, arguments: dict | None = None,
     runtime_policy: ToolRuntimePolicy | None = None,
 ) -> ToolResult:
-    result, runtime_metadata = _execute_callback(
-        tool_name,
-        callback,
-        arguments=arguments or {},
-        trace=trace,
-        fallback_action=fallback_action,
-        runtime_policy=runtime_policy,
-    )
-    add_tool_result_trace(trace, result, runtime_metadata)
-    add_tool_failure_trace(trace, result)
-    return result
+    return _call_tool(tool_name, arguments or {}, callback, trace=trace,
+                      fallback_action=fallback_action, runtime_policy=runtime_policy,
+                      record_timing=False)
 
 
 def execute_tool(
-    tool_name: str,
-    arguments: dict,
-    trace: dict | None = None,
-    fallback_action: str | None = None,
-    *,
-    runtime_policy: ToolRuntimePolicy | None = None,
+    tool_name: str, arguments: dict, trace: dict | None = None,
+    fallback_action: str | None = None, *, runtime_policy: ToolRuntimePolicy | None = None,
 ) -> ToolResult:
-    runtime_metadata = {}
-
-    def callback() -> ToolResult:
-        nonlocal runtime_metadata
-        result, runtime_metadata = _execute_callback(
-            tool_name,
-            lambda: execute_registered_tool(tool_name, arguments),
-            arguments=arguments,
-            trace=trace,
-            fallback_action=fallback_action,
-            runtime_policy=runtime_policy,
-        )
-        return result
-
-    if trace:
-        result = timed_step(
-            trace,
-            f"tool.{tool_name}",
-            callback,
-            {"tool_name": tool_name},
-        )
-    else:
-        result = callback()
-
-    add_tool_result_trace(trace, result, runtime_metadata)
-    add_tool_failure_trace(trace, result)
-    return result
+    return _call_tool(tool_name, arguments, lambda: execute_registered_tool(tool_name, arguments),
+                      trace=trace, fallback_action=fallback_action, runtime_policy=runtime_policy)
 
 
 def execute_agent_tool(
-    agent_key: str,
-    tool_name: str,
-    arguments: dict,
-    trace: dict | None = None,
-    fallback_action: str | None = None,
-    *,
-    runtime_policy: ToolRuntimePolicy | None = None,
+    agent_key: str, tool_name: str, arguments: dict, trace: dict | None = None,
+    fallback_action: str | None = None, *, runtime_policy: ToolRuntimePolicy | None = None,
 ) -> ToolResult:
-    policy = _resolve_runtime_policy(tool_name, runtime_policy)
-
-    if not can_agent_use_tool(agent_key, tool_name):
-        add_tool_call_trace(trace, tool_name, arguments, attempt=1, policy=policy)
-        runtime_metadata = {
-            "attempt": 1,
-            "max_attempts": 1,
-            "duration_ms": 0.0,
-            "retryable": False,
-            "side_effect_class": policy.side_effect_class,
-        }
-        result = _runtime_failure_result(
-            tool_name,
-            error=ToolPermissionDenied(f"{agent_key} 无权调用 {tool_name}。"),
-            error_type="ToolPermissionDenied",
-            retryable=False,
-            fallback_action="reject_tool_call",
-            policy=policy,
-            runtime_metadata=runtime_metadata,
-        )
-        add_tool_result_trace(trace, result, runtime_metadata)
-        add_tool_failure_trace(trace, result)
-        return result
-
-    return execute_tool(
-        tool_name=tool_name,
-        arguments=arguments,
-        trace=trace,
-        fallback_action=fallback_action,
-        runtime_policy=runtime_policy,
-    )
+    return _call_tool(tool_name, arguments, lambda: execute_registered_tool(tool_name, arguments),
+                      trace=trace, fallback_action=fallback_action, runtime_policy=runtime_policy,
+                      agent_key=agent_key, enforce_agent_permissions=True)
 
 
 def add_tool_failure_trace(trace: dict | None, tool_result: ToolResult) -> None:

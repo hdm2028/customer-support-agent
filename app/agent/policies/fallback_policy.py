@@ -1,36 +1,4 @@
-from app.agent.tools.tool_results import (
-    get_tool_result,
-    is_low_confidence_evidence,
-    is_system_tool_failure,
-)
-
-
-ORDER_RELATED_KEYWORDS = [
-    "订单",
-    "不想要",
-    "不要了",
-    "物流",
-    "发货",
-    "签收",
-    "退款",
-    "退钱",
-    "退货",
-    "换货",
-    "保修",
-    "维修",
-    "检测",
-    "发票",
-    "取消",
-    "地址",
-    "投诉",
-    "坏了",
-    "故障",
-    "质量问题",
-    "换新",
-    "售后",
-    "无法使用",
-    "不能用",
-]
+from app.domain.request_signals import asserted_mentions
 
 ORDER_ID_REQUIRED_KEYWORDS = [
     "我的订单",
@@ -108,11 +76,6 @@ RISKY_BYPASS_KEYWORDS = [
 ]
 
 
-def is_order_related(message: str) -> bool:
-    """判断问题是否和具体订单有关。"""
-    return any(keyword in message for keyword in ORDER_RELATED_KEYWORDS)
-
-
 def requires_order_id(message: str) -> bool:
     """判断当前问题是否必须依赖具体订单号才能继续处理。"""
     if (
@@ -128,25 +91,13 @@ def requires_order_id(message: str) -> bool:
 
 def is_risky_operation(message: str) -> bool:
     """判断用户是否请求高风险业务操作。"""
-    if any(keyword in message for keyword in RISKY_OPERATION_KEYWORDS):
+    if asserted_mentions(message, RISKY_OPERATION_KEYWORDS):
         return True
 
-    has_risky_action = any(
-        keyword in message for keyword in RISKY_ACTION_KEYWORDS
-    )
-    has_bypass_intent = any(
-        keyword in message for keyword in RISKY_BYPASS_KEYWORDS
-    )
+    has_risky_action = bool(asserted_mentions(message, RISKY_ACTION_KEYWORDS))
+    has_bypass_intent = bool(asserted_mentions(message, RISKY_BYPASS_KEYWORDS))
 
     return has_risky_action and has_bypass_intent
-
-
-def should_ask_order_id(
-    message: str,
-    order_id: str | None,
-) -> bool:
-    """如果问题必须查具体订单，但没有订单号，就应该先追问订单号。"""
-    return requires_order_id(message) and order_id is None
 
 
 def should_handoff_to_human(

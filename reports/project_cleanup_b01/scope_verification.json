@@ -1,0 +1,27 @@
+{
+  "baseline": "before",
+  "final": "after_final",
+  "same_python_and_packages": true,
+  "changed": [
+    "app/agent/README.md",
+    "app/agent/agents/after_sales.py",
+    "app/agent/policies/fallback_policy.py",
+    "app/agent/routing/llm_router.py",
+    "app/agent/tools/tool_results.py",
+    "app/rag/ingestion/chunker.py",
+    "app/storage/database.py",
+    "app/storage/mysql_database.py",
+    "app/storage/store.py"
+  ],
+  "added": [
+    "app/agent/routing/labels.py",
+    "app/agent/routing/semantic_prompt.py"
+  ],
+  "removed": [
+    "app/agent/routing/router.py"
+  ],
+  "unchanged_frozen_source_files": 197,
+  "rollback_patch_check_returncode": 0,
+  "evaluation_scripts_and_tests_unchanged": true,
+  "knowledge_and_seed_data_unchanged": true
+}

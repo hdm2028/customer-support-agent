@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://customer-support-agent.local/schemas/rag-eval-v2.schema.json",
+  "title": "Customer Support Agent RAG Evaluation Case (V2)",
+  "description": "Schema for one JSONL row consumed by scripts/eval/eval_rag.py when schema_version is rag-eval-v2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "split",
+    "scenario_type",
+    "difficulty",
+    "context_mode",
+    "query",
+    "input_context",
+    "expected"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "rag-eval-v2"
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "split": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "dev",
+        "validation",
+        "holdout",
+        "regression",
+        "final_test"
+      ]
+    },
+    "scenario_type": {
+      "type": "string",
+      "enum": [
+        "single_policy",
+        "state_conditioned",
+        "cross_policy",
+        "semantic_confusion",
+        "exception_override",
+        "authority_conflict",
+        "insufficient_information"
+      ]
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "context_mode": {
+      "type": "string",
+      "enum": [
+        "minimal",
+        "explicit",
+        "fact_enriched"
+      ]
+    },
+    "query": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_context": {
+      "$ref": "#/$defs/input_context"
+    },
+    "expected": {
+      "$ref": "#/$defs/expected"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "nullable_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "string_list": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "input_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary_intent": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "action_type": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "topic": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "related_topics": {
+          "$ref": "#/$defs/string_list"
+        },
+        "order_status": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "shipping_status": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "product_name": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "product_category": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "signed_date": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "handoff_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "sections": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "evidence_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_type"
+      ],
+      "properties": {
+        "evidence_type": {
+          "type": "string",
+          "enum": [
+            "refund_eligibility",
+            "refund_application",
+            "refund_state",
+            "refund_timing",
+            "refund_idempotency",
+            "refund_risk_review",
+            "order_cancel",
+            "address_change",
+            "shipping_status",
+            "shipping_delay",
+            "signed_not_received",
+            "shipping_intercept",
+            "product_quality",
+            "warranty",
+            "replacement",
+            "custom_product",
+            "human_review",
+            "complaint_escalation",
+            "membership_restriction",
+            "payment_exception",
+            "invoice"
+          ]
+        },
+        "acceptable_sources": {
+          "$ref": "#/$defs/string_list"
+        },
+        "acceptable_sections": {
+          "$ref": "#/$defs/string_list"
+        },
+        "keywords_any": {
+          "$ref": "#/$defs/string_list"
+        },
+        "keywords_all": {
+          "$ref": "#/$defs/string_list"
+        },
+        "critical_terms": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_targets",
+        "evidence_requirements"
+      ],
+      "properties": {
+        "primary_targets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/target"
+          }
+        },
+        "supporting_targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/target"
+          }
+        },
+        "evidence_requirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence_requirement"
+          }
+        }
+      }
+    }
+  }
+}

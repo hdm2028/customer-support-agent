@@ -1,0 +1,12 @@
+{
+  "success": false,
+  "scope": "isolated_sqlite_operational_rollback_not_production_schema_compatibility",
+  "previous_image_id": "sha256:142185089afe2014494bbc9ba325e95ceb9032e7f851e7a72bb49cda9ae28d9e",
+  "checks": {
+    "initial_ready": true,
+    "authorization": true
+  },
+  "created_resources_removed": true,
+  "error_type": "AssertionError",
+  "duration_seconds": 13.478
+}

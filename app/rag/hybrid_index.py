@@ -9,7 +9,7 @@ from app.rag.embedding_client import (
     tokenize,
 )
 from app.rag.models import DocumentChunk
-from app.rag.query_context import RetrievalQuery
+from app.rag.query_context import RetrievalQuery, resolve_embedding_query
 from app.rag.retrieval_text import build_retrieval_text
 from app.rag.vector_store import InMemoryVectorStore
 
@@ -154,7 +154,7 @@ class HybridRAGIndex:
             return []
 
         query_embedding = self.embedding_provider.embed_query(
-            query.semantic_query
+            resolve_embedding_query(query)
         )
 
         vector_results = self.vector_store.search(

@@ -1,0 +1,42 @@
+{
+  "kind": "isolated_mysql_lock_regression",
+  "checks": [
+    {
+      "name": "old_locking",
+      "returncode": 1,
+      "cases": [
+        "test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan"
+      ],
+      "implementation_sha256": "107b967376efda0582920714ddc827072ebd5c8e7c8a6bd798141331d1902683"
+    },
+    {
+      "name": "primary_locking",
+      "returncode": 0,
+      "cases": [
+        "test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund",
+        "test_approval_racing_cancellation_cannot_reactivate_the_refund"
+      ],
+      "implementation_sha256": "42c823b05fa75c0f2360722526d96d25eea78f17a9381fe11220840bfd4aba41"
+    }
+  ],
+  "regression_confirmed": true
+}

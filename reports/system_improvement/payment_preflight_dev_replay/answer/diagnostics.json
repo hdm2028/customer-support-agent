@@ -1,0 +1,10 @@
+{
+  "fallbacks": [
+    {
+      "case_id": "answer-eval-answer_refund_004-9f4c94c81f7d41909c710b06e05c1aae",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_policy'",
+      "category": "model_output_contract"
+    }
+  ],
+  "note": "Original scores are unchanged. A dependency-affected failure is not proof of a routing or business logic defect. Other failures require stage-level inspection."
+}

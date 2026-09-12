@@ -1,0 +1,61 @@
+{
+  "probe": "configured_provider_chat_usage",
+  "results": [
+    {
+      "mode": "sync",
+      "success": true,
+      "reply_chars": 64
+    },
+    {
+      "mode": "stream",
+      "success": true,
+      "reply_chars": 64
+    }
+  ],
+  "duration_ms": 5739.18,
+  "token_usage": {
+    "prompt_tokens_estimated": 0,
+    "completion_tokens_estimated": 0,
+    "total_tokens_estimated": 0,
+    "source": "local_estimate",
+    "llm_calls": [
+      {
+        "model": "glm-4-flash",
+        "provider_usage": {
+          "prompt_tokens": 8,
+          "completion_tokens": 34,
+          "total_tokens": 42
+        },
+        "success": true,
+        "prompt_tokens_estimated": 2,
+        "completion_tokens_estimated": 60,
+        "duration_ms": 2410.45
+      },
+      {
+        "model": "glm-4-flash",
+        "provider_usage": {
+          "prompt_tokens": 8,
+          "completion_tokens": 34,
+          "total_tokens": 42
+        },
+        "success": true,
+        "prompt_tokens_estimated": 2,
+        "completion_tokens_estimated": 60,
+        "duration_ms": 3328.38
+      }
+    ],
+    "provider_reported": {
+      "scope": "chat_completions_in_this_request_excluding_embeddings",
+      "call_count": 2,
+      "reported_calls": 2,
+      "unreported_calls": 0,
+      "complete": true,
+      "tokens": {
+        "prompt_tokens": 16,
+        "completion_tokens": 68,
+        "total_tokens": 84
+      }
+    },
+    "estimate_scope": "final_answer_context_and_reply_not_billable_usage"
+  }
+}

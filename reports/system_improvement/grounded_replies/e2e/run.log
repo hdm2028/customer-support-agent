@@ -1,0 +1,310 @@
+========================================================================
+End-to-End Refund Workflow Evaluation
+========================================================================
+{
+  "side_effects": [
+    "[WRITES DATABASE]",
+    "[USES REDIS OR MEMORY CACHE]",
+    "[PUBLISHES MQ WHEN REFUND IS CREATED]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-2l3_zfl3\\data\\eval\\e2e_eval.jsonl",
+  "total_cases": 12,
+  "passed_count": 9,
+  "failed_count": 3,
+  "task_success_rate": 0.75,
+  "routing_success_rate": 0.9167,
+  "agent_success_rate": 0.9,
+  "rag_success_rate": 0.8889,
+  "tool_success_rate": 0.9167,
+  "tool_argument_success_rate": 1.0,
+  "risk_success_rate": 0.8571,
+  "refund_success_rate": 0.8333,
+  "database_success_rate": 1.0,
+  "mq_success_rate": 1.0,
+  "workflow_success_rate": 0.9167,
+  "answer_success_rate": 0.75,
+  "failed_cases": [
+    {
+      "case_id": "e2e_refund_001",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "final_action": "refund_queued"
+      },
+      "actual": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent",
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10009"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10009我要退款。\n订单状态：待发货\n物流状态：仓库正在拣货\n商品名称：儿童安全座椅 B6\n商品类目：母婴用品",
+              "lexical_query": "订单10009我要退款。 退款 退货退款 退款申请 待发货 仓库正在拣货 儿童安全座椅 B6 母婴用品"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。"
+            }
+          },
+          {
+            "tool_name": "refund_apply",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。",
+              "risk_assessment": {
+                "risk_level": "low",
+                "risk_score": 15,
+                "risk_flags": [
+                  "中额退款"
+                ],
+                "review_required": false,
+                "review_reason": "中额退款",
+                "profile": {
+                  "user_id": "u009",
+                  "account_status": "normal",
+                  "refund_count_30d": 0,
+                  "complaint_count_30d": 0
+                }
+              }
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10009",
+              "issue_type": "退货退款",
+              "user_request": "订单10009我要退款。",
+              "priority": "high"
+            }
+          }
+        ],
+        "final_action": "refund_queued",
+        "reply": "退款申请 R-b3d749fc9ae8已受理，正在等待处理。申请受理不代表资金已经退回。关联订单：10009。关联工单：T-0084e277e886，工单草稿，待人工审核。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 1,
+            "active_refund_count": 1,
+            "mq_message_count": 1
+          }
+        }
+      },
+      "trace_id": "eb81c3f1-e934-4d25-8814-d1c332ea8815",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: MQ"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_003",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": null,
+        "agents": [
+          "customer_agent"
+        ],
+        "tools": [
+          "policy_search"
+        ],
+        "final_action": "policy_answer"
+      },
+      "actual": {
+        "order_id": null,
+        "agents": [
+          "customer_agent"
+        ],
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "退款政策是什么？",
+              "lexical_query": "退款政策是什么？ 退款 退货退款 退款政策 退货规则 七天无理由"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "本轮生成内容未通过证据核对，暂时不能据此判断政策适用条件。请补充具体问题或由人工核实。",
+        "side_effects": {
+          "before": {
+            "refund_count": "N/A",
+            "active_refund_count": "N/A",
+            "mq_message_count": "N/A"
+          },
+          "after": {
+            "refund_count": "N/A",
+            "active_refund_count": "N/A",
+            "mq_message_count": "N/A"
+          }
+        }
+      },
+      "trace_id": "4f877069-872d-4ba0-84cf-e56899e57b08",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: 知识库"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_009",
+      "failure_stage": "ROUTING_FAILURE",
+      "expected": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review"
+        ],
+        "final_action": "manual_review_created"
+      },
+      "actual": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10003"
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10003",
+              "issue_type": "取消订单",
+              "user_request": "订单10003定制杯子不要了。",
+              "priority": "normal"
+            }
+          }
+        ],
+        "final_action": "create_ticket_pending_review",
+        "reply": "订单 10003，商品：定制刻字保温杯，当前订单状态：已签收。\n\n订单备注记录：定制商品通常不支持七天无理由退货，质量问题除外。\n\n工单 T-2cceb2191137：草稿，待人工审核。\n\n本轮尚未取得足以回答此问题的政策片段，不能据此确认完整的政策条件。请补充具体问题或由人工核实。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "e43f3e36-4789-452e-be68-cf89e180f5e0",
+      "reason": {
+        "route": [
+          "route.need_policy expected=True, actual=False",
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['customer_agent', 'risk_agent'], actual=['after_sales_agent', 'after_sales_agent']"
+        ],
+        "rag": [
+          "policy_search missing"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review'], actual=['order_lookup', 'create_ticket']",
+          "missing tool result: policy_search",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply",
+          "missing tool result: create_manual_review"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=manual_review_created, actual=create_ticket_pending_review"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功"
+        ]
+      }
+    }
+  ],
+  "report_name": "eval_e2e",
+  "created_at": "2026-09-08T20:06:28"
+}
+report_path: C:\Users\DELL\AppData\Local\Temp\support-baseline-2l3_zfl3\reports\eval_e2e.json
+========================================================================

@@ -1,0 +1,67 @@
+............s...s.....s...................................... [ 79%]
+................                                                         [100%]
+================================== FAILURES ===================================
+_ PaymentReconciliationTests.test_submit_rechecks_confirmed_payment_before_dispatch (payment_status=None) _
+tests\test_payment_reconciliation.py:82: in test_submit_rechecks_confirmed_payment_before_dispatch
+    db.update_order_in_db("10009", {"payment_status": payment_status})
+app\storage\database.py:1246: in update_order_in_db
+    order = _mysql_backend().update_order_in_mysql(order_id, updates)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\storage\mysql_database.py:468: in update_order_in_mysql
+    upsert_order(cursor, order)
+app\storage\mysql_database.py:411: in upsert_order
+    cursor.execute(
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.IntegrityError: (1048, "Column 'payment_status' cannot be null")
+_ RefundPaymentPreconditionTests.test_unconfirmed_payment_never_creates_refund_or_event (payment_status=None) _
+tests\test_payment_reconciliation.py:145: in test_unconfirmed_payment_never_creates_refund_or_event
+    db.update_order_in_db("10009", {"payment_status": payment_status})
+app\storage\database.py:1246: in update_order_in_db
+    order = _mysql_backend().update_order_in_mysql(order_id, updates)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\storage\mysql_database.py:468: in update_order_in_mysql
+    upsert_order(cursor, order)
+app\storage\mysql_database.py:411: in upsert_order
+    cursor.execute(
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:159: in execute
+    result = self._query(query)
+             ^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\cursors.py:330: in _query
+    conn.query(q)
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:582: in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:847: in _read_query_result
+    result.read()
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:1245: in read
+    first_packet = self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\connections.py:803: in _read_packet
+    packet.raise_for_error()
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\protocol.py:219: in raise_for_error
+    err.raise_mysql_exception(self._data)
+..\..\Programs\Python\Python313\Lib\site-packages\pymysql\err.py:154: in raise_mysql_exception
+    raise errorclass(errno, errval, sqlstate=sqlstate)
+E   pymysql.err.IntegrityError: (1048, "Column 'payment_status' cannot be null")
+=========================== short test summary info ===========================
+SUBFAILED(payment_status=None) tests/test_payment_reconciliation.py::PaymentReconciliationTests::test_submit_rechecks_confirmed_payment_before_dispatch
+SUBFAILED(payment_status=None) tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_unconfirmed_payment_never_creates_refund_or_event
+2 failed, 74 passed, 3 skipped, 9 subtests passed in 64.92s (0:01:04)

@@ -1,0 +1,36 @@
+FF.FF                                                                    [100%]
+================================== FAILURES ===================================
+_ NonRefundReviewTests.test_semantic_address_alias_reaches_review_then_updates_confirmed_address _
+tests\test_nonrefund_review_continuation.py:92: in test_semantic_address_alias_reaches_review_then_updates_confirmed_address
+    review = self.requested_review(result, "address_change")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_nonrefund_review_continuation.py:52: in requested_review
+    self.assertIn("risk_check", names)
+E   AssertionError: 'risk_check' not found in ['order_lookup', 'create_ticket']
+_ NonRefundReviewTests.test_semantic_cancel_alias_reaches_review_and_unpaid_approval _
+tests\test_nonrefund_review_continuation.py:66: in test_semantic_cancel_alias_reaches_review_and_unpaid_approval
+    review = self.requested_review(result, "cancel_order")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_nonrefund_review_continuation.py:52: in requested_review
+    self.assertIn("risk_check", names)
+E   AssertionError: 'risk_check' not found in ['order_lookup', 'create_ticket']
+_ NonRefundReviewTests.test_semantic_change_review_rejection_and_late_shipping_do_not_change_order _
+tests\test_nonrefund_review_continuation.py:101: in test_semantic_change_review_rejection_and_late_shipping_do_not_change_order
+    review = self.requested_review(self.user_request("cancel_order", "订单10009我想撤销这单。"), "cancel_order")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_nonrefund_review_continuation.py:52: in requested_review
+    self.assertIn("risk_check", names)
+E   AssertionError: 'risk_check' not found in ['order_lookup', 'create_ticket']
+_ NonRefundReviewTests.test_semantic_paid_cancel_alias_approval_creates_one_refund_event _
+tests\test_nonrefund_review_continuation.py:78: in test_semantic_paid_cancel_alias_approval_creates_one_refund_event
+    review = self.requested_review(result, "cancel_order")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_nonrefund_review_continuation.py:52: in requested_review
+    self.assertIn("risk_check", names)
+E   AssertionError: 'risk_check' not found in ['order_lookup', 'create_ticket']
+=========================== short test summary info ===========================
+FAILED tests/test_nonrefund_review_continuation.py::NonRefundReviewTests::test_semantic_address_alias_reaches_review_then_updates_confirmed_address
+FAILED tests/test_nonrefund_review_continuation.py::NonRefundReviewTests::test_semantic_cancel_alias_reaches_review_and_unpaid_approval
+FAILED tests/test_nonrefund_review_continuation.py::NonRefundReviewTests::test_semantic_change_review_rejection_and_late_shipping_do_not_change_order
+FAILED tests/test_nonrefund_review_continuation.py::NonRefundReviewTests::test_semantic_paid_cancel_alias_approval_creates_one_refund_event
+4 failed, 1 passed, 6 deselected in 0.75s

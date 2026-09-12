@@ -1,0 +1,239 @@
+--- a/app/agent/orchestrator.py
++++ b/app/agent/orchestrator.py
+@@ -2,6 +2,7 @@
+ 
+ from app.agent.agents import AfterSalesAgent, CustomerAgent, RiskAgent
+ from app.agent.routing.router_v2 import build_tool_plan, route_tools_v2
++from app.agent.routing.pending_task import can_retrieve_policy_while_clarifying
+ from app.agent.state import AgentResult, AgentState
+ from app.agent.tools.tool_results import get_tool_result
+ from app.agent.tools.tool_validation import validate_tool_chain, validate_tool_plan
+@@ -57,7 +58,7 @@
+     def should_skip_agents(self, route: RouteDecision) -> bool:
+         return (
+             route.blocked_by_guardrail
+-            or route.need_clarification
++            or (route.need_clarification and not can_retrieve_policy_while_clarifying(route))
+             or (route.handoff_required and not route.order_id and not route.need_handoff)
+         )
+ 
+@@ -409,6 +410,13 @@
+             state.add_tool_result(plan_validation_result)
+             return state
+ 
++        if route.need_clarification:
++            # The only allowed clarification path is policy-only. Do not enter
++            # the business dispatch loop while order facts are still missing.
++            self.dispatch_agent("customer_agent", state)
++            self.append_chain_validation_result(state)
++            return state
++
+         for _ in range(12):
+             next_agent = self.decide_next_agent(state)
+ 
+--- a/app/agent/response/fallback.py
++++ b/app/agent/response/fallback.py
+@@ -3,7 +3,8 @@
+     is_low_confidence_evidence,
+     is_system_tool_failure,
+ )
+-from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
++from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
++from app.agent.routing.pending_task import can_retrieve_policy_while_clarifying
+ 
+ 
+ def _build_policy_answer(policy_result) -> str:
+@@ -62,8 +63,14 @@
+     if route.topic == WITHDRAWAL_TOPIC:
+         return WITHDRAWAL_GUIDANCE
+ 
+-    if route.need_clarification:
+-        reply = (
++    if route.need_clarification:
++        if can_retrieve_policy_while_clarifying(route):
++            policy = get_tool_result(tool_results, "policy_search")
++            if policy:
++                explanation = (_build_policy_answer(policy) if policy.success else
++                               "本轮未取得可用的退款政策证据，不能据此判断退款资格。")
++                return explanation + "\n\n尚未核实具体订单的退款资格；如需核实您的订单，请提供订单号。"
++        reply = (
+             route.clarification_question
+             or "请您补充订单号后，我再帮您继续处理。"
+         )
+--- a/app/agent/routing/pending_task.py
++++ b/app/agent/routing/pending_task.py
+@@ -263,6 +263,18 @@
+     return "请您补充必要信息后，我再继续处理。"
+ 
+ 
++def can_retrieve_policy_while_clarifying(route: RouteDecision) -> bool:
++    """Only explain eligibility policy while waiting for an order number."""
++    return bool(
++        route.need_clarification and route.intent == "return_refund"
++        and route.action_type == "query" and route.topic == "refund_eligibility"
++        and route.need_policy and not route.order_id
++        and not any((route.blocked_by_guardrail, route.need_order, route.need_ticket,
++                     route.need_refund_request, route.need_risk_check,
++                     route.manual_review_required, route.need_handoff, route.handoff_required))
++    )
++
++
+ def apply_slot_requirements(
+     route: RouteDecision,
+     required_slots: list[str],
+@@ -299,9 +311,9 @@
+             )
+         )
+ 
+-        # 当前 Router 的规则是：
+-        # 只要还需要用户补充信息，本轮就不执行任何业务工具。
+-        route.tool_plan = []
++        # Preserve the missing-order task; consultation may retrieve policy,
++        # but may not execute the user's potential future business operation.
++        route.tool_plan = ["policy_search"] if can_retrieve_policy_while_clarifying(route) else []
+ 
+     return route, missing_slots, final_required_slots
+ 
+--- a/app/agent/routing/router_v2.py
++++ b/app/agent/routing/router_v2.py
+@@ -17,16 +17,17 @@
+ )
+ from app.core.schemas import RouteDecision
+ from app.agent.routing.refund_withdrawal import WITHDRAWAL_TOPIC, mentions_refund_withdrawal
++from app.agent.routing.pending_task import can_retrieve_policy_while_clarifying
+ 
+ 
+ def build_tool_plan(
+     route: RouteDecision,
+ ) -> list[str]:
+-    if (
+-        route.blocked_by_guardrail
+-        or route.need_clarification
+-    ):
+-        return []
++    if route.blocked_by_guardrail:
++        return []
++
++    if route.need_clarification:
++        return ["policy_search"] if can_retrieve_policy_while_clarifying(route) else []
+ 
+     if (
+         route.handoff_required
+--- a/tests/test_conversation_task_boundaries.py
++++ b/tests/test_conversation_task_boundaries.py
+@@ -325,6 +325,115 @@
+             self.assertIsNone(workflow.memory.get_pending_task(cid))
+         self.assertEqual(self.fixture.count("tickets"), 0)  # Only information collection/routing above.
+ 
++    def eligibility_semantic(self, action="query"):
++        return SemanticRoute(intent="return_refund", action_type=action,
++                             topic="refund_eligibility" if action == "query" else "refund_apply", source="llm")
++
++    def test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths(self):
++        async def streamed(cid, use_llm):
++            events = [e async for e in stream_customer_support_agent(
++                "定制商品不合适能退货吗？", cid, use_llm=use_llm)]
++            result = next(e["content"] for e in events if e["type"] == "done")
++            messages = [e["content"] for e in events if e["type"] == "message"]
++            self.assertEqual(messages, [result["reply"]])
++            self.assertFalse(any(e["type"] == "token" for e in events))
++            return result
++        for use_llm in (False, True):
++            sync_id, stream_id = f"eligibility-sync-{use_llm}", f"eligibility-stream-{use_llm}"
++            with self.subTest(use_llm=use_llm), \
++                 patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.eligibility_semantic()), \
++                 patch.dict(TOOL_HANDLERS, {"policy_search": self.refund_policy_fixture}), \
++                 patch.object(workflow, "call_zhipu_chat", side_effect=AssertionError("clarification uses original policy")), \
++                 patch("app.agent.entry.stream_runner.call_zhipu_chat_stream", side_effect=AssertionError("no unverified qualification")):
++                sync = run_customer_support_agent("定制商品不合适能退货吗？", sync_id, use_llm=use_llm)
++                stream = asyncio.run(streamed(stream_id, use_llm))
++                self.assertEqual(sync["reply"], stream["reply"])
++                for result in (sync, stream):
++                    self.assertTrue(result["route"]["need_clarification"])
++                    self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
++                    self.assertIn("退款申请需要核实订单支付状态。", result["reply"])
++                    self.assertIn("尚未核实具体订单的退款资格", result["reply"])
++                    self.assertIn("请提供订单号", result["reply"])
++                for cid in (sync_id, stream_id):
++                    task = workflow.memory.get_pending_task(cid)
++                    self.assertEqual(task["missing_slots"], ["order_id"])
++                    self.assertEqual(task["user_request"], "定制商品不合适能退货吗？")
++        for table in ("refund_requests", "mq_messages", "manual_reviews", "tickets"):
++            self.assertEqual(self.fixture.count(table), 0)
++
++    def test_eligibility_order_followup_preserves_consultation_then_requires_explicit_execution(self):
++        cid = "eligibility-to-apply"
++        with patch("app.agent.routing.router_v2.infer_semantic_route", side_effect=[
++                self.eligibility_semantic(), self.eligibility_semantic(), self.eligibility_semantic("execute")]) as semantic, \
++             patch.dict(TOOL_HANDLERS, {"policy_search": self.refund_policy_fixture}):
++            first = run_customer_support_agent("未发货商品能否申请退款？", cid, use_llm=False)
++            self.assertEqual([r["tool_name"] for r in first["tool_results"]], ["policy_search"])
++            second = run_customer_support_agent("订单号是10009", cid, use_llm=False)
++            self.assertIn("未发货商品能否申请退款？", semantic.call_args.args[0])
++            self.assertEqual([r["tool_name"] for r in second["tool_results"]], ["order_lookup", "policy_search"])
++            self.assertNotIn("请提供订单号", second["reply"])
++            self.assertEqual(self.fixture.count("refund_requests"), 0)
++            third = run_customer_support_agent("现在帮我提交退款申请", cid, use_llm=False)
++        self.assertEqual(third["route"]["order_id"], "10009")
++        self.assertIn("refund_apply", [r["tool_name"] for r in third["tool_results"]])
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++        self.assertEqual(self.fixture.count("mq_messages"), 1)
++        self.assertNotIn("退款已完成", third["reply"])
++
++    def test_eligibility_question_replaces_pending_execution_and_number_remains_query(self):
++        cid = "eligibility-replaces-apply"
++        self.pending(cid)
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.eligibility_semantic()), \
++             patch.dict(TOOL_HANDLERS, {"policy_search": self.refund_policy_fixture}):
++            first = run_customer_support_agent("先问一下，未发货商品能退款吗？", cid, use_llm=False)
++            self.assertEqual([r["tool_name"] for r in first["tool_results"]], ["policy_search"])
++            self.assertEqual(workflow.memory.get_pending_task(cid)["user_request"], "先问一下，未发货商品能退款吗？")
++            second = run_customer_support_agent("10009", cid, use_llm=False)
++        self.assertEqual(second["route"]["action_type"], "query")
++        self.assertEqual([r["tool_name"] for r in second["tool_results"]], ["order_lookup", "policy_search"])
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        self.assertEqual(self.fixture.count("tickets"), 0)
++
++    def test_eligibility_consultation_does_not_remove_order_requirement_for_execution(self):
++        cid = "eligibility-missing-order-execute"
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.eligibility_semantic("execute")):
++            result = run_customer_support_agent("帮我提交退款申请", cid, use_llm=False)
++        self.assertTrue(result["route"]["need_clarification"])
++        self.assertEqual(result["tool_results"], [])
++        self.assertEqual(workflow.memory.get_pending_task(cid)["missing_slots"], ["order_id"])
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++
++    def test_eligibility_policy_failure_reports_missing_evidence_without_writing(self):
++        def unavailable(**kwargs):
++            return ToolResult(tool_name="policy_search", success=False, result="policy unavailable")
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.eligibility_semantic()), \
++             patch.dict(TOOL_HANDLERS, {"policy_search": unavailable}), \
++             patch.object(workflow, "call_zhipu_chat", side_effect=AssertionError("must not invent policy")):
++            result = run_customer_support_agent("什么条件可以退款？", "eligibility-policy-down", use_llm=True)
++        self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
++        self.assertFalse(result["tool_results"][0]["success"])
++        self.assertIn("政策", result["reply"])
++        self.assertNotIn("本轮可核实的政策内容", result["reply"])
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        self.assertEqual(self.fixture.count("manual_reviews"), 0)
++
++    def test_eligibility_pending_keeps_issue_without_business_keywords_for_order_followup(self):
++        cid = "eligibility-slot-formats"
++        question = "买回来五天了，现在还能退吗？"
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.eligibility_semantic()), \
++             patch.dict(TOOL_HANDLERS, {"policy_search": self.refund_policy_fixture}):
++            result = run_customer_support_agent(question, cid, use_llm=False)
++        self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
++        pending = workflow.memory.get_pending_task(cid)
++        for message in ("10009", "订单10009", "订单号是10009", "订单号：10009。"):
++            with self.subTest(message=message):
++                context = self.context_for(cid, message)
++                self.assertTrue(context["used_pending_task"])
++                self.assertIn(question, context["effective_user_message"])
++        for message in ("取消10009", "订单10009帮我申请退款", "订单10009现在是什么状态"):
++            with self.subTest(message=message):
++                self.assertEqual(pending_message_kind(message, pending), "replace")
++
+     def context_for(self, cid, message):
+         state = workflow.build_initial_state(message, cid, False)
+         state.update(workflow.load_context_node(state))

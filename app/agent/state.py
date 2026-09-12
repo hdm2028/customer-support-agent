@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any
+from copy import deepcopy
 
 from app.core.schemas import RouteDecision, ToolResult
 
@@ -42,6 +43,7 @@ class AgentState:
     blocked: bool = False
     block_reason: str | None = None
     agent_steps: list[dict] = field(default_factory=list)
+    harness: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.intent = self.intent or self.route.intent
@@ -102,4 +104,5 @@ class AgentState:
             "block_reason": self.block_reason,
             "agent_steps": self.agent_steps,
             "tool_names": [item.tool_name for item in self.tool_results],
+            "harness": deepcopy(self.harness),
         }

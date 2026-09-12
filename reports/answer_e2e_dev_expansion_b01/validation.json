@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "checks": [
+    "JSON/types and consumed fields",
+    "unique IDs and near-duplicates per layer",
+    "route/tool/action names",
+    "noncontradictory expected/forbidden labels",
+    "knowledge source/section existence",
+    "source/code review recorded separately from live results",
+    "original rows and frozen candidates unchanged"
+  ],
+  "counts": {
+    "answer": {
+      "existing": 4,
+      "new": 16,
+      "after_append": 20,
+      "promoted": true,
+      "near_duplicate_pairs_at_080": []
+    },
+    "e2e": {
+      "existing": 12,
+      "new": 12,
+      "after_append": 24,
+      "promoted": true,
+      "near_duplicate_pairs_at_080": []
+    }
+  },
+  "cross_layer_scenarios": 18,
+  "regression_cases": [
+    "answer_dev_b01_006",
+    "answer_dev_b01_015",
+    "e2e_dev_b01_005"
+  ],
+  "requires_human_review_candidates": [],
+  "limits": [
+    "lexical scoring does not prove complete semantic correctness",
+    "not a live-system pass",
+    "multi-turn, failure injection and production payment excluded"
+  ]
+}

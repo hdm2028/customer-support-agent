@@ -1,0 +1,39 @@
+.........................................s.......................... [ 26%]
+................................................. [ 45%]
+.............................................ssssss.......s...... [ 70%]
+...s...........................s.................................. [ 96%]
+..F......                                                                [100%]
+================================== FAILURES ===================================
+_ SideEffectFailureTests.test_manual_review_db_failure_is_not_reported_as_success _
+tests\test_tool_reliability.py:315: in test_manual_review_db_failure_is_not_reported_as_success
+    save.assert_called_once()
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:958: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'save_manual_review_to_db' to have been called once. Called 0 times.
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-od7fmsq2\main.py:179: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_tool_reliability.py::SideEffectFailureTests::test_manual_review_db_failure_is_not_reported_as_success
+1 failed, 246 passed, 10 skipped, 3 warnings, 40 subtests passed in 7.07s

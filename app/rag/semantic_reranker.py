@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass
 from importlib.metadata import version
 from typing import Protocol
+from threading import Lock
 
 
 DEFAULT_RERANKER_MODEL = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
@@ -74,6 +75,7 @@ class CrossEncoderSemanticReranker:
         self.batch_size = batch_size
         self.max_length = max_length
         self._model = None
+        self._load_lock = Lock()
 
     @property
     def identity(self) -> SemanticRerankerIdentity:
@@ -94,6 +96,12 @@ class CrossEncoderSemanticReranker:
         )
 
     def _load_model(self):
+        # Concurrent first requests share one weight load. Failed loads remain
+        # retryable; inference and ranking semantics are unchanged.
+        with self._load_lock:
+            return self._load_model_once()
+
+    def _load_model_once(self):
         if self._model is not None:
             return self._model
 

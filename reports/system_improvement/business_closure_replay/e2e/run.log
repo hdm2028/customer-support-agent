@@ -1,0 +1,460 @@
+========================================================================
+End-to-End Refund Workflow Evaluation
+========================================================================
+{
+  "side_effects": [
+    "[WRITES DATABASE]",
+    "[USES REDIS OR MEMORY CACHE]",
+    "[PUBLISHES MQ WHEN REFUND IS CREATED]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-z_yqv3tl\\data\\eval\\e2e_eval.jsonl",
+  "total_cases": 12,
+  "passed_count": 8,
+  "failed_count": 4,
+  "task_success_rate": 0.6667,
+  "routing_success_rate": 0.9167,
+  "agent_success_rate": 0.9,
+  "rag_success_rate": 0.8889,
+  "tool_success_rate": 0.9167,
+  "tool_argument_success_rate": 1.0,
+  "risk_success_rate": 0.8571,
+  "refund_success_rate": 0.8333,
+  "database_success_rate": 1.0,
+  "mq_success_rate": 1.0,
+  "workflow_success_rate": 0.9167,
+  "answer_success_rate": 0.6667,
+  "failed_cases": [
+    {
+      "case_id": "e2e_refund_001",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "final_action": "refund_queued"
+      },
+      "actual": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent",
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10009"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10009我要退款。\n订单状态：待发货\n物流状态：仓库正在拣货\n商品名称：儿童安全座椅 B6\n商品类目：母婴用品",
+              "lexical_query": "订单10009我要退款。 退款 退货退款 退款申请 待发货 仓库正在拣货 儿童安全座椅 B6 母婴用品"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。"
+            }
+          },
+          {
+            "tool_name": "refund_apply",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。",
+              "risk_assessment": {
+                "risk_level": "low",
+                "risk_score": 15,
+                "risk_flags": [
+                  "中额退款"
+                ],
+                "review_required": false,
+                "review_reason": "中额退款",
+                "profile": {
+                  "user_id": "u009",
+                  "account_status": "normal",
+                  "refund_count_30d": 0,
+                  "complaint_count_30d": 0
+                }
+              }
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10009",
+              "issue_type": "退货退款",
+              "user_request": "订单10009我要退款。",
+              "priority": "high"
+            }
+          }
+        ],
+        "final_action": "refund_queued",
+        "reply": "已查询到订单 10009，商品是 儿童安全座椅 B6，当前订单状态为待发货。根据知识库来源《退换货政策.md - 不支持七天无理由退货的情况》：货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。\n\n## 已发货订单\n\n订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。\n\n## 已签收订单\n\n商品已经签收后，需要根据签收时间、商品状态和退款原因判断是否符合退货条件。\n\n符合七天无理由退货条件的，可以创建退货申请。\n\n存在质量问题的，可以创建售后检测申请。\n\n## 退款申请\n\n满足退款条件后，可以创建退款申请。\n\n退款 根据知识库来源《历史问题案例.md - 案例六：已签收但用户没有收到》：：商品已找到。\n\n## 案例七：待发货订单修改地址\n\n用户下单后发现收货地址填写错误。\n\n客服查询订单后发现订单仍处于待发货状态，并且仓库尚未出库。\n\n客服创建地址修改工单。\n\n处理结果：地址修改成功。\n\n## 案例八：订单已发货无法直接修改地址\n\n用户要求修改收货地址。\n\n客服查询发现订单已经发货。\n\n由于订单已经进入物流流程，平台没有直接修改订单原始地址。\n\n随后建议用户联系物流确认是否支持配送地址变更。\n\n处理结果：未直接修改订单地址。\n\n## 案例九：高金额退款进入人工审核\n\n用户申请一笔高金额订单退款。\n\n退款资格初步判断符合要求，但风险检查结果为高风险。\n\n系退款申请 R-452271839498已受理，正在等待处理。申请受理不代表资金已经退回。我已生成退货退款工单草稿，后续需要人工客服核对订单和凭证后处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 1,
+            "active_refund_count": 1,
+            "mq_message_count": 1
+          }
+        }
+      },
+      "trace_id": "832899bc-73c6-4840-946f-610863ad5b29",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: MQ"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_007",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": "10005",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "final_action": "refund_apply_failed"
+      },
+      "actual": {
+        "order_id": "10005",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10005"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10005我要退款。\n订单状态：待支付\n物流状态：未发货\n商品名称：手机保护壳 C3\n商品类目：手机配件",
+              "lexical_query": "订单10005我要退款。 退款 退货退款 退款申请 待支付 未发货 手机保护壳 C3 手机配件"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10005",
+              "user_request": "订单10005我要退款。"
+            }
+          },
+          {
+            "tool_name": "refund_apply",
+            "arguments": {
+              "order_id": "10005",
+              "user_request": "订单10005我要退款。",
+              "risk_assessment": {
+                "risk_level": "low",
+                "risk_score": 0,
+                "risk_flags": [],
+                "review_required": false,
+                "review_reason": "未命中明显风险规则",
+                "profile": {
+                  "user_id": "u005",
+                  "account_status": "normal",
+                  "refund_count_30d": 0,
+                  "complaint_count_30d": 0
+                }
+              }
+            }
+          }
+        ],
+        "final_action": "refund_apply_failed",
+        "reply": "已查询到订单 10005，商品是 手机保护壳 C3，当前订单状态为待支付。根据知识库来源《退换货政策.md - 不支持七天无理由退货的情况》：货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。\n\n## 已发货订单\n\n订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。\n\n## 已签收订单\n\n商品已经签收后，需要根据签收时间、商品状态和退款原因判断是否符合退货条件。\n\n符合七天无理由退货条件的，可以创建退货申请。\n\n存在质量问题的，可以创建售后检测申请。\n\n## 退款申请\n\n满足退款条件后，可以创建退款申请。\n\n退款 根据知识库来源《退款政策.md - 退款人工审核》：经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n## 退款到账\n\n退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理退款申请暂未创建成功：订单尚未支付，不会产生退款；用户可自行取消待支付订单。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "4db36ddb-f7e5-4744-b81d-914c34b2251f",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply contains forbidden phrase: MQ"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_008",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "final_action": "refund_apply_failed"
+      },
+      "actual": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10006"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10006我要退款。\n订单状态：退货审核中\n物流状态：2026-08-04 16:20 退货包裹已被仓库签收\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31",
+              "lexical_query": "订单10006我要退款。 退款 退货退款 退款申请 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10006",
+              "user_request": "订单10006我要退款。"
+            }
+          },
+          {
+            "tool_name": "refund_apply",
+            "arguments": {
+              "order_id": "10006",
+              "user_request": "订单10006我要退款。",
+              "risk_assessment": {
+                "risk_level": "low",
+                "risk_score": 0,
+                "risk_flags": [],
+                "review_required": false,
+                "review_reason": "未命中明显风险规则",
+                "profile": {
+                  "user_id": "u006",
+                  "account_status": "normal",
+                  "refund_count_30d": 1,
+                  "complaint_count_30d": 0
+                }
+              }
+            }
+          }
+        ],
+        "final_action": "refund_apply_failed",
+        "reply": "已查询到订单 10006，商品是 女士运动鞋 R5，当前订单状态为退货审核中。根据知识库来源《退换货政策.md - 不支持七天无理由退货的情况》：货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n如果用户认为商品存在质量问题，可以继续申请质量检测，不直接按照七天无理由退货处理。\n\n## 已发货订单\n\n订单已经发货后，通常不能直接取消发货。\n\n如果用户需要退货，可以根据物流状态尝试进行物流拦截。\n\n无法拦截时，需要等待商品送达或者拒收后，再按照退货流程处理。\n\n## 已签收订单\n\n商品已经签收后，需要根据签收时间、商品状态和退款原因判断是否符合退货条件。\n\n符合七天无理由退货条件的，可以创建退货申请。\n\n存在质量问题的，可以创建售后检测申请。\n\n## 退款申请\n\n满足退款条件后，可以创建退款申请。\n\n退款 根据知识库来源《退款政策.md - 退款人工审核》：经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n## 退款到账\n\n退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理退款申请暂未创建成功：订单已有售后或退款流程在处理中，不能重复创建退款申请。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "b946db34-5cbc-467f-9f6a-805cc42f5c08",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply contains forbidden phrase: MQ"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_009",
+      "failure_stage": "ROUTING_FAILURE",
+      "expected": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review"
+        ],
+        "final_action": "manual_review_created"
+      },
+      "actual": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10003"
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10003",
+              "issue_type": "取消订单",
+              "user_request": "订单10003定制杯子不要了。",
+              "priority": "normal"
+            }
+          }
+        ],
+        "final_action": "create_ticket_pending_review",
+        "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。我已生成取消订单工单草稿，后续需要人工客服核对订单和凭证后处理。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "aae75ca9-3e57-4e7f-9b75-806f758780af",
+      "reason": {
+        "route": [
+          "route.need_policy expected=True, actual=False",
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['customer_agent', 'risk_agent'], actual=['after_sales_agent', 'after_sales_agent']"
+        ],
+        "rag": [
+          "policy_search missing"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review'], actual=['order_lookup', 'create_ticket']",
+          "missing tool result: policy_search",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply",
+          "missing tool result: create_manual_review"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=manual_review_created, actual=create_ticket_pending_review"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功",
+          "reply missing phrase: 人工审核"
+        ]
+      }
+    }
+  ],
+  "report_name": "eval_e2e",
+  "created_at": "2026-09-08T19:22:36"
+}
+report_path: C:\Users\DELL\AppData\Local\Temp\support-baseline-z_yqv3tl\reports\eval_e2e.json
+========================================================================

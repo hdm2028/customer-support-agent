@@ -1,0 +1,866 @@
+--- a/app/agent/orchestrator.py
++++ b/app/agent/orchestrator.py
+@@ -255,6 +255,17 @@
+                     "existing_refund": {key: tool_result.result.get(key) for key in ("refund_id", "order_id", "status")},
+                     "origin": "refund_apply_replay",
+                 })
++
++            if (tool_result.tool_name == "create_manual_review" and tool_result.success
++                    and isinstance(tool_result.result, dict) and tool_result.result.get("idempotent_replay")):
++                review = tool_result.result
++                if review.get("existing_refund"):
++                    self.record_refund_precondition(state, {"kind": "existing_refund", "origin": "review_creation_check",
++                        "existing_refund": review["existing_refund"], "reason": "已有退款申请，无需再创建审核。"})
++                elif review.get("review_type") == "refund":
++                    self.record_refund_precondition(state, {"kind": "existing_refund_review", "origin": "review_creation_check",
++                        "existing_review": {key: review.get(key) for key in ("review_id", "status")},
++                        "reason": "已有待处理退款审核，本轮不重复创建。"})
+ 
+             if tool_result.tool_name == "policy_search" and not tool_result.success:
+                 self.block_execution(state, "policy_search_failed")
+--- a/app/tools/human_review.py
++++ b/app/tools/human_review.py
+@@ -1,6 +1,8 @@
+ from app.core.schemas import ToolResult
+-from app.storage.database import save_manual_review_to_db
++from app.storage.database import save_manual_review_to_db, get_active_refund_request_by_order_id_from_db
+ from app.storage.store import get_order_by_id
++from app.storage.transactions import execute, lock_record, transaction
++from app.core.security import authorize_order
+ from contextvars import ContextVar
+ from contextlib import contextmanager
+ from copy import deepcopy
+@@ -44,8 +46,7 @@
+     """创建人工审核单，用于大额退款、异常账号、投诉升级等高风险动作。"""
+ 
+     order = get_order_by_id(order_id) if order_id else None
+-    review = save_manual_review_to_db(
+-        {
++    payload = {
+             "order_id": order_id,
+             "user_id": order.get("user_id") if order else None,
+             "review_type": review_type,
+@@ -56,7 +57,37 @@
+             "context": current_review_context(),
+             "next_step": "由人工客服复核订单、用户凭证、风控原因和政策依据后处理。",
+         }
+-    )
++    if review_type == "refund" and order_id:
++        # All creators serialize on the stable order row. Read pending reviews
++        # without locking them: resolution locks review -> refund -> order, so
++        # taking a review lock here would introduce a reverse-order deadlock.
++        with transaction():
++            row = lock_record("orders", "order_id", order_id)
++            if row is None:
++                raise ValueError("订单不存在，不能创建退款审核")
++            locked_order = row["payload"] if isinstance(row["payload"], dict) else json.loads(row["payload"])
++            authorize_order(locked_order)
++            payload["user_id"] = locked_order.get("user_id")
++            rows = execute("SELECT payload FROM manual_reviews WHERE order_id = ? AND review_type = 'refund' "
++                           "AND status = 'pending_review' ORDER BY created_at, review_id LIMIT 1", (order_id,), fetch=True)
++            if rows:
++                saved = rows[0]["payload"] if isinstance(rows[0]["payload"], dict) else json.loads(rows[0]["payload"])
++                if related_id and saved.get("related_id") not in {None, related_id}:
++                    raise ValueError("已有审核关联其他退款申请，请先核实关联关系")
++                review = {**saved, "idempotent_replay": True}
++            else:
++                refund = get_active_refund_request_by_order_id_from_db(order_id)
++                if refund and refund["status"] != "pending_manual_review":
++                    review = {"status": "not_required", "idempotent_replay": True,
++                              "existing_refund": {key: refund.get(key) for key in ("refund_id", "order_id", "status")}}
++                else:
++                    if refund:
++                        if related_id and related_id != refund["refund_id"]:
++                            raise ValueError("当前退款与审核关联信息不一致")
++                        payload["related_id"] = refund["refund_id"]
++                    review = {**save_manual_review_to_db(payload), "idempotent_replay": False}
++    else:
++        review = save_manual_review_to_db(payload)
+ 
+     return ToolResult(
+         tool_name="create_manual_review",
+--- a/app/agent/response/fallback.py
++++ b/app/agent/response/fallback.py
+@@ -1,78 +1,78 @@
+-from app.agent.tools.tool_results import (
+-    get_tool_result,
+-    is_low_confidence_evidence,
+-    is_system_tool_failure,
+-)
+-from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
+-
+-
+-def _build_policy_answer(policy_result) -> str:
+-    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
+-    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
+-
+-
+-def refund_status_message(refund: dict) -> str:
+-    """Describe the observed state, including replay, without claiming settlement."""
+-    prefix = f"退款申请 {refund.get('refund_id')}"
+-    messages = {
+-        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
+-        "pending_manual_review": "当前状态为待人工审核。",
+-        "refund_processing": "正在处理中，尚未确认处理完成。",
+-        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
+-        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
+-        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
+-        "failed": "处理失败，请查看失败原因或联系人工客服。",
+-        "rejected": "审核未通过，请查看审核说明。",
+-        "cancelled": "已取消。",
+-        "canceled": "已取消。",
+-    }
+-    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
+-
+-
+-def refund_outcome_reply(tool_results: list) -> str | None:
+-    """Execution outcomes come from tool state, never from retrieved policy prose."""
+-    result = get_tool_result(tool_results, "refund_apply")
+-    if result is None:
+-        return None
+-    if result.success and isinstance(result.result, dict):
+-        parts = [refund_status_message(result.result)]
+-    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
+-        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
+-    else:
+-        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
+-        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
+-    order = get_tool_result(tool_results, "order_lookup")
+-    if order and order.success and isinstance(order.result, dict):
+-        parts.append(f"关联订单：{order.result.get('order_id')}。")
+-    review = get_tool_result(tool_results, "create_manual_review")
+-    if review and review.success and isinstance(review.result, dict):
+-        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
+-    ticket = get_tool_result(tool_results, "create_ticket")
+-    if ticket and ticket.success and isinstance(ticket.result, dict):
+-        status = ticket.result.get("status")
+-        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
+-                 "pending_human_review": "工单草稿，待人工审核",
+-                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
+-                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
+-        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
+-    return "".join(parts)
+-
+-
+-def build_fallback_answer(route, tool_results: list) -> str:
+-    if route.topic == WITHDRAWAL_TOPIC:
+-        return WITHDRAWAL_GUIDANCE
+-
+-    if route.need_clarification:
+-        reply = (
+-            route.clarification_question
+-            or "请您补充订单号后，我再帮您继续处理。"
+-        )
+-
+-        if route.handoff_required and route.handoff_reason:
+-            reply += route.handoff_reason
+-
+-        return reply
+-
++from app.agent.tools.tool_results import (
++    get_tool_result,
++    is_low_confidence_evidence,
++    is_system_tool_failure,
++)
++from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
++
++
++def _build_policy_answer(policy_result) -> str:
++    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
++    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
++
++
++def refund_status_message(refund: dict) -> str:
++    """Describe the observed state, including replay, without claiming settlement."""
++    prefix = f"退款申请 {refund.get('refund_id')}"
++    messages = {
++        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
++        "pending_manual_review": "当前状态为待人工审核。",
++        "refund_processing": "正在处理中，尚未确认处理完成。",
++        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
++        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
++        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
++        "failed": "处理失败，请查看失败原因或联系人工客服。",
++        "rejected": "审核未通过，请查看审核说明。",
++        "cancelled": "已取消。",
++        "canceled": "已取消。",
++    }
++    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
++
++
++def refund_outcome_reply(tool_results: list) -> str | None:
++    """Execution outcomes come from tool state, never from retrieved policy prose."""
++    result = get_tool_result(tool_results, "refund_apply")
++    if result is None:
++        return None
++    if result.success and isinstance(result.result, dict):
++        parts = [refund_status_message(result.result)]
++    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
++        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
++    else:
++        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
++        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
++    order = get_tool_result(tool_results, "order_lookup")
++    if order and order.success and isinstance(order.result, dict):
++        parts.append(f"关联订单：{order.result.get('order_id')}。")
++    review = get_tool_result(tool_results, "create_manual_review")
++    if review and review.success and isinstance(review.result, dict):
++        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
++    ticket = get_tool_result(tool_results, "create_ticket")
++    if ticket and ticket.success and isinstance(ticket.result, dict):
++        status = ticket.result.get("status")
++        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
++                 "pending_human_review": "工单草稿，待人工审核",
++                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
++                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
++        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
++    return "".join(parts)
++
++
++def build_fallback_answer(route, tool_results: list) -> str:
++    if route.topic == WITHDRAWAL_TOPIC:
++        return WITHDRAWAL_GUIDANCE
++
++    if route.need_clarification:
++        reply = (
++            route.clarification_question
++            or "请您补充订单号后，我再帮您继续处理。"
++        )
++
++        if route.handoff_required and route.handoff_reason:
++            reply += route.handoff_reason
++
++        return reply
++
+     if route.handoff_required and not route.order_id:
+         handoff = get_tool_result(tool_results, "transfer_to_human")
+         if handoff and handoff.success:
+@@ -81,27 +81,27 @@
+         if handoff and not handoff.success:
+             return "本轮未能确认人工工单已创建，请查询已有工单或稍后重试。"
+         return (
+-            route.handoff_reason
+-            or "该问题需要人工客服进一步处理。"
+-        )
+-
+-    if route.blocked_by_guardrail:
+-        return (
+-            route.guardrail_reason
+-            or "当前请求存在安全风险，已拒绝执行。"
+-        )
+-
+-    order_result = get_tool_result(
+-        tool_results,
+-        "order_lookup",
+-    )
+-
+-    if order_result and not order_result.success:
+-        return (
+-            f"{order_result.result} 请您核对订单号后重新提供，"
+-            "我再继续查询售后政策并判断是否需要创建工单。"
+-        )
+-
++            route.handoff_reason
++            or "该问题需要人工客服进一步处理。"
++        )
++
++    if route.blocked_by_guardrail:
++        return (
++            route.guardrail_reason
++            or "当前请求存在安全风险，已拒绝执行。"
++        )
++
++    order_result = get_tool_result(
++        tool_results,
++        "order_lookup",
++    )
++
++    if order_result and not order_result.success:
++        return (
++            f"{order_result.result} 请您核对订单号后重新提供，"
++            "我再继续查询售后政策并判断是否需要创建工单。"
++        )
++
+     refund_reply = refund_outcome_reply(tool_results)
+     if refund_reply is not None:
+         return refund_reply
+@@ -112,6 +112,10 @@
+         decision = refund_decision.result
+         if decision.get("existing_refund"):
+             reply = refund_status_message(decision["existing_refund"]) + "本轮未重复创建退款申请、审核单或工单，可在退款申请详情查看处理进度。"
++        elif decision.get("existing_review"):
++            review = decision["existing_review"]
++            reply = (f"退款审核单 {review['review_id']} 已存在，当前待人工审核。"
++                     "本轮未重复创建审核单或人工工单，审核通过前不会自动执行退款。")
+         elif decision.get("kind") == "order_after_sales":
+             reply = (f"订单 {decision['order_id']} 当前状态为{decision['order_status']}。{decision['reason']}"
+                      "本轮未查到有效退款申请记录，不能将订单售后状态当成已创建退款申请的凭证。"
+@@ -122,194 +126,194 @@
+         if policy and not policy.success:
+             reply += "本轮政策证据未能取得，以上状态判断依据查询到的业务记录。"
+         return reply
+-
+-    policy_result = get_tool_result(
+-        tool_results,
+-        "policy_search",
+-    )
+-
+-    ticket_decision_result = get_tool_result(
+-        tool_results,
+-        "ticket_decision",
+-    )
+-
+-    ticket_result = get_tool_result(
+-        tool_results,
+-        "create_ticket",
+-    )
+-
+-    risk_result = get_tool_result(
+-        tool_results,
+-        "risk_check",
+-    )
+-
+-    manual_review_result = get_tool_result(
+-        tool_results,
+-        "create_manual_review",
+-    )
+-
+-    handoff_result = get_tool_result(
+-        tool_results,
+-        "transfer_to_human",
+-    )
+-
+-    plan_validation_result = get_tool_result(
+-        tool_results,
+-        "tool_plan_validation",
+-    )
+-
+-    chain_validation_result = get_tool_result(
+-        tool_results,
+-        "tool_chain_validation",
+-    )
+-
+-    parts = []
+-
+-    if (
+-        plan_validation_result
+-        and not plan_validation_result.success
+-    ):
+-        return (
+-            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
+-            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
+-        )
+-
+-    if order_result and order_result.success:
+-        order = order_result.result
+-
+-        if isinstance(order, dict):
+-            parts.append(
+-                f"已查询到订单 {order.get('order_id')}，"
+-                f"商品是 {order.get('product_name')}，"
+-                f"当前订单状态为{order.get('order_status')}。"
+-            )
+-
+-    if policy_result and not policy_result.success:
+-        if is_low_confidence_evidence(policy_result):
+-            parts.append(
+-                "但本轮没有检索到足够匹配的售后政策证据，"
+-                "我不能强行判断或创建工单。"
+-                "建议补充问题细节，或转人工客服核对政策后继续处理。"
+-            )
+-
+-        elif is_system_tool_failure(policy_result):
+-            parts.append(
+-                "但本轮售后政策检索工具调用失败，"
+-                "我不能在缺少政策依据时直接判断或创建工单。"
+-                "建议转人工客服核对政策后继续处理。"
+-            )
+-
+-        else:
+-            parts.append(
+-                "但本轮没有检索到足够匹配的售后政策，"
+-                "我不能编造不存在的政策结论。"
+-                "建议补充问题细节或转人工客服确认。"
+-            )
+-
+-    if policy_result and policy_result.success:
+-        parts.append(
+-            _build_policy_answer(policy_result)
+-        )
+-
+-    if risk_result and risk_result.success:
+-        risk = risk_result.result
+-
+-        if isinstance(risk, dict):
+-            if risk.get("risk_level") in {
+-                "medium",
+-                "high",
+-            }:
+-                flags = (
+-                    "、".join(
+-                        risk.get(
+-                            "risk_flags",
+-                            [],
+-                        )
+-                    )
+-                    or "售后风险"
+-                )
+-
+-                parts.append(
+-                    f"风控 Agent 判定风险等级为"
+-                    f"{risk.get('risk_level')}，"
+-                    f"命中原因：{flags}。"
+-                )
+-
+-    if (
+-        manual_review_result
+-        and manual_review_result.success
+-    ):
+-        review = manual_review_result.result
+-
+-        if isinstance(review, dict):
+-            parts.append(
+-                f"已创建人工审核单 "
+-                f"{review.get('review_id')}，"
+-                "后续由人工客服复核后再执行高风险操作。"
+-            )
+-
+-    if ticket_result and not ticket_result.success:
+-        if is_system_tool_failure(ticket_result):
+-            parts.append(
+-                "工单创建工具本轮调用失败，暂时没有生成工单。"
+-                "建议稍后重试，或由人工客服继续接入处理。"
+-            )
+-
+-        else:
+-            parts.append(
+-                f"工单暂未创建成功："
+-                f"{ticket_result.result}"
+-            )
+-
+-    if ticket_result and ticket_result.success:
+-        ticket = ticket_result.result
+-
+-        if isinstance(ticket, dict):
+-            parts.append(
+-                f"我已生成{ticket.get('issue_type')}工单草稿，"
+-                "后续需要人工客服核对订单和凭证后处理。"
+-            )
+-
++
++    policy_result = get_tool_result(
++        tool_results,
++        "policy_search",
++    )
++
++    ticket_decision_result = get_tool_result(
++        tool_results,
++        "ticket_decision",
++    )
++
++    ticket_result = get_tool_result(
++        tool_results,
++        "create_ticket",
++    )
++
++    risk_result = get_tool_result(
++        tool_results,
++        "risk_check",
++    )
++
++    manual_review_result = get_tool_result(
++        tool_results,
++        "create_manual_review",
++    )
++
++    handoff_result = get_tool_result(
++        tool_results,
++        "transfer_to_human",
++    )
++
++    plan_validation_result = get_tool_result(
++        tool_results,
++        "tool_plan_validation",
++    )
++
++    chain_validation_result = get_tool_result(
++        tool_results,
++        "tool_chain_validation",
++    )
++
++    parts = []
++
++    if (
++        plan_validation_result
++        and not plan_validation_result.success
++    ):
++        return (
++            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
++            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
++        )
++
++    if order_result and order_result.success:
++        order = order_result.result
++
++        if isinstance(order, dict):
++            parts.append(
++                f"已查询到订单 {order.get('order_id')}，"
++                f"商品是 {order.get('product_name')}，"
++                f"当前订单状态为{order.get('order_status')}。"
++            )
++
++    if policy_result and not policy_result.success:
++        if is_low_confidence_evidence(policy_result):
++            parts.append(
++                "但本轮没有检索到足够匹配的售后政策证据，"
++                "我不能强行判断或创建工单。"
++                "建议补充问题细节，或转人工客服核对政策后继续处理。"
++            )
++
++        elif is_system_tool_failure(policy_result):
++            parts.append(
++                "但本轮售后政策检索工具调用失败，"
++                "我不能在缺少政策依据时直接判断或创建工单。"
++                "建议转人工客服核对政策后继续处理。"
++            )
++
++        else:
++            parts.append(
++                "但本轮没有检索到足够匹配的售后政策，"
++                "我不能编造不存在的政策结论。"
++                "建议补充问题细节或转人工客服确认。"
++            )
++
++    if policy_result and policy_result.success:
++        parts.append(
++            _build_policy_answer(policy_result)
++        )
++
++    if risk_result and risk_result.success:
++        risk = risk_result.result
++
++        if isinstance(risk, dict):
++            if risk.get("risk_level") in {
++                "medium",
++                "high",
++            }:
++                flags = (
++                    "、".join(
++                        risk.get(
++                            "risk_flags",
++                            [],
++                        )
++                    )
++                    or "售后风险"
++                )
++
++                parts.append(
++                    f"风控 Agent 判定风险等级为"
++                    f"{risk.get('risk_level')}，"
++                    f"命中原因：{flags}。"
++                )
++
++    if (
++        manual_review_result
++        and manual_review_result.success
++    ):
++        review = manual_review_result.result
++
++        if isinstance(review, dict):
++            parts.append(
++                f"已创建人工审核单 "
++                f"{review.get('review_id')}，"
++                "后续由人工客服复核后再执行高风险操作。"
++            )
++
++    if ticket_result and not ticket_result.success:
++        if is_system_tool_failure(ticket_result):
++            parts.append(
++                "工单创建工具本轮调用失败，暂时没有生成工单。"
++                "建议稍后重试，或由人工客服继续接入处理。"
++            )
++
++        else:
++            parts.append(
++                f"工单暂未创建成功："
++                f"{ticket_result.result}"
++            )
++
++    if ticket_result and ticket_result.success:
++        ticket = ticket_result.result
++
++        if isinstance(ticket, dict):
++            parts.append(
++                f"我已生成{ticket.get('issue_type')}工单草稿，"
++                "后续需要人工客服核对订单和凭证后处理。"
++            )
++
+     if handoff_result and handoff_result.success:
+-        handoff = handoff_result.result
+-
++        handoff = handoff_result.result
++
+         if isinstance(handoff, dict):
+             from app.agent.response.grounded import handoff_receipt
+             parts.append(handoff_receipt(handoff))
+-
+-    if (
+-        chain_validation_result
+-        and not chain_validation_result.success
+-    ):
+-        parts.append(
+-            "另外，本轮工具执行链路没有通过一致性校验，"
+-            "我不会继续扩大自动处理范围。"
+-            "建议转人工客服复核。"
+-        )
+-
+-    if (
+-        ticket_decision_result
+-        and not ticket_decision_result.success
+-    ):
+-        result = ticket_decision_result.result
+-
+-        reason = (
+-            result.get(
+-                "reason",
+-                "当前订单状态暂不满足创建工单条件。",
+-            )
+-            if isinstance(result, dict)
+-            else str(result)
+-        )
+-
+-        parts.append(
+-            f"根据订单状态，当前暂不创建工单：{reason}"
+-        )
+-
+-    if not parts:
+-        return (
+-            "您好，我暂时没有找到足够信息。"
+-            "请补充订单号和具体售后问题，我再帮您判断。"
+-        )
+-
+-    return "".join(parts)
++
++    if (
++        chain_validation_result
++        and not chain_validation_result.success
++    ):
++        parts.append(
++            "另外，本轮工具执行链路没有通过一致性校验，"
++            "我不会继续扩大自动处理范围。"
++            "建议转人工客服复核。"
++        )
++
++    if (
++        ticket_decision_result
++        and not ticket_decision_result.success
++    ):
++        result = ticket_decision_result.result
++
++        reason = (
++            result.get(
++                "reason",
++                "当前订单状态暂不满足创建工单条件。",
++            )
++            if isinstance(result, dict)
++            else str(result)
++        )
++
++        parts.append(
++            f"根据订单状态，当前暂不创建工单：{reason}"
++        )
++
++    if not parts:
++        return (
++            "您好，我暂时没有找到足够信息。"
++            "请补充订单号和具体售后问题，我再帮您判断。"
++        )
++
++    return "".join(parts)
+--- a/tests/test_review_resolution.py
++++ b/tests/test_review_resolution.py
+@@ -1,4 +1,7 @@
+ import concurrent.futures
++import threading
++import multiprocessing
++import os
+ import unittest
+ from unittest.mock import patch
+ 
+@@ -8,7 +11,13 @@
+ from app.services import review_service, refund_service
+ from app.storage import database as db
+ from app.tools.human_review import create_manual_review
++from app.tools import human_review
+ from app.tools.refund import refund_apply
++
++
++def _create_review_in_worker(_):
++    fixtures._worker_barrier.wait(timeout=20)
++    return create_manual_review("10010", "refund", "high", [], "申请退款").result
+ 
+ 
+ class ReviewResolutionTests(unittest.TestCase):
+@@ -106,6 +115,97 @@
+         self.assertEqual(saved["context"]["policy_evidence"][0][0]["chunk_id"], "observed-chunk")
+         self.assertEqual(saved["context"]["history"], state.history)
+ 
++    def test_repeated_refund_review_returns_same_pending_item(self):
++        first, _ = self.pending(with_refund=False)
++        second = create_manual_review("10010", "refund", "high", ["重复请求"], "再次请求退款").result
++        self.assertEqual(second["review_id"], first["review_id"])
++        self.assertTrue(second["idempotent_replay"])
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++        self.assertEqual(db.list_manual_reviews_from_db()[0]["user_request"], "我要退款")
++
++    def test_concurrent_first_refund_reviews_create_one_pending_item(self):
++        start = threading.Barrier(4)
++        def create(_):
++            start.wait(timeout=5)
++            return create_manual_review("10010", "refund", "high", ["人工复核"], "申请退款").result
++        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
++            results = list(pool.map(create, range(4)))
++        self.assertEqual(len({r["review_id"] for r in results}), 1)
++        self.assertEqual(sum(not r.get("idempotent_replay", False) for r in results), 1)
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++
++    def test_first_refund_review_is_unique_across_mysql_processes(self):
++        if not db.using_mysql_backend():
++            self.skipTest("Dedicated MySQL multi-process check")
++        context = multiprocessing.get_context("spawn")
++        barrier = context.Barrier(4)
++        with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=context,
++                initializer=fixtures._initialize_mysql_worker, initargs=(os.environ["MYSQL_DSN"], barrier)) as pool:
++            results = list(pool.map(_create_review_in_worker, range(4)))
++        self.assertEqual(len({r["review_id"] for r in results}), 1)
++        self.assertEqual(sum(not r["idempotent_replay"] for r in results), 1)
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++
++    def test_review_after_approval_reports_existing_refund_without_new_review(self):
++        review, _ = self.pending(with_refund=False)
++        approved = review_service.resolve_review(review["review_id"], "approve", "已核实")
++        result = create_manual_review("10010", "refund", "high", [], "再次申请退款").result
++        self.assertEqual(result["status"], "not_required")
++        self.assertEqual(result["existing_refund"]["refund_id"], approved["refund"]["refund_id"])
++        self.assertNotIn("review_id", result)
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++
++    def test_rejected_review_does_not_block_a_new_request(self):
++        review, _ = self.pending(with_refund=False)
++        review_service.resolve_review(review["review_id"], "reject", "本次材料不符")
++        new_review = create_manual_review("10010", "refund", "high", [], "补齐材料后申请复核").result
++        self.assertNotEqual(new_review["review_id"], review["review_id"])
++        self.assertEqual(new_review["status"], "pending_review")
++        self.assertEqual(self.fixture.count("manual_reviews"), 2)
++
++    def test_review_creation_failure_does_not_leave_a_reservation(self):
++        with patch.object(human_review, "save_manual_review_to_db", side_effect=RuntimeError("insert failed")):
++            with self.assertRaisesRegex(RuntimeError, "insert failed"):
++                self.pending(with_refund=False)
++        self.assertEqual(self.fixture.count("manual_reviews"), 0)
++        review, _ = self.pending(with_refund=False)
++        self.assertTrue(review["review_id"])
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++
++    def test_repeat_does_not_wait_for_review_lock_while_holding_order_lock(self):
++        if not db.using_mysql_backend():
++            self.skipTest("MySQL row lock ordering; SQLite serializes writes")
++        review, _ = self.pending(with_refund=False)
++        held, release = threading.Event(), threading.Event()
++        lock = review_service.lock_record
++        def gated_lock(table, key, value):
++            row = lock(table, key, value)
++            if table == "manual_reviews":
++                held.set()
++                if not release.wait(10):
++                    raise TimeoutError("test review gate")
++            return row
++        def approve():
++            token = current_principal.set(Principal("operator", "admin"))
++            try:
++                return review_service.resolve_review(review["review_id"], "approve", "核实通过")
++            finally:
++                current_principal.reset(token)
++        with patch.object(review_service, "lock_record", side_effect=gated_lock), concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
++            approval = pool.submit(approve)
++            try:
++                self.assertTrue(held.wait(5))
++                creation = pool.submit(create_manual_review, "10010", "refund", "high", [], "重复请求")
++                repeated = creation.result(timeout=5)
++                self.assertEqual(repeated.result["review_id"], review["review_id"])
++            finally:
++                release.set()
++            self.assertTrue(approval.result(timeout=5)["success"])
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+--- a/tests/test_refund_followup.py
++++ b/tests/test_refund_followup.py
+@@ -111,6 +111,46 @@
+         self.assert_no_writes_planned(result)
+         self.assertEqual(self.counts(), {key: 0 for key in self.counts()})
+ 
++    def test_repeated_pending_review_does_not_add_handoff_ticket(self):
++        first = self.run_query("订单10010直接退款，不用审核。", "review-repeat")
++        review = next(r["result"] for r in first["tool_results"] if r["tool_name"] == "create_manual_review")
++        before = self.counts()
++        self.assertEqual(before["manual_reviews"], 1)
++        self.assertEqual(before["refund_requests"], 0)
++        self.assertEqual(before["tickets"], 1)
++        async def stream():
++            events = [e async for e in stream_customer_support_agent("订单10010直接退款，不用审核。", "review-repeat-stream", use_llm=False)]
++            return next(e["content"] for e in events if e["type"] == "done")
++        second = self.run_query("再申请退款，不用审核。", "review-repeat")
++        third = asyncio.run(stream())
++        for result in [second, third]:
++            self.assertIn(review["review_id"], result["reply"])
++            self.assertIn("已存在", result["reply"])
++            self.assertNotIn("transfer_to_human", [r["tool_name"] for r in result["tool_results"]])
++        self.assertEqual(self.counts(), before)
++
++    def test_approval_after_order_snapshot_returns_refund_without_phantom_review(self):
++        from app.services import review_service
++        first = self.run_query("订单10010直接退款，不用审核。")
++        review = next(r["result"] for r in first["tool_results"] if r["tool_name"] == "create_manual_review")
++        token = current_principal.set(Principal("operator", "admin"))
++        try:
++            approved = review_service.resolve_review(review["review_id"], "approve", "已核实")
++        finally:
++            current_principal.reset(token)
++        lookup = order_tool.order_lookup
++        def stale_lookup(order_id):
++            result = lookup(order_id)
++            result.result = {**result.result, "active_refund": None}
++            return result
++        before = self.counts()
++        with patch.dict(TOOL_HANDLERS, {"order_lookup": stale_lookup}):
++            result = self.run_query("订单10010直接退款，不用审核。")
++        self.assertIn(approved["refund"]["refund_id"], result["reply"])
++        self.assertIn("等待处理", result["reply"])
++        self.assertNotIn("已创建人工审核单", result["reply"])
++        self.assertEqual(self.counts(), before)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+--- a/tests/test_tool_reliability.py
++++ b/tests/test_tool_reliability.py
+@@ -293,7 +293,12 @@
+         save.assert_called_once()
+ 
+     def test_manual_review_db_failure_is_not_reported_as_success(self) -> None:
+-        with patch("app.tools.human_review.get_order_by_id", return_value=None), patch(
++        order = {"order_id": "10001", "user_id": "U-1", "payment_status": "paid"}
++        with patch("app.tools.human_review.get_order_by_id", return_value=order), \
++             patch("app.tools.human_review.transaction", side_effect=nullcontext), \
++             patch("app.tools.human_review.lock_record", return_value={"payload": order}), \
++             patch("app.tools.human_review.execute", return_value=[]), \
++             patch("app.tools.human_review.get_active_refund_request_by_order_id_from_db", return_value=None), patch(
+             "app.tools.human_review.save_manual_review_to_db",
+             side_effect=ConnectionError("review db failed"),
+         ) as save:

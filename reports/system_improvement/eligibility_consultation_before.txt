@@ -1,0 +1,65 @@
+..FFF.                                                          [100%]
+================================== FAILURES ===================================
+_ ConversationTaskBoundaryTests.test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths (use_llm=False) _
+tests\test_conversation_task_boundaries.py:352: in test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths
+    self.assertFalse(result["route"]["need_clarification"])
+E   AssertionError: True is not false
+_ ConversationTaskBoundaryTests.test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths (use_llm=True) _
+tests\test_conversation_task_boundaries.py:352: in test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths
+    self.assertFalse(result["route"]["need_clarification"])
+E   AssertionError: True is not false
+_ ConversationTaskBoundaryTests.test_eligibility_order_followup_preserves_consultation_then_requires_explicit_execution _
+tests\test_conversation_task_boundaries.py:368: in test_eligibility_order_followup_preserves_consultation_then_requires_explicit_execution
+    self.assertEqual([r["tool_name"] for r in first["tool_results"]], ["policy_search"])
+E   AssertionError: Lists differ: [] != ['policy_search']
+E   
+E   Second list contains 1 additional elements.
+E   First extra element 0:
+E   'policy_search'
+E   
+E   - []
+E   + ['policy_search']
+_ ConversationTaskBoundaryTests.test_eligibility_policy_failure_reports_missing_evidence_without_writing _
+tests\test_conversation_task_boundaries.py:411: in test_eligibility_policy_failure_reports_missing_evidence_without_writing
+    self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
+E   AssertionError: Lists differ: [] != ['policy_search']
+E   
+E   Second list contains 1 additional elements.
+E   First extra element 0:
+E   'policy_search'
+E   
+E   - []
+E   + ['policy_search']
+_ ConversationTaskBoundaryTests.test_eligibility_question_replaces_pending_execution_and_number_remains_query _
+tests\test_conversation_task_boundaries.py:387: in test_eligibility_question_replaces_pending_execution_and_number_remains_query
+    self.assertEqual([r["tool_name"] for r in first["tool_results"]], ["policy_search"])
+E   AssertionError: Lists differ: [] != ['policy_search']
+E   
+E   Second list contains 1 additional elements.
+E   First extra element 0:
+E   'policy_search'
+E   
+E   - []
+E   + ['policy_search']
+_ ConversationTaskBoundaryTests.test_only_order_reference_inherits_issue_but_new_order_instruction_does_not (message='订单10009') _
+tests\test_conversation_task_boundaries.py:423: in test_only_order_reference_inherits_issue_but_new_order_instruction_does_not
+    self.assertTrue(used)
+E   AssertionError: False is not true
+_ ConversationTaskBoundaryTests.test_only_order_reference_inherits_issue_but_new_order_instruction_does_not (message='订单号是10009') _
+tests\test_conversation_task_boundaries.py:423: in test_only_order_reference_inherits_issue_but_new_order_instruction_does_not
+    self.assertTrue(used)
+E   AssertionError: False is not true
+_ ConversationTaskBoundaryTests.test_only_order_reference_inherits_issue_but_new_order_instruction_does_not (message='订单号：10009。') _
+tests\test_conversation_task_boundaries.py:423: in test_only_order_reference_inherits_issue_but_new_order_instruction_does_not
+    self.assertTrue(used)
+E   AssertionError: False is not true
+=========================== short test summary info ===========================
+SUBFAILED(use_llm=False) tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths
+SUBFAILED(use_llm=True) tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_eligibility_consultation_without_order_retrieves_policy_in_all_reply_paths
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_eligibility_order_followup_preserves_consultation_then_requires_explicit_execution
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_eligibility_policy_failure_reports_missing_evidence_without_writing
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_eligibility_question_replaces_pending_execution_and_number_remains_query
+SUBFAILED(message='订单10009') tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_only_order_reference_inherits_issue_but_new_order_instruction_does_not
+SUBFAILED(message='订单号是10009') tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_only_order_reference_inherits_issue_but_new_order_instruction_does_not
+SUBFAILED(message='订单号：10009。') tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_only_order_reference_inherits_issue_but_new_order_instruction_does_not
+8 failed, 3 passed, 25 deselected, 4 subtests passed in 0.94s

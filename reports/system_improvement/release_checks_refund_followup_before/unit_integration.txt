@@ -1,0 +1,115 @@
+.........................................s.......................... [ 27%]
+................................................. [ 46%]
+.............................................ssssss.......s...... [ 72%]
+...s.......FFFFF.................................................. [ 98%]
+...                                                                      [100%]
+================================== FAILURES ===================================
+_ RefundFollowupTests.test_existing_status_is_reported_without_reissuing_application (status='queued') _
+tests\test_refund_followup.py:76: in test_existing_status_is_reported_without_reissuing_application
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check', 'create_ticket'} is not false
+_ RefundFollowupTests.test_existing_status_is_reported_without_reissuing_application (status='pending_manual_review') _
+tests\test_refund_followup.py:76: in test_existing_status_is_reported_without_reissuing_application
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'create_manual_review', 'refund_apply', 'risk_check', 'create_ticket'} is not false
+_ RefundFollowupTests.test_existing_status_is_reported_without_reissuing_application (status='refund_processing') _
+tests\test_refund_followup.py:76: in test_existing_status_is_reported_without_reissuing_application
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check', 'create_ticket'} is not false
+_ RefundFollowupTests.test_existing_status_is_reported_without_reissuing_application (status='payment_submitting') _
+tests\test_refund_followup.py:76: in test_existing_status_is_reported_without_reissuing_application
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check', 'create_ticket'} is not false
+_ RefundFollowupTests.test_existing_status_is_reported_without_reissuing_application (status='refund_unknown') _
+tests\test_refund_followup.py:76: in test_existing_status_is_reported_without_reissuing_application
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check', 'create_ticket'} is not false
+_ RefundFollowupTests.test_existing_status_is_reported_without_reissuing_application (status='refund_succeeded') _
+tests\test_refund_followup.py:76: in test_existing_status_is_reported_without_reissuing_application
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check', 'create_ticket'} is not false
+_ RefundFollowupTests.test_late_idempotent_replay_cannot_create_followup_ticket _
+tests\test_refund_followup.py:93: in test_late_idempotent_replay_cannot_create_followup_ticket
+    self.assertEqual(self.fixture.count("tickets"), 0)
+E   AssertionError: 1 != 0
+_ RefundFollowupTests.test_order_after_sales_marker_does_not_invent_refund_record _
+tests\test_refund_followup.py:46: in test_order_after_sales_marker_does_not_invent_refund_record
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check'} is not false
+_ RefundFollowupTests.test_refund_details_are_read_only_after_order_authorization _
+tests\test_refund_followup.py:100: in test_refund_details_are_read_only_after_order_authorization
+    with patch.object(order_tool, "get_active_refund_request_by_order_id_from_db") as read:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.tools.order' from 'C:\\Users\\DELL\\AppData\\Local\\Temp\\support-release-check-lmyau_y0\\app\\tools\\order.py'> does not have the attribute 'get_active_refund_request_by_order_id_from_db'
+_ RefundFollowupTests.test_refund_summary_read_failure_is_not_treated_as_no_existing_refund _
+tests\test_refund_followup.py:108: in test_refund_summary_read_failure_is_not_treated_as_no_existing_refund
+    with patch.object(order_tool, "get_active_refund_request_by_order_id_from_db", side_effect=RuntimeError("read unavailable")):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.tools.order' from 'C:\\Users\\DELL\\AppData\\Local\\Temp\\support-release-check-lmyau_y0\\app\\tools\\order.py'> does not have the attribute 'get_active_refund_request_by_order_id_from_db'
+_ RefundFollowupTests.test_repeated_chat_returns_existing_receipt_without_new_ticket_in_sync_and_stream _
+tests\test_refund_followup.py:62: in test_repeated_chat_returns_existing_receipt_without_new_ticket_in_sync_and_stream
+    self.assert_no_writes_planned(result)
+tests\test_refund_followup.py:42: in assert_no_writes_planned
+    self.assertFalse(names & {"risk_check", "refund_apply", "create_manual_review", "create_ticket", "transfer_to_human"})
+E   AssertionError: {'refund_apply', 'risk_check', 'create_ticket'} is not false
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-lmyau_y0\main.py:179: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SUBFAILED(status='queued') tests/test_refund_followup.py::RefundFollowupTests::test_existing_status_is_reported_without_reissuing_application
+SUBFAILED(status='pending_manual_review') tests/test_refund_followup.py::RefundFollowupTests::test_existing_status_is_reported_without_reissuing_application
+SUBFAILED(status='refund_processing') tests/test_refund_followup.py::RefundFollowupTests::test_existing_status_is_reported_without_reissuing_application
+SUBFAILED(status='payment_submitting') tests/test_refund_followup.py::RefundFollowupTests::test_existing_status_is_reported_without_reissuing_application
+SUBFAILED(status='refund_unknown') tests/test_refund_followup.py::RefundFollowupTests::test_existing_status_is_reported_without_reissuing_application
+SUBFAILED(status='refund_succeeded') tests/test_refund_followup.py::RefundFollowupTests::test_existing_status_is_reported_without_reissuing_application
+FAILED tests/test_refund_followup.py::RefundFollowupTests::test_late_idempotent_replay_cannot_create_followup_ticket
+FAILED tests/test_refund_followup.py::RefundFollowupTests::test_order_after_sales_marker_does_not_invent_refund_record
+FAILED tests/test_refund_followup.py::RefundFollowupTests::test_refund_details_are_read_only_after_order_authorization
+FAILED tests/test_refund_followup.py::RefundFollowupTests::test_refund_summary_read_failure_is_not_treated_as_no_existing_refund
+FAILED tests/test_refund_followup.py::RefundFollowupTests::test_repeated_chat_returns_existing_receipt_without_new_ticket_in_sync_and_stream
+11 failed, 237 passed, 9 skipped, 3 warnings, 34 subtests passed in 7.09s

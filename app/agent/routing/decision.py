@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.domain.request_signals import asserted_mentions
 
 from app.agent.policies.fallback_policy import (
     should_handoff_to_human,
@@ -77,11 +78,7 @@ def requests_review_bypass(
         .lower()
     )
 
-    return any(
-        pattern in text
-        for pattern
-        in REVIEW_BYPASS_PATTERNS
-    )
+    return bool(asserted_mentions(text, REVIEW_BYPASS_PATTERNS))
 
 
 def requires_order_id(
@@ -118,7 +115,7 @@ def requires_order_id(
         semantic.intent
         == "address_change"
     ):
-        return True
+        return not (semantic.action_type == "query" and semantic.topic == "address_change_policy")
 
     if (
         semantic.intent
@@ -395,11 +392,12 @@ def build_route_decision(
     # 显式要求人工客服，
     # 不一定意味着风险审核。
     #
-    # 只有风险/审核绕过
-    # 才进入 manual review。
+    # Order changes use the review continuation path even at low risk. Their
+    # completion must not depend on a particular wording matching a keyword.
     manual_review_required = bool(
         review_bypass
         or legacy_handoff_required
+        or (is_execution and semantic.intent in {"cancel_order", "address_change"})
     )
 
     # --------------------------------
@@ -410,8 +408,9 @@ def build_route_decision(
         order_id
         and (
             need_refund_request
-            or semantic.intent
-            == "complaint"
+            # Risk assessment can promote the route to a persisted review.
+            # Feedback/query semantics must not open that execution path.
+            or (is_execution and semantic.intent in {"complaint", "cancel_order", "address_change"})
             or review_bypass
             or risky_action
             or legacy_handoff_required

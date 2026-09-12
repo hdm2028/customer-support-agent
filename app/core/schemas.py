@@ -62,6 +62,7 @@ class RouteDecision(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    run_id: str | None = None
     success: bool
     conversation_id: str
     orchestration: dict = Field(default_factory=dict)

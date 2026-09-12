@@ -1,0 +1,71 @@
+{
+  "scope": "read-only live routing; no tools or business writes",
+  "rows": [
+    {
+      "message": "????10009?????",
+      "route": {
+        "intent": "order_lookup",
+        "action_type": "query",
+        "topic": "order_status",
+        "related_topics": [],
+        "confidence": 0.95,
+        "routing_reason": "用户询问订单10009的状态，属于查询订单状态的意图。",
+        "agent_plan": [],
+        "tool_plan": [
+          "order_lookup"
+        ],
+        "order_id": "10009",
+        "need_order": true,
+        "need_policy": false,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "duration_ms": 6719.4
+    },
+    {
+      "message": "?????????10009",
+      "route": {
+        "intent": "order_lookup",
+        "action_type": "query",
+        "topic": "order_status",
+        "related_topics": [],
+        "confidence": 0.95,
+        "routing_reason": "用户输入了订单号，意图是查询订单状态。",
+        "agent_plan": [],
+        "tool_plan": [
+          "order_lookup"
+        ],
+        "order_id": "10009",
+        "need_order": true,
+        "need_policy": false,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "duration_ms": 4500.9
+    }
+  ],
+  "valid": false,
+  "exclusion_reason": "PowerShell stdin encoding replaced Chinese input with question marks; invalid business diagnosis. Correct UTF-8 rerun saved separately."
+}

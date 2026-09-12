@@ -1,0 +1,205 @@
+--- a/app/agent/policies/evidence_guardrail.py
++++ b/app/agent/policies/evidence_guardrail.py
+@@ -1,4 +1,4 @@
+-from app.core.schemas import ToolResult
++from app.core.schemas import RouteDecision, ToolResult
+ 
+ 
+ POLICY_PROFILES = [
+@@ -63,8 +63,13 @@
+     return any(normalize_text(keyword) in normalized for keyword in keywords)
+ 
+ 
+-def detect_policy_profile(query: str) -> dict | None:
+-    """根据用户问题识别本轮期望的政策类型。"""
++def detect_policy_profile(query: str, *, route: RouteDecision | None = None) -> dict | None:
++    """沿用明确的业务主意图；缺少可用路由时兼容原关键词判断。"""
++
++    if route is not None and route.action_type in {"query", "execute", "handoff"}:
++        for profile in POLICY_PROFILES:
++            if profile["name"] == route.intent:
++                return profile
+ 
+     for profile in POLICY_PROFILES:
+         if profile["name"] == "return_refund" and contains_any(query, profile["triggers"]):
+@@ -95,7 +100,9 @@
+     return simplified
+ 
+ 
+-def validate_policy_evidence(query: str, policy_result: ToolResult) -> tuple[bool, dict]:
++def validate_policy_evidence(
++    query: str, policy_result: ToolResult, *, route: RouteDecision | None = None,
++) -> tuple[bool, dict]:
+     if not policy_result.success:
+         return False, {
+             "reason": "policy_search_failed",
+@@ -109,7 +116,7 @@
+             "detail": "RAG 没有返回任何政策证据。",
+         }
+ 
+-    profile = detect_policy_profile(query)
++    profile = detect_policy_profile(query, route=route)
+     top_score = float(results[0].get("score", 0) or 0)
+     combined_text = "\n".join(
+         f"{item.get('source', '')}\n{item.get('section', '')}\n{item.get('text', '')}"
+@@ -165,11 +172,13 @@
+     }
+ 
+ 
+-def apply_policy_evidence_guardrail(query: str, policy_result: ToolResult) -> ToolResult:
++def apply_policy_evidence_guardrail(
++    query: str, policy_result: ToolResult, *, route: RouteDecision | None = None,
++) -> ToolResult:
+     if not policy_result.success:
+         return policy_result
+ 
+-    passed, report = validate_policy_evidence(query, policy_result)
++    passed, report = validate_policy_evidence(query, policy_result, route=route)
+ 
+     if passed:
+         if isinstance(policy_result.result, list):
+--- a/app/agent/agents/customer.py
++++ b/app/agent/agents/customer.py
+@@ -41,7 +41,7 @@
+                 trace=state.trace,
+                 fallback_action="handoff_to_human",
+             )
+-        result = apply_policy_evidence_guardrail(state.user_message, result)
++        result = apply_policy_evidence_guardrail(state.user_message, result, route=state.route)
+ 
+         if state.trace:
+             report = {}
+--- a/tests/test_policy_evidence_bridge.py
++++ b/tests/test_policy_evidence_bridge.py
+@@ -15,11 +15,12 @@
+         with patch.dict("os.environ", {"RAG_EVIDENCE_SELECTION": "complementary"}), \
+              patch("app.agent.agents.customer.build_rag_query", return_value=query), \
+              patch.object(policy._RETRIEVER, "retrieve", return_value=[{"text": "政策", "source": "policy.md"}]) as retrieve, \
+-             patch("app.agent.agents.customer.apply_policy_evidence_guardrail", side_effect=lambda _, result: result):
++             patch("app.agent.agents.customer.apply_policy_evidence_guardrail", side_effect=lambda _, result, **kwargs: result) as guard:
+             CustomerAgent().run(state)
+         self.assertEqual(retrieve.call_args.kwargs["query"], query)
+         self.assertEqual(retrieve.call_args.kwargs["top_k"], 5)
+         self.assertEqual(retrieve.call_args.kwargs["candidate_k"], 20)
++        self.assertIs(guard.call_args.kwargs["route"], state.route)
+ 
+     def test_default_tool_keeps_existing_profile(self):
+         with patch.dict("os.environ", {"RAG_EVIDENCE_SELECTION": ""}), \
+--- a/docs/improvement_progress.md
++++ b/docs/improvement_progress.md
+@@ -1,6 +1,8 @@
+ # 客服 Agent 改进进度
+ 
+ 授权范围：按 P0 → P2 推进项目能力与可靠性。阶段完成必须有实际代码及验证，外部服务未接通不能记为完成。原 RAG 基线和数据保留，不运行 validation/final_test。
++
++2026-09-11 [????????????](../reports/policy_route_alignment_b01/report.md)???????????????????????????????????????????? Answer Dev 13/20 ? 14/20?65% ? 70%??E2E Dev 17/24 ????????????303 ????101 ???????11 ???????????????????????????????????????
+ 
+ 2026-09-10 五层优化复测：[修复与对照报告](../reports/five_layer_optimization_20260909/report.md)。保留查询辅助主题容错、实际政策工具互补证据接入和独立否定句诊断；默认方案未切换。原评分为 Routing 23/24、RAG V1 17/20 / V2 5/6（18/19 项）、Tool 43/55、Answer 2/4、E2E 7/12，原通过案例无退化、禁止工具调用为 0。296 项测试与 83 项 subtest 通过、11 项跳过。附加提示词虽然使 Tool 达到 44/55，但主意图、派生路由及 E2E 风险指标退化，已回退。投诉语义、003 召回和旧验收契约/夹具隔离仍未完成，不能标记整体验收通过。
+ 
+--- /dev/null
++++ b/tests/test_policy_route_alignment.py
+@@ -0,0 +1,104 @@
++import unittest
++from unittest.mock import patch
++
++from app.agent.agents.customer import CustomerAgent
++from app.agent.policies.evidence_guardrail import (
++    MIN_RAG_SCORE,
++    apply_policy_evidence_guardrail,
++    detect_policy_profile,
++    validate_policy_evidence,
++)
++from app.agent.state import AgentState
++from app.core.schemas import RouteDecision, ToolResult
++
++
++def evidence(source="物流配送政策.md", text="物流签收争议需要核实签收人员及代收情况。", score=0.9):
++    return ToolResult(tool_name="policy_search", success=True, result=[{
++        "chunk_id": "policy-fragment", "source": source, "text": text, "score": score,
++    }])
++
++
++def shipping_route(**overrides):
++    return RouteDecision(**{
++        "intent": "shipping_exception", "action_type": "query", "topic": "shipping_policy",
++        "need_policy": True, **overrides,
++    })
++
++
++class PolicyRouteAlignmentTests(unittest.TestCase):
++    def test_customer_uses_resolved_intent_when_query_negates_refund(self):
++        state = AgentState("conversation", "快递显示签收但没有收到，我暂不申请退款。", shipping_route())
++        with patch("app.agent.agents.customer.execute_agent_tool", return_value=evidence()) as call:
++            result = CustomerAgent().run(state)
++        self.assertTrue(result.success)
++        self.assertEqual(call.call_args.kwargs["tool_name"], "policy_search")
++        self.assertEqual(result.state_updates["policy"][0]["chunk_id"], "policy-fragment")
++        self.assertEqual(result.state_updates["policy"][0]["evidence_guardrail"]["profile"], "shipping_exception")
++
++    def test_negated_or_quoted_refund_does_not_override_resolved_shipping(self):
++        for query in ("只查物流，不退货。", "先前咨询过退款，这次只问签收记录。", "说明上写着退款，请解释这次物流延误。"):
++            with self.subTest(query=query):
++                passed, report = validate_policy_evidence(query, evidence(), route=shipping_route())
++                self.assertTrue(passed)
++                self.assertEqual(report["profile"], "shipping_exception")
++
++    def test_primary_refund_in_mixed_request_still_requires_refund_evidence(self):
++        route = RouteDecision(intent="return_refund", action_type="execute", topic="refund_apply",
++                              related_topics=["shipping_policy"], need_refund_request=True)
++        query = "快递没有收到，我要申请退款。"
++        failed = apply_policy_evidence_guardrail(query, evidence(), route=route)
++        self.assertFalse(failed.success)
++        self.assertEqual(failed.result["guardrail_report"]["profile"], "return_refund")
++        self.assertEqual(failed.result["guardrail_report"]["reason"], "evidence_source_mismatch")
++        passed, _ = validate_policy_evidence(query, evidence("退款政策.md", "退款需核实支付及订单状态。"), route=route)
++        self.assertTrue(passed)
++
++    def test_route_selection_applies_to_other_existing_business_profiles(self):
++        profiles = [
++            ("address_change", "订单取消与修改政策.md", "出库前可以申请修改收货地址。"),
++            ("warranty_repair", "保修政策.md", "保修需要核实购买时间及故障原因。"),
++            ("payment_invoice", "支付与发票政策.md", "电子发票需要确认发票抬头和税号。"),
++            ("membership", "会员权益政策.md", "会员权益不能绕过质量检测。"),
++            ("complaint", "售后FAQ.md", "投诉可以提交升级工单。"),
++        ]
++        for intent, source, text in profiles:
++            with self.subTest(intent=intent):
++                route = RouteDecision(intent=intent, action_type="query")
++                passed, report = validate_policy_evidence("这次不问退款，只咨询当前业务。", evidence(source, text), route=route)
++                self.assertTrue(passed)
++                self.assertEqual(report["profile"], intent)
++
++    def test_absent_unknown_or_unmapped_route_retains_keyword_fallback(self):
++        routes = [None, RouteDecision(), shipping_route(action_type="unknown"),
++                  shipping_route(action_type="invalid"), RouteDecision(intent="unmapped", action_type="query")]
++        for route in routes:
++            with self.subTest(route=route):
++                self.assertEqual(detect_policy_profile("物流问题，不申请退款。", route=route)["name"], "return_refund")
++                passed, report = validate_policy_evidence("物流问题，不申请退款。", evidence(), route=route)
++                self.assertFalse(passed)
++                self.assertEqual(report["reason"], "evidence_source_mismatch")
++
++    def test_related_topic_does_not_replace_primary_policy(self):
++        route = shipping_route(related_topics=["refund_policy"])
++        self.assertEqual(detect_policy_profile("查询物流，提到了退款。", route=route)["name"], "shipping_exception")
++        passed, report = validate_policy_evidence("查询物流，提到了退款。", evidence("退款政策.md", "退款规则。"), route=route)
++        self.assertFalse(passed)
++        self.assertEqual(report["reason"], "evidence_source_mismatch")
++
++    def test_score_source_content_and_empty_checks_remain_enforced(self):
++        cases = [
++            (evidence(score=MIN_RAG_SCORE - 0.01), "low_rag_confidence"),
++            (evidence("未授权来源.md"), "evidence_source_mismatch"),
++            (evidence("售后FAQ.md", text="其他内容。"), "evidence_keyword_miss"),
++            (ToolResult(tool_name="policy_search", success=True, result=[]), "empty_policy_results"),
++            (ToolResult(tool_name="policy_search", success=False, result={"error": "unavailable"}), "policy_search_failed"),
++        ]
++        for result, reason in cases:
++            with self.subTest(reason=reason):
++                passed, report = validate_policy_evidence("物流，不申请退款。", result, route=shipping_route())
++                self.assertFalse(passed)
++                self.assertEqual(report["reason"], reason)
++
++
++if __name__ == "__main__":
++    unittest.main()

@@ -1,0 +1,337 @@
+[
+  {
+    "case_id": "answer_dev_b01_001",
+    "layer": "answer",
+    "scenario_id": "AE01",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE01；依据 data/orders.json:10011、app/agent/response/grounded.py。只核对订单事实，不使用固定日期推算物流时效。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_002",
+    "layer": "answer",
+    "scenario_id": "AE02",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE02；依据 data/orders.json 不含99998、app/agent/response/fallback.py 的 order_lookup 失败分支。应核对订单，不能伪造商品或订单状态。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_003",
+    "layer": "answer",
+    "scenario_id": "AE03",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE03；依据 app/agent/routing/decision.py:requires_order_id、pending_task.py:build_clarification_question。每案新会话，无可继承订单号。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_004",
+    "layer": "answer",
+    "scenario_id": "AE04",
+    "knowledge_sources": [
+      {
+        "source": "订单取消与修改政策.md",
+        "section": "修改收货地址流程"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE04；依据 app/agent/routing/pending_task.py 的 new_address 缺槽分支、订单取消与修改政策.md/修改收货地址流程。尚未提供新地址，不能把澄清说成完成修改。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_005",
+    "layer": "answer",
+    "scenario_id": "AE05",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE05；依据 app/tools/human_review.py:transfer_to_human、app/agent/response/grounded.py:handoff_receipt、tests/test_human_handoff.py。新会话转人工后为待认领，不是已解决。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_006",
+    "layer": "answer",
+    "scenario_id": "AE06",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE06；回归案例；依据 app/agent/routing/refund_withdrawal.py:WITHDRAWAL_GUIDANCE、tests/test_conversation_task_boundaries.py。聊天只给已有申请选择入口，不假设数据库存在申请，也不执行撤销。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": true
+  },
+  {
+    "case_id": "answer_dev_b01_007",
+    "layer": "answer",
+    "scenario_id": "AE07",
+    "knowledge_sources": [
+      {
+        "source": "退款政策.md",
+        "section": "退款申请前置条件"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE07；依据 data/orders.json:10005、app/storage/database.py:ORDER_BUSINESS_DEFAULTS、app/domain/refund_policy.py:require_confirmed_refund_payment、退款政策.md/退款申请前置条件。前置业务拒绝无需伪装成退款成功。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_008",
+    "layer": "answer",
+    "scenario_id": "AE08",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE08；依据 app/storage/database.py 中10007的 payment_pending、app/domain/refund_policy.py:require_confirmed_refund_payment、app/agent/orchestrator.py:apply_refund_preconditions。支付不确定时不创建新退款。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_009",
+    "layer": "answer",
+    "scenario_id": "AE09",
+    "knowledge_sources": [
+      {
+        "source": "支付与发票政策.md",
+        "section": "发票抬头"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE09；依据 支付与发票政策.md/发票抬头。政策咨询不声称开票完成；必须引用本轮检索来源。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_010",
+    "layer": "answer",
+    "scenario_id": "AE10",
+    "knowledge_sources": [
+      {
+        "source": "支付与发票政策.md",
+        "section": "修改发票信息"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE10；依据 支付与发票政策.md/修改发票信息，已开具发票需按修改或重新开具流程处理。与开票资料咨询是不同状态边界。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_011",
+    "layer": "answer",
+    "scenario_id": "AE11",
+    "knowledge_sources": [
+      {
+        "source": "保修政策.md",
+        "section": "不属于保修范围的情况"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE11；依据 保修政策.md/不属于保修范围的情况、质量检测。使用正向规则锚点检查限制，避免把正确否定中的“免费保修”列为禁词。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_012",
+    "layer": "answer",
+    "scenario_id": "AE12",
+    "knowledge_sources": [
+      {
+        "source": "会员权益政策.md",
+        "section": "售后权益限制"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE12；依据 会员权益政策.md/售后权益限制、黑金会员。关键词只检查这些约束有被涉及，不能单靠该分数证明所有否定语义正确。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_013",
+    "layer": "answer",
+    "scenario_id": "AE13",
+    "knowledge_sources": [
+      {
+        "source": "订单取消与修改政策.md",
+        "section": "已发货后修改地址"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE13；依据 订单取消与修改政策.md/已发货后修改地址。一般政策咨询不要求用户先提交订单号或新地址，不承诺物流地址变更一定成功。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_014",
+    "layer": "answer",
+    "scenario_id": "AE14",
+    "knowledge_sources": [
+      {
+        "source": "物流配送政策.md",
+        "section": "已签收但用户未收到"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE14；依据 data/orders.json:10008、物流配送政策.md/已签收但用户未收到。签收记录不等于本人收货；只查政策，不按固定签收日期创建超时工单。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "answer_dev_b01_015",
+    "layer": "answer",
+    "scenario_id": "AE15",
+    "knowledge_sources": [
+      {
+        "source": "退款政策.md",
+        "section": "退款失败"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE15；回归案例；依据 退款政策.md/退款失败、app/services/payments.py 的未知结果查询边界。只验证政策解释，不伪造真实渠道超时或支付调用。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": true
+  },
+  {
+    "case_id": "answer_dev_b01_016",
+    "layer": "answer",
+    "scenario_id": "AE16",
+    "knowledge_sources": [
+      {
+        "source": "退款政策.md",
+        "section": "退款人工审核"
+      },
+      {
+        "source": "人工审核SOP.md",
+        "section": "审核期间"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE16；依据 退款政策.md/退款人工审核、人工审核SOP.md/审核期间。不使用宽泛的“退款已经完成”禁词误伤正确否定句，也不假设用户已有真实审核单。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_001",
+    "layer": "e2e",
+    "scenario_id": "AE01",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE01；依据 data/orders.json:10011、app/agent/routing/decision.py。reply_only 是现有 evaluator 对普通查询的分类；同时检查工具成功及退款 DB/MQ 无新增。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_002",
+    "layer": "e2e",
+    "scenario_id": "AE03",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE03；依据 app/agent/routing/decision.py:requires_order_id、pending_task.py。全新会话无历史订单；未知订单时 DB/MQ 原评分为不适用，以无工具调用检查执行边界。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_003",
+    "layer": "e2e",
+    "scenario_id": "AE04",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE04；依据 app/agent/routing/pending_task.py 的 new_address 必填槽位。当前业务在补齐槽位前不执行订单查询或写入；按此可执行契约验证，不复制旧用例的缺槽写操作预期。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_004",
+    "layer": "e2e",
+    "scenario_id": "AE05",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE05；依据 app/tools/human_review.py、app/agent/response/grounded.py:handoff_receipt、tests/test_human_handoff.py。当前 infer_final_action 对成功转人工归入 reply_only；用工具结果和回执验收，不声称本 evaluator 已验证工单数据库持久化。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_005",
+    "layer": "e2e",
+    "scenario_id": "AE06",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE06；回归案例；依据 app/agent/routing/refund_withdrawal.py、router_v2.py、tests/test_conversation_task_boundaries.py。撤销引导在提取订单号前返回，不绑定10011，expected_order_id因此为null；以无工具调用验收，原E2E的DB/MQ检查为不适用。已有申请选择与真实撤销另由专项测试验证。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": true
+  },
+  {
+    "case_id": "e2e_dev_b01_006",
+    "layer": "e2e",
+    "scenario_id": "AE08",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE08；依据 app/storage/database.py:10007 payment_pending、app/domain/refund_policy.py、app/agent/orchestrator.py:record_refund_precondition。expected_route 是前置决策后的实际 route；refund_decision 是内部结果而非外部工具，原 evaluator 消费该结果并检查退款 DB/MQ 无新增。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_007",
+    "layer": "e2e",
+    "scenario_id": "AE09",
+    "knowledge_sources": [
+      {
+        "source": "支付与发票政策.md",
+        "section": "发票抬头"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE09；依据 支付与发票政策.md/发票抬头、app/agent/routing/decision.py:POLICY_TOPICS。咨询规则不需要具体订单，不调用开票执行流程；原 E2E 仅检查存在政策来源，不等价于完整回答引用评分。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_008",
+    "layer": "e2e",
+    "scenario_id": "AE11",
+    "knowledge_sources": [
+      {
+        "source": "保修政策.md",
+        "section": "不属于保修范围的情况"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE11；依据 保修政策.md/不属于保修范围的情况、app/agent/routing/decision.py。一般保修政策咨询无需具体订单；不以用户描述生成已完成检测或换新的回执。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_009",
+    "layer": "e2e",
+    "scenario_id": "AE12",
+    "knowledge_sources": [
+      {
+        "source": "会员权益政策.md",
+        "section": "售后权益限制"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE12；依据 会员权益政策.md/售后权益限制、黑金会员、app/agent/routing/decision.py。咨询中提及绕过限制不等于真实执行请求，不应因此创建审核。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_010",
+    "layer": "e2e",
+    "scenario_id": "AE13",
+    "knowledge_sources": [
+      {
+        "source": "订单取消与修改政策.md",
+        "section": "已发货后修改地址"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE13；依据 订单取消与修改政策.md/已发货后修改地址、app/agent/routing/decision.py:requires_order_id。与 AE04 执行修改地址形成咨询/执行边界对照。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_011",
+    "layer": "e2e",
+    "scenario_id": "AE17",
+    "knowledge_sources": [],
+    "ground_truth": "Dev B01 / AE17；依据 data/orders.json:10005、app/agent/routing/decision.py 的订单变更审核规则、app/agent/agents/after_sales.py、tests/test_nonrefund_review_continuation.py。只申请审核，不调用管理员批准；原 DB/MQ 检查只保证无新退款/退款消息，审核持久化与订单状态不变仍需专项测试。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  },
+  {
+    "case_id": "e2e_dev_b01_012",
+    "layer": "e2e",
+    "scenario_id": "AE18",
+    "knowledge_sources": [
+      {
+        "source": "保修政策.md",
+        "section": "保修处理方式"
+      },
+      {
+        "source": "商品售后规则.md",
+        "section": "通用规则"
+      }
+    ],
+    "ground_truth": "Dev B01 / AE18；依据 保修政策.md/保修处理方式、商品售后规则.md/通用规则、app/agent/routing/decision.py:requires_order_id。与 AE11 保修政策咨询形成无需订单/执行需订单的边界对照。",
+    "review": "source_and_consumer_contract_checked",
+    "regression": false
+  }
+]

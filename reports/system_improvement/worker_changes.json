@@ -1,0 +1,13 @@
+{
+  "before_snapshot": "reports\\system_improvement\\release_checks_review_supplements_final\\source_snapshot.zip",
+  "after_snapshot": "reports\\system_improvement\\release_checks_worker_final\\source_snapshot.zip",
+  "changed_source_files": [
+    "scripts/maintenance/check_release.py",
+    "scripts/maintenance/refund_worker.py",
+    "scripts/reliability/run_isolated_refund_checks.py",
+    "tests/test_refund_worker.py"
+  ],
+  "app_main_web_knowledge_unchanged": true,
+  "current_source_matches_test_snapshot": true,
+  "note": "No Dev/model rerun: runtime changes confined to standalone worker polling. Dataset and evaluator changes are not part of this stage."
+}

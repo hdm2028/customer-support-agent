@@ -1,0 +1,84 @@
+{
+  "source_report": "reports\\durable_graph_prototype\\smoke_20260911_213024_68707d.json",
+  "plan": {
+    "version": "task-harness-v1",
+    "goal": "申请退款10009",
+    "status": "completed",
+    "steps_used": 4,
+    "max_steps": 12,
+    "tasks": [
+      {
+        "id": "order_lookup",
+        "objective": "核实订单归属、支付及售后状态",
+        "agent": "after_sales_agent",
+        "status": "completed",
+        "result_refs": [
+          0
+        ],
+        "reason": null,
+        "depends_on": []
+      },
+      {
+        "id": "policy_search",
+        "objective": "取得当前诉求所需的政策证据",
+        "agent": "customer_agent",
+        "status": "completed",
+        "result_refs": [
+          1
+        ],
+        "reason": null,
+        "depends_on": [
+          "order_lookup"
+        ]
+      },
+      {
+        "id": "risk_check",
+        "objective": "评估风险并决定是否需要人工审核",
+        "agent": "risk_agent",
+        "status": "completed",
+        "result_refs": [
+          2
+        ],
+        "reason": null,
+        "depends_on": [
+          "order_lookup",
+          "policy_search"
+        ]
+      },
+      {
+        "id": "refund_apply",
+        "objective": "创建退款申请，确认受理状态",
+        "agent": "after_sales_agent",
+        "status": "completed",
+        "result_refs": [
+          3
+        ],
+        "reason": null,
+        "depends_on": [
+          "order_lookup",
+          "policy_search",
+          "risk_check"
+        ]
+      }
+    ],
+    "context": {
+      "conversation_id": "refund-recovery",
+      "order_id": "10009",
+      "history_messages": 0,
+      "has_pending_task": false,
+      "available_results": [
+        "order_lookup",
+        "policy_search",
+        "risk_check",
+        "refund_apply"
+      ]
+    }
+  },
+  "reply": "退款申请 R-57ccc3867ffe已受理，正在等待处理。申请受理不代表资金已经退回。关联订单：10009。",
+  "tool_names": [
+    "order_lookup",
+    "policy_search",
+    "risk_check",
+    "refund_apply"
+  ]
+}

@@ -297,6 +297,9 @@ def build_retrieval_query(
         semantic_query=_semantic_query(context),
         lexical_query=_lexical_query(context),
         rerank_query=_rerank_query(context),
+        raw_query=context.raw_query,
+        primary_intent=context.primary_intent,
+        action_type=context.action_type,
     )
 
 

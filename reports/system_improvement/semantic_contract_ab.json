@@ -1,0 +1,340 @@
+{
+  "suites": {
+    "routing_v2": {
+      "total": 24,
+      "before_passed": 23,
+      "after_passed": 23,
+      "first_responses_fixed": 24,
+      "repair_calls": 0,
+      "repair_duration_seconds": 0,
+      "improved": [],
+      "regressed": [],
+      "changed_existing_scalar_metrics": {}
+    },
+    "tools": {
+      "total": 55,
+      "before_passed": 41,
+      "after_passed": 41,
+      "first_responses_fixed": 41,
+      "repair_calls": 2,
+      "repair_duration_seconds": 13.4559,
+      "improved": [],
+      "regressed": [],
+      "changed_existing_scalar_metrics": {
+        "dangerous_tool_misuse_count": {
+          "before": 4,
+          "after": 5
+        }
+      }
+    },
+    "answer": {
+      "total": 4,
+      "before_passed": 1,
+      "after_passed": 1,
+      "first_responses_fixed": 4,
+      "repair_calls": 1,
+      "repair_duration_seconds": 4.1209,
+      "improved": [],
+      "regressed": [],
+      "changed_existing_scalar_metrics": {}
+    },
+    "e2e": {
+      "total": 12,
+      "before_passed": 9,
+      "after_passed": 9,
+      "first_responses_fixed": 11,
+      "repair_calls": 0,
+      "repair_duration_seconds": 0,
+      "improved": [],
+      "regressed": [],
+      "changed_existing_scalar_metrics": {}
+    }
+  },
+  "repair_cases": [
+    {
+      "suite": "tools",
+      "query": "订单10006现在退货审核到哪一步了？",
+      "case_ids": [
+        "tool_order_004"
+      ],
+      "original": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "return_apply",
+        "related_topics": [
+          "return_apply_status"
+        ],
+        "confidence": 0.95,
+        "reason": "用户询问订单10006的退货审核进度，属于查询退货申请状态的范畴。"
+      },
+      "repaired": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "return_apply",
+        "related_topics": [],
+        "confidence": 0.95,
+        "reason": "用户询问订单10006的退货审核进度，属于查询退货申请状态的范畴。"
+      },
+      "case_before": {
+        "route": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "related_topics": [],
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_apply_status'",
+          "agent_plan": [
+            "售后 Agent"
+          ],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10006",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        },
+        "reason": "passed",
+        "deterministic_metrics": null,
+        "actual_tools": [
+          "order_lookup"
+        ]
+      },
+      "case_after": {
+        "route": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "return_apply",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户询问订单10006的退货审核进度，属于查询退货申请状态的范畴。",
+          "agent_plan": [
+            "售后 Agent"
+          ],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10006",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        },
+        "reason": "passed",
+        "deterministic_metrics": null,
+        "actual_tools": [
+          "order_lookup"
+        ]
+      }
+    },
+    {
+      "suite": "tools",
+      "query": "订单10004这个商品体验太差了，我要投诉；直接退款，不用审核。",
+      "case_ids": [
+        "tool_boundary_complaint_refund"
+      ],
+      "original": {
+        "intent": "complaint",
+        "action_type": "execute",
+        "topic": "complaint",
+        "related_topics": [
+          "return_refund"
+        ],
+        "confidence": 0.95,
+        "reason": "用户明确表达了投诉的意图，并要求退款，因此将主意图识别为投诉，并将退款作为相关意图。"
+      },
+      "repaired": {
+        "intent": "complaint",
+        "action_type": "execute",
+        "topic": "complaint",
+        "related_topics": [],
+        "confidence": 0.95,
+        "reason": "用户明确表达了投诉的意图，并要求退款，因此将主意图识别为投诉，并将退款作为相关意图。"
+      },
+      "case_before": {
+        "route": {
+          "intent": "general_support",
+          "action_type": "unknown",
+          "topic": "general_question",
+          "related_topics": [],
+          "confidence": 0.0,
+          "routing_reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+          "agent_plan": [
+            "售后 Agent"
+          ],
+          "tool_plan": [
+            "order_lookup"
+          ],
+          "order_id": "10004",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        },
+        "reason": "tools should contain ordered sequence ['order_lookup', 'policy_search', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=['order_lookup']; missing argument trace for policy_search; missing argument trace for risk_check; missing argument trace for create_manual_review; missing argument trace for transfer_to_human",
+        "deterministic_metrics": null,
+        "actual_tools": [
+          "order_lookup"
+        ]
+      },
+      "case_after": {
+        "route": {
+          "intent": "complaint",
+          "action_type": "execute",
+          "topic": "complaint",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户明确表达了投诉的意图，并要求退款，因此将主意图识别为投诉，并将退款作为相关意图。",
+          "agent_plan": [
+            "售后 Agent",
+            "风控 Agent"
+          ],
+          "tool_plan": [
+            "order_lookup",
+            "risk_check",
+            "create_manual_review",
+            "transfer_to_human",
+            "create_ticket"
+          ],
+          "order_id": "10004",
+          "need_order": true,
+          "need_policy": false,
+          "need_ticket": true,
+          "need_refund_request": false,
+          "need_risk_check": true,
+          "manual_review_required": true,
+          "need_handoff": true,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": true,
+          "handoff_reason": "用户要求绕过正常审核流程，需要人工审核。",
+          "risk_level": "high",
+          "risk_flags": [
+            "账号异常",
+            "30天内高频退款",
+            "近期投诉频繁",
+            "大额退款",
+            "投诉升级话术",
+            "要求绕过审核"
+          ]
+        },
+        "reason": "tools should contain ordered sequence ['order_lookup', 'policy_search', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=['order_lookup', 'risk_check', 'create_manual_review', 'create_ticket', 'transfer_to_human']; missing argument trace for policy_search; create_manual_review.review_type expected_rule=refund, actual=risk_control; dangerous_tool_misuse=['create_ticket']",
+        "deterministic_metrics": null,
+        "actual_tools": [
+          "order_lookup",
+          "risk_check",
+          "create_manual_review",
+          "create_ticket",
+          "transfer_to_human"
+        ]
+      }
+    },
+    {
+      "suite": "answer",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "case_ids": [
+        "answer_refund_004"
+      ],
+      "original": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "refund_eligibility",
+        "related_topics": [
+          "return_policy"
+        ],
+        "confidence": 0.95,
+        "reason": "用户询问定制杯子是否可以七天无理由退货，属于判断退款资格的范畴。"
+      },
+      "repaired": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "refund_eligibility",
+        "related_topics": [],
+        "confidence": 0.95,
+        "reason": "用户询问定制杯子是否可以七天无理由退货，属于判断退款资格的范畴。"
+      },
+      "case_before": {
+        "route": null,
+        "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']",
+        "deterministic_metrics": {
+          "correctness": false,
+          "relevance": true,
+          "completeness": false,
+          "faithfulness_groundedness": false,
+          "hallucination_free": true
+        },
+        "actual_tools": null
+      },
+      "case_after": {
+        "route": null,
+        "reason": "missing_expected_keywords=['知识库']",
+        "deterministic_metrics": {
+          "correctness": false,
+          "relevance": true,
+          "completeness": false,
+          "faithfulness_groundedness": true,
+          "hallucination_free": true
+        },
+        "actual_tools": null
+      }
+    }
+  ],
+  "snapshot_changed_files": [
+    "app/agent/routing/llm_router.py",
+    "scripts/eval/semantic_response_replay.py"
+  ],
+  "protected_inputs_and_evaluators_unchanged": true,
+  "configuration_differences": {
+    "SEMANTIC_ROUTE_REPAIR": [
+      "",
+      "once"
+    ]
+  },
+  "decision": "do_not_promote; disabled by default; new forbidden create_ticket call despite unchanged aggregate pass counts",
+  "usage": {
+    "a_actual_calls_from_raw_records": 80,
+    "a_calls_with_trace_usage": 56,
+    "a_trace_reported_tokens": 170229,
+    "a_unreported_routing_calls": 24,
+    "b_repair_calls": 3,
+    "b_provider_reported_tokens": 10255,
+    "b_first_response_replays": 80,
+    "repair_duration_seconds": 17.5768
+  }
+}

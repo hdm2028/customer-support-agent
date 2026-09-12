@@ -1,0 +1,1330 @@
+--- a/app/agent/entry/workflow.py
++++ b/app/agent/entry/workflow.py
+@@ -207,7 +207,7 @@
+         real_conversation_id = state["real_conversation_id"]
+         pending_task = state.get("pending_task")
+         effective_user_message = state["effective_user_message"]
+-        slots = state["slots"]
++        slots = dict(state["slots"])
+         required_slots = state["required_slots"]
+ 
+         if state.get("cancelled_pending_request"):
+@@ -215,11 +215,15 @@
+                                   routing_reason="用户取消尚未提交的待补充任务")
+         else:
+             route = route_user_request(effective_user_message)
+-        route, missing_slots = apply_slot_requirements(
++        if route.order_id:
++            slots["order_id"] = route.order_id
++        route, missing_slots, required_slots = apply_slot_requirements(
+             route=route,
+             required_slots=required_slots,
+             slots=slots,
+         )
++        if "new_address" not in required_slots:
++            slots.pop("new_address", None)
+         route.agent_plan = build_agent_plan(route)
+         orchestration = describe_agent_plan(route)
+ 
+@@ -274,6 +278,8 @@
+         return {
+             "route": route,
+             "missing_slots": missing_slots,
++            "required_slots": required_slots,
++            "slots": slots,
+             "orchestration": orchestration,
+         }
+ 
+--- a/app/agent/routing/decision.py
++++ b/app/agent/routing/decision.py
+@@ -1,550 +1,550 @@
+-from __future__ import annotations
+-
+-from app.agent.policies.fallback_policy import (
+-    should_handoff_to_human,
+-)
+-from app.agent.policies.guardrails import (
+-    contains_risky_action,
+-)
+-from app.agent.routing.semantic import (
+-    SemanticRoute,
+-)
+-from app.core.schemas import (
+-    RouteDecision,
+-)
+-
+-
+-POLICY_TOPICS = {
+-    "refund_policy",
+-    "refund_timing",
+-    "refund_eligibility",
+-    "return_policy",
+-    "cancel_policy",
+-    "address_change_policy",
+-    "warranty_policy",
+-    "shipping_policy",
+-    "invoice_policy",
+-    "membership_policy",
+-}
+-
+-
+-REFUND_EXECUTION_TOPICS = {
+-    "refund_apply",
+-    "return_apply",
+-}
+-
+-
+-# --------------------------------
+-# 明确的审核绕过表达
+-#
+-# 注意：
+-# 这不是业务意图 Router。
+-# 这里只负责检测安全风险。
+-# --------------------------------
+-
+-REVIEW_BYPASS_PATTERNS = (
+-    "不用审核",
+-    "不要审核",
+-    "别审核",
+-    "不需要审核",
+-    "无需审核",
+-    "跳过审核",
+-    "绕过审核",
+-    "免审核",
+-    "别走审核",
+-    "不要走审核",
+-    "不走审核",
+-    "跳过审核流程",
+-    "绕过审核流程",
+-    "别走审核流程",
+-    "不要走审核流程",
+-)
+-
+-
+-def requests_review_bypass(
+-    user_message: str,
+-) -> bool:
+-    """
+-    检测用户是否明确要求绕过审核。
+-
+-    这里只检测安全风险，
+-    不负责判断业务 intent。
+-    """
+-
+-    text = (
+-        user_message
+-        .strip()
+-        .lower()
+-    )
+-
+-    return any(
+-        pattern in text
+-        for pattern
+-        in REVIEW_BYPASS_PATTERNS
+-    )
+-
+-
+-def requires_order_id(
+-    semantic: SemanticRoute,
+-) -> bool:
+-    """
+-    当前业务是否需要具体订单。
+-
+-    注意：
+-    “需要订单号”
+-    不等于
+-    “当前已经有订单号”。
+-    """
+-
+-    if (
+-        semantic.action_type
+-        == "handoff"
+-    ):
+-        return False
+-
+-    if (
+-        semantic.intent
+-        == "order_lookup"
+-    ):
+-        return True
+-
+-    if (
+-        semantic.intent
+-        == "cancel_order"
+-    ):
+-        return True
+-
+-    if (
+-        semantic.intent
+-        == "address_change"
+-    ):
+-        return True
+-
+-    if (
+-        semantic.intent
+-        == "return_refund"
+-    ):
+-        # 真正执行退款
+-        if (
+-            semantic.action_type
+-            == "execute"
+-        ):
+-            return True
+-
+-        # 针对具体商品/订单询问
+-        # 是否符合退款条件
+-        if (
+-            semantic.topic
+-            == "refund_eligibility"
+-        ):
+-            return True
+-
+-        # refund_policy /
+-        # refund_timing
+-        # 属于通用政策问题
+-        return False
+-
+-    if (
+-        semantic.intent
+-        == "shipping_exception"
+-    ):
+-        return (
+-            semantic.topic
+-            in {
+-                "shipping_status",
+-                "shipping_delay",
+-                "shipping_exception",
+-                "lost_package",
+-            }
+-        )
+-
+-    if (
+-        semantic.intent
+-        == "warranty_repair"
+-    ):
+-        return (
+-            semantic.action_type
+-            == "execute"
+-        )
+-
+-    if (
+-        semantic.intent
+-        == "payment_invoice"
+-    ):
+-        return (
+-            semantic.topic
+-            in {
+-                "payment_status",
+-                "payment_failed",
+-                "duplicate_charge",
+-                "invoice_apply",
+-                "invoice_change",
+-            }
+-        )
+-
+-    if (
+-        semantic.intent
+-        == "complaint"
+-    ):
+-        return (
+-            semantic.action_type
+-            == "execute"
+-        )
+-
+-    return False
+-
+-
+-def requires_policy(
+-    semantic: SemanticRoute,
+-) -> bool:
+-
+-    if (
+-        semantic.topic
+-        in POLICY_TOPICS
+-    ):
+-        return True
+-
+-    # 真正执行退款前，
+-    # 也需要先查退款政策
+-    if (
+-        semantic.intent
+-        == "return_refund"
+-        and semantic.action_type
+-        == "execute"
+-        and semantic.topic
+-        in REFUND_EXECUTION_TOPICS
+-    ):
+-        return True
+-
+-    return False
+-
+-
+-def requires_refund_execution(
+-    semantic: SemanticRoute,
+-    order_id: str | None,
+-) -> bool:
+-
+-    return bool(
+-        semantic.intent
+-        == "return_refund"
+-        and semantic.action_type
+-        == "execute"
+-        and semantic.topic
+-        == "refund_apply"
+-        and order_id is not None
+-    )
+-
+-
+-def requires_ticket(
+-    semantic: SemanticRoute,
+-    order_id: str | None,
+-    need_refund_request: bool,
+-    risky_action: bool,
+-) -> bool:
+-
+-    if order_id is None:
+-        return False
+-
+-    if need_refund_request:
+-        return True
+-
+-    if risky_action:
+-        return True
+-
+-    if (
+-        semantic.action_type
+-        != "execute"
+-    ):
+-        return False
+-
+-    return (
+-        semantic.intent
+-        in {
+-            "address_change",
+-            "cancel_order",
+-            "shipping_exception",
+-            "warranty_repair",
+-            "complaint",
+-            "payment_invoice",
+-        }
+-    )
+-
+-
+-def build_route_decision(
+-    user_message: str,
+-    semantic: SemanticRoute,
+-    order_id: str | None,
+-) -> RouteDecision:
+-
+-    # --------------------------------
+-    # 1. Semantic 层已经决定：
+-    #    query / execute / handoff
+-    # --------------------------------
+-
+-    is_execution = (
+-        semantic.action_type
+-        == "execute"
+-    )
+-
+-    is_explicit_handoff = (
+-        semantic.action_type
+-        == "handoff"
+-    )
+-
+-    # --------------------------------
+-    # 2. 原有人工升级规则
+-    #
+-    # 只有 execute 请求才允许
+-    # 原始文本风险规则影响业务决策。
+-    #
+-    # 避免：
+-    # “不要直接给我退款”
+-    # 被识别成高风险退款执行。
+-    # --------------------------------
+-
+-    legacy_handoff_required = False
+-    legacy_handoff_reason = None
+-
+-    if is_execution:
+-        (
+-            legacy_handoff_required,
+-            legacy_handoff_reason,
+-        ) = should_handoff_to_human(
+-            user_message
+-        )
+-
+-    # --------------------------------
+-    # 3. 审核绕过是明确安全风险
+-    #
+-    # 同样只对 execute 生效。
+-    # --------------------------------
+-
+-    review_bypass = bool(
+-        is_execution
+-        and requests_review_bypass(
+-            user_message
+-        )
+-    )
+-
+-    # --------------------------------
+-    # 4. 其他危险动作检测
+-    #
+-    # 只在 execute 时启用。
+-    # --------------------------------
+-
+-    risky_action = bool(
+-        is_execution
+-        and contains_risky_action(
+-            user_message
+-        )
+-    )
+-
+-    # --------------------------------
+-    # 5. Order / Policy
+-    # --------------------------------
+-
+-    order_required = (
+-        requires_order_id(
+-            semantic
+-        )
+-    )
+-
+-    need_clarification = bool(
+-        order_required
+-        and order_id is None
+-    )
+-
+-    # 保留当前项目既有行为：
+-    # 消息中明确提供 order_id，
+-    # 就允许查询订单事实。
+-    need_order = (
+-        order_id is not None
+-    )
+-
+-    need_policy = (
+-        requires_policy(
+-            semantic
+-        )
+-    )
+-
+-    # --------------------------------
+-    # 6. Refund Execution
+-    # --------------------------------
+-
+-    need_refund_request = (
+-        requires_refund_execution(
+-            semantic=semantic,
+-            order_id=order_id,
+-        )
+-    )
+-
+-    # --------------------------------
+-    # 7. Handoff / Manual Review
+-    # --------------------------------
+-
+-    handoff_required = bool(
+-        is_explicit_handoff
+-        or review_bypass
+-        or legacy_handoff_required
+-    )
+-
+-    need_handoff = (
+-        handoff_required
+-    )
+-
+-    # 显式要求人工客服，
+-    # 不一定意味着风险审核。
+-    #
+-    # 只有风险/审核绕过
+-    # 才进入 manual review。
+-    manual_review_required = bool(
+-        review_bypass
+-        or legacy_handoff_required
+-    )
+-
+-    # --------------------------------
+-    # 8. Risk Check
+-    # --------------------------------
+-
+-    need_risk_check = bool(
+-        order_id
+-        and (
+-            need_refund_request
+-            or semantic.intent
+-            == "complaint"
+-            or review_bypass
+-            or risky_action
+-            or legacy_handoff_required
+-        )
+-    )
+-
+-    # --------------------------------
+-    # 9. Ticket
+-    # --------------------------------
+-
+-    need_ticket = (
+-        requires_ticket(
+-            semantic=semantic,
+-            order_id=order_id,
+-            need_refund_request=(
+-                need_refund_request
+-            ),
+-            risky_action=(
+-                risky_action
+-                or review_bypass
+-            ),
+-        )
+-    )
+-
+-    # --------------------------------
+-    # 10. Risk Level
+-    # --------------------------------
+-
+-    high_risk = bool(
+-        review_bypass
+-        or legacy_handoff_required
+-    )
+-
+-    risk_level = (
+-        "high"
+-        if high_risk
+-        else "low"
+-    )
+-
+-    risk_flags: list[str] = []
+-
+-    if review_bypass:
+-        risk_flags.append(
+-            "review_bypass"
+-        )
+-
+-    if risky_action:
+-        risk_flags.append(
+-            "risky_action"
+-        )
+-
+-    # --------------------------------
+-    # 11. Handoff Reason
+-    # --------------------------------
+-
+-    handoff_reason = None
+-
+-    if review_bypass:
+-        handoff_reason = (
+-            "用户要求绕过正常审核流程，"
+-            "需要人工审核。"
+-        )
+-
+-    elif legacy_handoff_required:
+-        handoff_reason = (
+-            legacy_handoff_reason
+-        )
+-
+-    elif is_explicit_handoff:
+-        handoff_reason = (
+-            "用户明确要求人工客服处理。"
+-        )
+-
+-    # --------------------------------
+-    # 12. RouteDecision
+-    # --------------------------------
+-
++from __future__ import annotations
++
++from app.agent.policies.fallback_policy import (
++    should_handoff_to_human,
++)
++from app.agent.policies.guardrails import (
++    contains_risky_action,
++)
++from app.agent.routing.semantic import (
++    SemanticRoute,
++)
++from app.core.schemas import (
++    RouteDecision,
++)
++
++
++POLICY_TOPICS = {
++    "refund_policy",
++    "refund_timing",
++    "refund_eligibility",
++    "return_policy",
++    "cancel_policy",
++    "address_change_policy",
++    "warranty_policy",
++    "shipping_policy",
++    "invoice_policy",
++    "membership_policy",
++}
++
++
++REFUND_EXECUTION_TOPICS = {
++    "refund_apply",
++    "return_apply",
++}
++
++
++# --------------------------------
++# 明确的审核绕过表达
++#
++# 注意：
++# 这不是业务意图 Router。
++# 这里只负责检测安全风险。
++# --------------------------------
++
++REVIEW_BYPASS_PATTERNS = (
++    "不用审核",
++    "不要审核",
++    "别审核",
++    "不需要审核",
++    "无需审核",
++    "跳过审核",
++    "绕过审核",
++    "免审核",
++    "别走审核",
++    "不要走审核",
++    "不走审核",
++    "跳过审核流程",
++    "绕过审核流程",
++    "别走审核流程",
++    "不要走审核流程",
++)
++
++
++def requests_review_bypass(
++    user_message: str,
++) -> bool:
++    """
++    检测用户是否明确要求绕过审核。
++
++    这里只检测安全风险，
++    不负责判断业务 intent。
++    """
++
++    text = (
++        user_message
++        .strip()
++        .lower()
++    )
++
++    return any(
++        pattern in text
++        for pattern
++        in REVIEW_BYPASS_PATTERNS
++    )
++
++
++def requires_order_id(
++    semantic: SemanticRoute,
++) -> bool:
++    """
++    当前业务是否需要具体订单。
++
++    注意：
++    “需要订单号”
++    不等于
++    “当前已经有订单号”。
++    """
++
++    if (
++        semantic.action_type
++        == "handoff"
++    ):
++        return False
++
++    if (
++        semantic.intent
++        == "order_lookup"
++    ):
++        return True
++
++    if (
++        semantic.intent
++        == "cancel_order"
++    ):
++        return True
++
++    if (
++        semantic.intent
++        == "address_change"
++    ):
++        return not (semantic.action_type == "query" and semantic.topic == "address_change_policy")
++
++    if (
++        semantic.intent
++        == "return_refund"
++    ):
++        # 真正执行退款
++        if (
++            semantic.action_type
++            == "execute"
++        ):
++            return True
++
++        # 针对具体商品/订单询问
++        # 是否符合退款条件
++        if (
++            semantic.topic
++            == "refund_eligibility"
++        ):
++            return True
++
++        # refund_policy /
++        # refund_timing
++        # 属于通用政策问题
++        return False
++
++    if (
++        semantic.intent
++        == "shipping_exception"
++    ):
++        return (
++            semantic.topic
++            in {
++                "shipping_status",
++                "shipping_delay",
++                "shipping_exception",
++                "lost_package",
++            }
++        )
++
++    if (
++        semantic.intent
++        == "warranty_repair"
++    ):
++        return (
++            semantic.action_type
++            == "execute"
++        )
++
++    if (
++        semantic.intent
++        == "payment_invoice"
++    ):
++        return (
++            semantic.topic
++            in {
++                "payment_status",
++                "payment_failed",
++                "duplicate_charge",
++                "invoice_apply",
++                "invoice_change",
++            }
++        )
++
++    if (
++        semantic.intent
++        == "complaint"
++    ):
++        return (
++            semantic.action_type
++            == "execute"
++        )
++
++    return False
++
++
++def requires_policy(
++    semantic: SemanticRoute,
++) -> bool:
++
++    if (
++        semantic.topic
++        in POLICY_TOPICS
++    ):
++        return True
++
++    # 真正执行退款前，
++    # 也需要先查退款政策
++    if (
++        semantic.intent
++        == "return_refund"
++        and semantic.action_type
++        == "execute"
++        and semantic.topic
++        in REFUND_EXECUTION_TOPICS
++    ):
++        return True
++
++    return False
++
++
++def requires_refund_execution(
++    semantic: SemanticRoute,
++    order_id: str | None,
++) -> bool:
++
++    return bool(
++        semantic.intent
++        == "return_refund"
++        and semantic.action_type
++        == "execute"
++        and semantic.topic
++        == "refund_apply"
++        and order_id is not None
++    )
++
++
++def requires_ticket(
++    semantic: SemanticRoute,
++    order_id: str | None,
++    need_refund_request: bool,
++    risky_action: bool,
++) -> bool:
++
++    if order_id is None:
++        return False
++
++    if need_refund_request:
++        return True
++
++    if risky_action:
++        return True
++
++    if (
++        semantic.action_type
++        != "execute"
++    ):
++        return False
++
++    return (
++        semantic.intent
++        in {
++            "address_change",
++            "cancel_order",
++            "shipping_exception",
++            "warranty_repair",
++            "complaint",
++            "payment_invoice",
++        }
++    )
++
++
++def build_route_decision(
++    user_message: str,
++    semantic: SemanticRoute,
++    order_id: str | None,
++) -> RouteDecision:
++
++    # --------------------------------
++    # 1. Semantic 层已经决定：
++    #    query / execute / handoff
++    # --------------------------------
++
++    is_execution = (
++        semantic.action_type
++        == "execute"
++    )
++
++    is_explicit_handoff = (
++        semantic.action_type
++        == "handoff"
++    )
++
++    # --------------------------------
++    # 2. 原有人工升级规则
++    #
++    # 只有 execute 请求才允许
++    # 原始文本风险规则影响业务决策。
++    #
++    # 避免：
++    # “不要直接给我退款”
++    # 被识别成高风险退款执行。
++    # --------------------------------
++
++    legacy_handoff_required = False
++    legacy_handoff_reason = None
++
++    if is_execution:
++        (
++            legacy_handoff_required,
++            legacy_handoff_reason,
++        ) = should_handoff_to_human(
++            user_message
++        )
++
++    # --------------------------------
++    # 3. 审核绕过是明确安全风险
++    #
++    # 同样只对 execute 生效。
++    # --------------------------------
++
++    review_bypass = bool(
++        is_execution
++        and requests_review_bypass(
++            user_message
++        )
++    )
++
++    # --------------------------------
++    # 4. 其他危险动作检测
++    #
++    # 只在 execute 时启用。
++    # --------------------------------
++
++    risky_action = bool(
++        is_execution
++        and contains_risky_action(
++            user_message
++        )
++    )
++
++    # --------------------------------
++    # 5. Order / Policy
++    # --------------------------------
++
++    order_required = (
++        requires_order_id(
++            semantic
++        )
++    )
++
++    need_clarification = bool(
++        order_required
++        and order_id is None
++    )
++
++    # 保留当前项目既有行为：
++    # 消息中明确提供 order_id，
++    # 就允许查询订单事实。
++    need_order = (
++        order_id is not None
++    )
++
++    need_policy = (
++        requires_policy(
++            semantic
++        )
++    )
++
++    # --------------------------------
++    # 6. Refund Execution
++    # --------------------------------
++
++    need_refund_request = (
++        requires_refund_execution(
++            semantic=semantic,
++            order_id=order_id,
++        )
++    )
++
++    # --------------------------------
++    # 7. Handoff / Manual Review
++    # --------------------------------
++
++    handoff_required = bool(
++        is_explicit_handoff
++        or review_bypass
++        or legacy_handoff_required
++    )
++
++    need_handoff = (
++        handoff_required
++    )
++
++    # 显式要求人工客服，
++    # 不一定意味着风险审核。
++    #
++    # 只有风险/审核绕过
++    # 才进入 manual review。
++    manual_review_required = bool(
++        review_bypass
++        or legacy_handoff_required
++    )
++
++    # --------------------------------
++    # 8. Risk Check
++    # --------------------------------
++
++    need_risk_check = bool(
++        order_id
++        and (
++            need_refund_request
++            or semantic.intent
++            == "complaint"
++            or review_bypass
++            or risky_action
++            or legacy_handoff_required
++        )
++    )
++
++    # --------------------------------
++    # 9. Ticket
++    # --------------------------------
++
++    need_ticket = (
++        requires_ticket(
++            semantic=semantic,
++            order_id=order_id,
++            need_refund_request=(
++                need_refund_request
++            ),
++            risky_action=(
++                risky_action
++                or review_bypass
++            ),
++        )
++    )
++
++    # --------------------------------
++    # 10. Risk Level
++    # --------------------------------
++
++    high_risk = bool(
++        review_bypass
++        or legacy_handoff_required
++    )
++
++    risk_level = (
++        "high"
++        if high_risk
++        else "low"
++    )
++
++    risk_flags: list[str] = []
++
++    if review_bypass:
++        risk_flags.append(
++            "review_bypass"
++        )
++
++    if risky_action:
++        risk_flags.append(
++            "risky_action"
++        )
++
++    # --------------------------------
++    # 11. Handoff Reason
++    # --------------------------------
++
++    handoff_reason = None
++
++    if review_bypass:
++        handoff_reason = (
++            "用户要求绕过正常审核流程，"
++            "需要人工审核。"
++        )
++
++    elif legacy_handoff_required:
++        handoff_reason = (
++            legacy_handoff_reason
++        )
++
++    elif is_explicit_handoff:
++        handoff_reason = (
++            "用户明确要求人工客服处理。"
++        )
++
++    # --------------------------------
++    # 12. RouteDecision
++    # --------------------------------
++
+     return RouteDecision(
+         intent=semantic.intent,
+         action_type=semantic.action_type,
+         topic=semantic.topic,
+         related_topics=list(semantic.related_topics),
+         confidence=semantic.confidence,
+-        routing_reason=semantic.reason,
+-
+-        order_id=order_id,
+-
+-        need_order=need_order,
+-        need_policy=need_policy,
+-        need_ticket=need_ticket,
+-
+-        need_refund_request=(
+-            need_refund_request
+-        ),
+-
+-        need_risk_check=(
+-            need_risk_check
+-        ),
+-
+-        manual_review_required=(
+-            manual_review_required
+-        ),
+-
+-        need_handoff=(
+-            need_handoff
+-        ),
+-
+-        blocked_by_guardrail=False,
+-        guardrail_reason=None,
+-
+-        need_clarification=(
+-            need_clarification
+-        ),
+-
+-        clarification_question=(
+-            "请您提供订单号，我才能继续查询订单状态并判断售后方案。"
+-            if need_clarification
+-            else None
+-        ),
+-
+-        handoff_required=(
+-            handoff_required
+-        ),
+-
+-        handoff_reason=(
+-            handoff_reason
+-        ),
+-
+-        risk_level=(
+-            risk_level
+-        ),
+-
+-        risk_flags=(
+-            risk_flags
+-        ),
+-    )
++        routing_reason=semantic.reason,
++
++        order_id=order_id,
++
++        need_order=need_order,
++        need_policy=need_policy,
++        need_ticket=need_ticket,
++
++        need_refund_request=(
++            need_refund_request
++        ),
++
++        need_risk_check=(
++            need_risk_check
++        ),
++
++        manual_review_required=(
++            manual_review_required
++        ),
++
++        need_handoff=(
++            need_handoff
++        ),
++
++        blocked_by_guardrail=False,
++        guardrail_reason=None,
++
++        need_clarification=(
++            need_clarification
++        ),
++
++        clarification_question=(
++            "请您提供订单号，我才能继续查询订单状态并判断售后方案。"
++            if need_clarification
++            else None
++        ),
++
++        handoff_required=(
++            handoff_required
++        ),
++
++        handoff_reason=(
++            handoff_reason
++        ),
++
++        risk_level=(
++            risk_level
++        ),
++
++        risk_flags=(
++            risk_flags
++        ),
++    )
+--- a/app/agent/routing/pending_task.py
++++ b/app/agent/routing/pending_task.py
+@@ -1,6 +1,10 @@
+ from app.agent.routing.parsing import extract_order_id
+ from app.core.schemas import RouteDecision
+ import re
++
++
++def is_address_question(message: str) -> bool:
++    return bool(re.search(r"[?？]|是否|能否|能不能|可不可以|怎么|如何|为什么|什么|吗[。！!\s]*$", message))
+ 
+ 
+ def cancels_pending_request(message: str) -> bool:
+@@ -16,9 +20,16 @@
+     if cancels_pending_request(message):
+         return "cancel"
+     missing = pending.get("missing_slots", [])
++    explicit_order = re.search(r"订单(?:号)?\s*(?:是|为|[:：])?\s*(\d{4,})", message)
++    previous_order = (pending.get("slots") or {}).get("order_id")
++    if explicit_order and previous_order and explicit_order.group(1) != previous_order:
++        return "replace"
+     if "order_id" in missing and re.fullmatch(r"\s*(?:订单(?:号)?\s*(?:是|为|:|：)?\s*)?\d{4,}[。\s]*", message):
+         return "slots"
+     if "new_address" in missing:
++        # A follow-up question is a new request, not a free-text address value.
++        if is_address_question(message):
++            return "replace"
+         business_change = any(word in message for word in ("退款", "退货", "投诉", "取消", "不用", "不改", "不想", "先别"))
+         if not business_change and extract_new_address(message, pending):
+             return "slots"
+@@ -58,6 +69,9 @@
+     user_message: str,
+     pending_task: dict | None = None,
+ ) -> str | None:
++    if is_address_question(user_message):
++        return None
++
+     address_prefixes = [
+         "新地址是",
+         "新地址为",
+@@ -134,6 +148,10 @@
+         pending_task,
+     )
+ 
++    if pending_task and new_address and not re.search(r"订单(?:号)?\s*(?:是|为|[:：])?\s*\d{4,}", user_message):
++        # House/unit numbers inside an address must not replace the bound order.
++        order_id = None
++
+     if order_id:
+         slots["order_id"] = order_id
+ 
+@@ -249,11 +267,17 @@
+     route: RouteDecision,
+     required_slots: list[str],
+     slots: dict,
+-) -> tuple[RouteDecision, list[str]]:
++) -> tuple[RouteDecision, list[str], list[str]]:
+     if route.blocked_by_guardrail:
+-        return route, []
+-
+-    final_required_slots = list(required_slots)
++        return route, [], []
++
++    # Pre-routing keywords are only hints. A consultation must never inherit
++    # execution-only slots, including from a previously pending operation.
++    final_required_slots = []
++    if route.action_type == "execute":
++        final_required_slots = [slot for slot in required_slots if slot not in {"order_id", "new_address"}]
++        if route.intent == "address_change":
++            final_required_slots.extend(["order_id", "new_address"])
+ 
+     if (
+         route.need_clarification
+@@ -279,7 +303,7 @@
+         # 只要还需要用户补充信息，本轮就不执行任何业务工具。
+         route.tool_plan = []
+ 
+-    return route, missing_slots
++    return route, missing_slots, final_required_slots
+ 
+ 
+ def should_store_pending_task(
+--- a/tests/test_conversation_task_boundaries.py
++++ b/tests/test_conversation_task_boundaries.py
+@@ -12,6 +12,9 @@
+ from app.agent.routing.refund_withdrawal import WITHDRAWAL_TOPIC
+ from app.core.schemas import RouteDecision, ToolResult
+ from app.observability import tracing
++from app.agent.routing.semantic import SemanticRoute
++from app.storage import database as db
++from app.tools.registry import TOOL_HANDLERS
+ 
+ 
+ class ConversationTaskBoundaryTests(unittest.TestCase):
+@@ -142,6 +145,101 @@
+         self.assertIn("10009", effective)
+         self.assertNotIn("10001", effective)
+ 
++    def address_semantic(self, action="query"):
++        return SemanticRoute(intent="address_change", action_type=action,
++            topic="address_change_policy" if action == "query" else "address_change_apply", source="llm")
++
++    def policy_fixture(self, **kwargs):
++        return ToolResult(tool_name="policy_search", success=True, result=[{
++            "chunk_id": "address-policy", "text": "修改收货地址前应核实订单的发货状态。", "score": .95,
++            "source": "policy.md", "section": "地址规则", "citation": "policy.md - 地址规则"}])
++
++    def test_address_policy_query_without_order_does_not_collect_execution_slots(self):
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.address_semantic()), \
++                patch.dict(TOOL_HANDLERS, {"policy_search": self.policy_fixture}):
++            result = run_customer_support_agent("修改收货地址有什么规则？", "address-policy-only", use_llm=False)
++        self.assertFalse(result["route"]["need_clarification"])
++        self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
++        self.assertIsNone(workflow.memory.get_pending_task("address-policy-only"))
++        self.assertEqual(self.fixture.count("tickets"), 0)
++
++    def test_address_policy_query_with_order_uses_lookup_and_policy_in_sync_and_stream(self):
++        async def streamed():
++            events = [e async for e in stream_customer_support_agent("订单10002发货后还能修改收货地址吗？", "address-query-stream", use_llm=False)]
++            return next(e["content"] for e in events if e["type"] == "done")
++        before = db.get_order_from_db("10002")
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.address_semantic()), \
++                patch.dict(TOOL_HANDLERS, {"policy_search": self.policy_fixture}):
++            sync = run_customer_support_agent("订单10002发货后还能修改收货地址吗？", "address-query-sync", use_llm=False)
++            stream = asyncio.run(streamed())
++        for result in [sync, stream]:
++            self.assertFalse(result["route"]["need_clarification"])
++            self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["order_lookup", "policy_search"])
++            self.assertNotIn("提供新的收货地址", result["reply"])
++        self.assertEqual(db.get_order_from_db("10002"), before)
++        self.assertEqual(self.fixture.count("tickets"), 0)
++        self.assertEqual(self.fixture.count("manual_reviews"), 0)
++
++    def test_actual_address_execution_collects_order_then_address_and_keeps_house_number_out_of_order_slot(self):
++        cid = "address-execution"
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.address_semantic("execute")):
++            first = run_customer_support_agent("请帮我修改收货地址", cid, use_llm=False)
++            self.assertEqual(first["tool_results"], [])
++            self.assertEqual(workflow.memory.get_pending_task(cid)["missing_slots"], ["order_id", "new_address"])
++            second = run_customer_support_agent("订单号是10009", cid, use_llm=False)
++            self.assertEqual(second["tool_results"], [])
++            self.assertEqual(workflow.memory.get_pending_task(cid)["missing_slots"], ["new_address"])
++            context = self.context_for(cid, "新地址是测试市测试路1000号")
++            self.assertEqual(context["slots"]["order_id"], "10009")
++            self.assertEqual(context["slots"]["new_address"], "测试市测试路1000号")
++            routed = workflow.route_node(context)
++            self.assertEqual(routed["route"].order_id, "10009")
++            self.assertFalse(routed["missing_slots"])
++            self.assertIsNone(workflow.memory.get_pending_task(cid))
++        self.assertEqual(self.fixture.count("tickets"), 0)  # Only information collection/routing above.
++
++    def context_for(self, cid, message):
++        state = workflow.build_initial_state(message, cid, False)
++        state.update(workflow.load_context_node(state))
++        return state
++
++    def test_pending_address_question_reaches_router_without_becoming_an_address(self):
++        cid = "address-question-after-execute"
++        self.pending(cid, address=True)
++        context = self.context_for(cid, "修改地址是否需要额外费用？")
++        self.assertFalse(context["used_pending_task"])
++        self.assertEqual(context["effective_user_message"], "修改地址是否需要额外费用？")
++        self.assertNotIn("new_address", context["slots"])
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.address_semantic()):
++            routed = workflow.route_node(context)
++        self.assertFalse(routed["route"].need_clarification)
++        self.assertEqual(routed["required_slots"], [])
++        self.assertIsNone(workflow.memory.get_pending_task(cid))
++
++    def test_explicit_order_switch_replaces_pending_address_task(self):
++        cid = "address-order-switch"
++        workflow.memory.set_pending_task(cid, {"user_request": "修改订单10001的地址", "slots": {"order_id": "10001"},
++            "required_slots": ["order_id", "new_address"], "missing_slots": ["new_address"]})
++        context = self.context_for(cid, "改为修改订单10009的地址")
++        self.assertFalse(context["used_pending_task"])
++        self.assertNotIn("10001", context["effective_user_message"])
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.address_semantic("execute")):
++            routed = workflow.route_node(context)
++        self.assertEqual(routed["route"].order_id, "10009")
++        self.assertEqual(routed["missing_slots"], ["new_address"])
++        self.assertEqual(workflow.memory.get_pending_task(cid)["slots"]["order_id"], "10009")
++
++    def test_execute_after_policy_consultation_collects_address_but_inherits_known_order(self):
++        cid = "address-consult-to-execute"
++        workflow.memory.append(cid, "user", "订单10009可以修改地址吗？")
++        workflow.memory.append(cid, "assistant", "需先核实订单。")
++        context = self.context_for(cid, "帮我修改地址")
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=self.address_semantic("execute")):
++            routed = workflow.route_node(context)
++        self.assertEqual(routed["route"].order_id, "10009")
++        self.assertEqual(routed["slots"]["order_id"], "10009")
++        self.assertEqual(routed["missing_slots"], ["new_address"])
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

@@ -1,0 +1,754 @@
+--- a/app/agent/orchestrator.py
++++ b/app/agent/orchestrator.py
+@@ -1,11 +1,12 @@
+ from collections.abc import AsyncGenerator
+ 
+ from app.agent.agents import AfterSalesAgent, CustomerAgent, RiskAgent
+-from app.agent.routing.router_v2 import route_tools_v2
++from app.agent.routing.router_v2 import build_tool_plan, route_tools_v2
+ from app.agent.state import AgentResult, AgentState
+ from app.agent.tools.tool_results import get_tool_result
+ from app.agent.tools.tool_validation import validate_tool_chain, validate_tool_plan
+ from app.core.schemas import RouteDecision, ToolResult
++from app.domain.refund_policy import RefundPaymentNotConfirmed, require_confirmed_refund_payment
+ from app.observability.tracing import add_trace_event, timed_step
+ from app.tools.executor import add_tool_failure_trace
+ 
+@@ -244,6 +245,9 @@
+                 self.block_execution(state, "order_lookup_failed")
+                 return
+ 
++            if tool_result.tool_name == "order_lookup" and tool_result.success:
++                self.apply_refund_payment_precondition(state)
++
+             if tool_result.tool_name == "policy_search" and not tool_result.success:
+                 self.block_execution(state, "policy_search_failed")
+                 return
+@@ -270,6 +274,31 @@
+             ):
+                 self.block_execution(state, "tool_permission_denied")
+                 return
++
++    def apply_refund_payment_precondition(self, state: AgentState) -> None:
++        if not state.route.need_refund_request or not isinstance(state.order, dict):
++            return
++        try:
++            require_confirmed_refund_payment(state.order)
++        except RefundPaymentNotConfirmed as error:
++            decision = {"can_create": False, "reason": str(error), "order_id": state.order_id,
++                        "payment_status": state.order.get("payment_status"),
++                        "order_status": state.order.get("order_status"), "origin": "order_lookup"}
++            # Like ticket_decision, this is an internal business decision, not
++            # an executed external tool or a failed dependency call.
++            state.add_tool_result(ToolResult(tool_name="refund_decision", success=True, result=decision))
++            previous_plan = list(state.route.tool_plan)
++            for flag in ("need_refund_request", "need_risk_check", "need_ticket",
++                         "manual_review_required", "need_handoff", "handoff_required"):
++                setattr(state.route, flag, False)
++            state.route.handoff_reason = None
++            state.route.tool_plan = build_tool_plan(state.route)
++            state.route.agent_plan = self.build_agent_plan(state.route)
++            if state.trace:
++                add_trace_event(state.trace, event_type="refund_precondition", data={
++                    **decision, "previous_tool_plan": previous_plan,
++                    "effective_tool_plan": list(state.route.tool_plan),
++                })
+ 
+     def block_execution(self, state: AgentState, reason: str) -> None:
+         state.block(reason)
+--- a/app/agent/entry/workflow.py
++++ b/app/agent/entry/workflow.py
+@@ -113,6 +113,7 @@
+     return (
+         route.topic == WITHDRAWAL_TOPIC
+         or get_tool_result(tool_results, "refund_apply") is not None
++        or get_tool_result(tool_results, "refund_decision") is not None
+         or route.blocked_by_guardrail
+         or route.need_clarification
+         or (route.handoff_required and not route.order_id)
+--- a/app/agent/response/fallback.py
++++ b/app/agent/response/fallback.py
+@@ -1,78 +1,78 @@
+-from app.agent.tools.tool_results import (
+-    get_tool_result,
+-    is_low_confidence_evidence,
+-    is_system_tool_failure,
+-)
+-from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
+-
+-
+-def _build_policy_answer(policy_result) -> str:
+-    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
+-    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
+-
+-
+-def refund_status_message(refund: dict) -> str:
+-    """Describe the observed state, including replay, without claiming settlement."""
+-    prefix = f"退款申请 {refund.get('refund_id')}"
+-    messages = {
+-        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
+-        "pending_manual_review": "当前状态为待人工审核。",
+-        "refund_processing": "正在处理中，尚未确认处理完成。",
+-        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
+-        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
+-        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
+-        "failed": "处理失败，请查看失败原因或联系人工客服。",
+-        "rejected": "审核未通过，请查看审核说明。",
+-        "cancelled": "已取消。",
+-        "canceled": "已取消。",
+-    }
+-    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
+-
+-
+-def refund_outcome_reply(tool_results: list) -> str | None:
+-    """Execution outcomes come from tool state, never from retrieved policy prose."""
+-    result = get_tool_result(tool_results, "refund_apply")
+-    if result is None:
+-        return None
+-    if result.success and isinstance(result.result, dict):
+-        parts = [refund_status_message(result.result)]
+-    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
+-        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
+-    else:
+-        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
+-        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
+-    order = get_tool_result(tool_results, "order_lookup")
+-    if order and order.success and isinstance(order.result, dict):
+-        parts.append(f"关联订单：{order.result.get('order_id')}。")
+-    review = get_tool_result(tool_results, "create_manual_review")
+-    if review and review.success and isinstance(review.result, dict):
+-        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
+-    ticket = get_tool_result(tool_results, "create_ticket")
+-    if ticket and ticket.success and isinstance(ticket.result, dict):
+-        status = ticket.result.get("status")
+-        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
+-                 "pending_human_review": "工单草稿，待人工审核",
+-                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
+-                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
+-        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
+-    return "".join(parts)
+-
+-
+-def build_fallback_answer(route, tool_results: list) -> str:
+-    if route.topic == WITHDRAWAL_TOPIC:
+-        return WITHDRAWAL_GUIDANCE
+-
+-    if route.need_clarification:
+-        reply = (
+-            route.clarification_question
+-            or "请您补充订单号后，我再帮您继续处理。"
+-        )
+-
+-        if route.handoff_required and route.handoff_reason:
+-            reply += route.handoff_reason
+-
+-        return reply
+-
++from app.agent.tools.tool_results import (
++    get_tool_result,
++    is_low_confidence_evidence,
++    is_system_tool_failure,
++)
++from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
++
++
++def _build_policy_answer(policy_result) -> str:
++    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
++    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
++
++
++def refund_status_message(refund: dict) -> str:
++    """Describe the observed state, including replay, without claiming settlement."""
++    prefix = f"退款申请 {refund.get('refund_id')}"
++    messages = {
++        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
++        "pending_manual_review": "当前状态为待人工审核。",
++        "refund_processing": "正在处理中，尚未确认处理完成。",
++        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
++        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
++        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
++        "failed": "处理失败，请查看失败原因或联系人工客服。",
++        "rejected": "审核未通过，请查看审核说明。",
++        "cancelled": "已取消。",
++        "canceled": "已取消。",
++    }
++    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
++
++
++def refund_outcome_reply(tool_results: list) -> str | None:
++    """Execution outcomes come from tool state, never from retrieved policy prose."""
++    result = get_tool_result(tool_results, "refund_apply")
++    if result is None:
++        return None
++    if result.success and isinstance(result.result, dict):
++        parts = [refund_status_message(result.result)]
++    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
++        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
++    else:
++        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
++        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
++    order = get_tool_result(tool_results, "order_lookup")
++    if order and order.success and isinstance(order.result, dict):
++        parts.append(f"关联订单：{order.result.get('order_id')}。")
++    review = get_tool_result(tool_results, "create_manual_review")
++    if review and review.success and isinstance(review.result, dict):
++        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
++    ticket = get_tool_result(tool_results, "create_ticket")
++    if ticket and ticket.success and isinstance(ticket.result, dict):
++        status = ticket.result.get("status")
++        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
++                 "pending_human_review": "工单草稿，待人工审核",
++                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
++                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
++        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
++    return "".join(parts)
++
++
++def build_fallback_answer(route, tool_results: list) -> str:
++    if route.topic == WITHDRAWAL_TOPIC:
++        return WITHDRAWAL_GUIDANCE
++
++    if route.need_clarification:
++        reply = (
++            route.clarification_question
++            or "请您补充订单号后，我再帮您继续处理。"
++        )
++
++        if route.handoff_required and route.handoff_reason:
++            reply += route.handoff_reason
++
++        return reply
++
+     if route.handoff_required and not route.order_id:
+         handoff = get_tool_result(tool_results, "transfer_to_human")
+         if handoff and handoff.success:
+@@ -81,218 +81,228 @@
+         if handoff and not handoff.success:
+             return "本轮未能确认人工工单已创建，请查询已有工单或稍后重试。"
+         return (
+-            route.handoff_reason
+-            or "该问题需要人工客服进一步处理。"
+-        )
+-
+-    if route.blocked_by_guardrail:
+-        return (
+-            route.guardrail_reason
+-            or "当前请求存在安全风险，已拒绝执行。"
+-        )
+-
+-    order_result = get_tool_result(
+-        tool_results,
+-        "order_lookup",
+-    )
+-
+-    if order_result and not order_result.success:
+-        return (
+-            f"{order_result.result} 请您核对订单号后重新提供，"
+-            "我再继续查询售后政策并判断是否需要创建工单。"
+-        )
+-
+-    refund_reply = refund_outcome_reply(tool_results)
+-    if refund_reply is not None:
+-        return refund_reply
+-
+-    policy_result = get_tool_result(
+-        tool_results,
+-        "policy_search",
+-    )
+-
+-    ticket_decision_result = get_tool_result(
+-        tool_results,
+-        "ticket_decision",
+-    )
+-
+-    ticket_result = get_tool_result(
+-        tool_results,
+-        "create_ticket",
+-    )
+-
+-    risk_result = get_tool_result(
+-        tool_results,
+-        "risk_check",
+-    )
+-
+-    manual_review_result = get_tool_result(
+-        tool_results,
+-        "create_manual_review",
+-    )
+-
+-    handoff_result = get_tool_result(
+-        tool_results,
+-        "transfer_to_human",
+-    )
+-
+-    plan_validation_result = get_tool_result(
+-        tool_results,
+-        "tool_plan_validation",
+-    )
+-
+-    chain_validation_result = get_tool_result(
+-        tool_results,
+-        "tool_chain_validation",
+-    )
+-
+-    parts = []
+-
+-    if (
+-        plan_validation_result
+-        and not plan_validation_result.success
+-    ):
+-        return (
+-            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
+-            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
+-        )
+-
+-    if order_result and order_result.success:
+-        order = order_result.result
+-
+-        if isinstance(order, dict):
+-            parts.append(
+-                f"已查询到订单 {order.get('order_id')}，"
+-                f"商品是 {order.get('product_name')}，"
+-                f"当前订单状态为{order.get('order_status')}。"
+-            )
+-
+-    if policy_result and not policy_result.success:
+-        if is_low_confidence_evidence(policy_result):
+-            parts.append(
+-                "但本轮没有检索到足够匹配的售后政策证据，"
+-                "我不能强行判断或创建工单。"
+-                "建议补充问题细节，或转人工客服核对政策后继续处理。"
+-            )
+-
+-        elif is_system_tool_failure(policy_result):
+-            parts.append(
+-                "但本轮售后政策检索工具调用失败，"
+-                "我不能在缺少政策依据时直接判断或创建工单。"
+-                "建议转人工客服核对政策后继续处理。"
+-            )
+-
+-        else:
+-            parts.append(
+-                "但本轮没有检索到足够匹配的售后政策，"
+-                "我不能编造不存在的政策结论。"
+-                "建议补充问题细节或转人工客服确认。"
+-            )
+-
+-    if policy_result and policy_result.success:
+-        parts.append(
+-            _build_policy_answer(policy_result)
+-        )
+-
+-    if risk_result and risk_result.success:
+-        risk = risk_result.result
+-
+-        if isinstance(risk, dict):
+-            if risk.get("risk_level") in {
+-                "medium",
+-                "high",
+-            }:
+-                flags = (
+-                    "、".join(
+-                        risk.get(
+-                            "risk_flags",
+-                            [],
+-                        )
+-                    )
+-                    or "售后风险"
+-                )
+-
+-                parts.append(
+-                    f"风控 Agent 判定风险等级为"
+-                    f"{risk.get('risk_level')}，"
+-                    f"命中原因：{flags}。"
+-                )
+-
+-    if (
+-        manual_review_result
+-        and manual_review_result.success
+-    ):
+-        review = manual_review_result.result
+-
+-        if isinstance(review, dict):
+-            parts.append(
+-                f"已创建人工审核单 "
+-                f"{review.get('review_id')}，"
+-                "后续由人工客服复核后再执行高风险操作。"
+-            )
+-
+-    if ticket_result and not ticket_result.success:
+-        if is_system_tool_failure(ticket_result):
+-            parts.append(
+-                "工单创建工具本轮调用失败，暂时没有生成工单。"
+-                "建议稍后重试，或由人工客服继续接入处理。"
+-            )
+-
+-        else:
+-            parts.append(
+-                f"工单暂未创建成功："
+-                f"{ticket_result.result}"
+-            )
+-
+-    if ticket_result and ticket_result.success:
+-        ticket = ticket_result.result
+-
+-        if isinstance(ticket, dict):
+-            parts.append(
+-                f"我已生成{ticket.get('issue_type')}工单草稿，"
+-                "后续需要人工客服核对订单和凭证后处理。"
+-            )
+-
++            route.handoff_reason
++            or "该问题需要人工客服进一步处理。"
++        )
++
++    if route.blocked_by_guardrail:
++        return (
++            route.guardrail_reason
++            or "当前请求存在安全风险，已拒绝执行。"
++        )
++
++    order_result = get_tool_result(
++        tool_results,
++        "order_lookup",
++    )
++
++    if order_result and not order_result.success:
++        return (
++            f"{order_result.result} 请您核对订单号后重新提供，"
++            "我再继续查询售后政策并判断是否需要创建工单。"
++        )
++
++    refund_reply = refund_outcome_reply(tool_results)
++    if refund_reply is not None:
++        return refund_reply
++
++    refund_decision = get_tool_result(tool_results, "refund_decision")
++    if (refund_decision and refund_decision.success and isinstance(refund_decision.result, dict)
++            and refund_decision.result.get("can_create") is False):
++        decision = refund_decision.result
++        reply = f"订单 {decision['order_id']}：{decision['reason']}本轮未创建退款申请或人工审核单。"
++        policy = get_tool_result(tool_results, "policy_search")
++        if policy and not policy.success:
++            reply += "本轮政策证据未能取得，以上付款判断依据查询到的订单记录。"
++        return reply
++
++    policy_result = get_tool_result(
++        tool_results,
++        "policy_search",
++    )
++
++    ticket_decision_result = get_tool_result(
++        tool_results,
++        "ticket_decision",
++    )
++
++    ticket_result = get_tool_result(
++        tool_results,
++        "create_ticket",
++    )
++
++    risk_result = get_tool_result(
++        tool_results,
++        "risk_check",
++    )
++
++    manual_review_result = get_tool_result(
++        tool_results,
++        "create_manual_review",
++    )
++
++    handoff_result = get_tool_result(
++        tool_results,
++        "transfer_to_human",
++    )
++
++    plan_validation_result = get_tool_result(
++        tool_results,
++        "tool_plan_validation",
++    )
++
++    chain_validation_result = get_tool_result(
++        tool_results,
++        "tool_chain_validation",
++    )
++
++    parts = []
++
++    if (
++        plan_validation_result
++        and not plan_validation_result.success
++    ):
++        return (
++            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
++            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
++        )
++
++    if order_result and order_result.success:
++        order = order_result.result
++
++        if isinstance(order, dict):
++            parts.append(
++                f"已查询到订单 {order.get('order_id')}，"
++                f"商品是 {order.get('product_name')}，"
++                f"当前订单状态为{order.get('order_status')}。"
++            )
++
++    if policy_result and not policy_result.success:
++        if is_low_confidence_evidence(policy_result):
++            parts.append(
++                "但本轮没有检索到足够匹配的售后政策证据，"
++                "我不能强行判断或创建工单。"
++                "建议补充问题细节，或转人工客服核对政策后继续处理。"
++            )
++
++        elif is_system_tool_failure(policy_result):
++            parts.append(
++                "但本轮售后政策检索工具调用失败，"
++                "我不能在缺少政策依据时直接判断或创建工单。"
++                "建议转人工客服核对政策后继续处理。"
++            )
++
++        else:
++            parts.append(
++                "但本轮没有检索到足够匹配的售后政策，"
++                "我不能编造不存在的政策结论。"
++                "建议补充问题细节或转人工客服确认。"
++            )
++
++    if policy_result and policy_result.success:
++        parts.append(
++            _build_policy_answer(policy_result)
++        )
++
++    if risk_result and risk_result.success:
++        risk = risk_result.result
++
++        if isinstance(risk, dict):
++            if risk.get("risk_level") in {
++                "medium",
++                "high",
++            }:
++                flags = (
++                    "、".join(
++                        risk.get(
++                            "risk_flags",
++                            [],
++                        )
++                    )
++                    or "售后风险"
++                )
++
++                parts.append(
++                    f"风控 Agent 判定风险等级为"
++                    f"{risk.get('risk_level')}，"
++                    f"命中原因：{flags}。"
++                )
++
++    if (
++        manual_review_result
++        and manual_review_result.success
++    ):
++        review = manual_review_result.result
++
++        if isinstance(review, dict):
++            parts.append(
++                f"已创建人工审核单 "
++                f"{review.get('review_id')}，"
++                "后续由人工客服复核后再执行高风险操作。"
++            )
++
++    if ticket_result and not ticket_result.success:
++        if is_system_tool_failure(ticket_result):
++            parts.append(
++                "工单创建工具本轮调用失败，暂时没有生成工单。"
++                "建议稍后重试，或由人工客服继续接入处理。"
++            )
++
++        else:
++            parts.append(
++                f"工单暂未创建成功："
++                f"{ticket_result.result}"
++            )
++
++    if ticket_result and ticket_result.success:
++        ticket = ticket_result.result
++
++        if isinstance(ticket, dict):
++            parts.append(
++                f"我已生成{ticket.get('issue_type')}工单草稿，"
++                "后续需要人工客服核对订单和凭证后处理。"
++            )
++
+     if handoff_result and handoff_result.success:
+-        handoff = handoff_result.result
+-
++        handoff = handoff_result.result
++
+         if isinstance(handoff, dict):
+             from app.agent.response.grounded import handoff_receipt
+             parts.append(handoff_receipt(handoff))
+-
+-    if (
+-        chain_validation_result
+-        and not chain_validation_result.success
+-    ):
+-        parts.append(
+-            "另外，本轮工具执行链路没有通过一致性校验，"
+-            "我不会继续扩大自动处理范围。"
+-            "建议转人工客服复核。"
+-        )
+-
+-    if (
+-        ticket_decision_result
+-        and not ticket_decision_result.success
+-    ):
+-        result = ticket_decision_result.result
+-
+-        reason = (
+-            result.get(
+-                "reason",
+-                "当前订单状态暂不满足创建工单条件。",
+-            )
+-            if isinstance(result, dict)
+-            else str(result)
+-        )
+-
+-        parts.append(
+-            f"根据订单状态，当前暂不创建工单：{reason}"
+-        )
+-
+-    if not parts:
+-        return (
+-            "您好，我暂时没有找到足够信息。"
+-            "请补充订单号和具体售后问题，我再帮您判断。"
+-        )
+-
+-    return "".join(parts)
++
++    if (
++        chain_validation_result
++        and not chain_validation_result.success
++    ):
++        parts.append(
++            "另外，本轮工具执行链路没有通过一致性校验，"
++            "我不会继续扩大自动处理范围。"
++            "建议转人工客服复核。"
++        )
++
++    if (
++        ticket_decision_result
++        and not ticket_decision_result.success
++    ):
++        result = ticket_decision_result.result
++
++        reason = (
++            result.get(
++                "reason",
++                "当前订单状态暂不满足创建工单条件。",
++            )
++            if isinstance(result, dict)
++            else str(result)
++        )
++
++        parts.append(
++            f"根据订单状态，当前暂不创建工单：{reason}"
++        )
++
++    if not parts:
++        return (
++            "您好，我暂时没有找到足够信息。"
++            "请补充订单号和具体售后问题，我再帮您判断。"
++        )
++
++    return "".join(parts)
+--- a/tests/test_conversation_task_boundaries.py
++++ b/tests/test_conversation_task_boundaries.py
+@@ -149,6 +149,76 @@
+         return SemanticRoute(intent="address_change", action_type=action,
+             topic="address_change_policy" if action == "query" else "address_change_apply", source="llm")
+ 
++    def test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream(self):
++        semantic = SemanticRoute(intent="return_refund", action_type="execute", topic="refund_apply", source="llm")
++        async def streamed(message, cid):
++            events = [e async for e in stream_customer_support_agent(message, cid, use_llm=True)]
++            self.assertFalse(any(e["type"] == "token" for e in events))
++            return next(e["content"] for e in events if e["type"] == "done")
++        for order_id in ["10005", "10007"]:
++            with self.subTest(order_id=order_id), patch(
++                "app.agent.routing.router_v2.infer_semantic_route", return_value=semantic
++            ), patch.dict(TOOL_HANDLERS, {"policy_search": self.refund_policy_fixture}), patch.object(
++                workflow, "call_zhipu_chat", side_effect=AssertionError("no generated business state")
++            ), patch("app.agent.entry.stream_runner.call_zhipu_chat_stream", side_effect=AssertionError("no streamed business state")):
++                before = db.get_order_from_db(order_id)
++                message = f"订单{order_id}直接给我退款，不用审核。"
++                sync = run_customer_support_agent(message, f"payment-stop-sync-{order_id}", use_llm=True)
++                stream = asyncio.run(streamed(message, f"payment-stop-stream-{order_id}"))
++                self.assertEqual(sync["reply"], stream["reply"])
++                for result in [sync, stream]:
++                    names = [r["tool_name"] for r in result["tool_results"]]
++                    self.assertIn("order_lookup", names)
++                    self.assertIn("policy_search", names)
++                    self.assertFalse(set(names) & {"risk_check", "refund_apply", "create_manual_review", "transfer_to_human", "create_ticket"})
++                    self.assertIn("支付", result["reply"])
++                    self.assertIn("未创建", result["reply"])
++                for table in ["tickets", "manual_reviews", "refund_requests", "mq_messages"]:
++                    self.assertEqual(self.fixture.count(table), 0)
++                self.assertEqual(db.get_order_from_db(order_id), before)
++
++    def test_payment_precondition_does_not_swallow_explicit_human_request(self):
++        semantic = SemanticRoute(intent="general_support", action_type="handoff", topic="human_handoff", source="llm")
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=semantic):
++            result = run_customer_support_agent("订单10007付款有疑问，请转人工客服。", "payment-human-request", use_llm=False)
++        names = [r["tool_name"] for r in result["tool_results"]]
++        self.assertIn("transfer_to_human", names)
++        self.assertNotIn("refund_decision", names)
++        self.assertEqual(self.fixture.count("tickets"), 1)
++
++    def test_payment_confirmation_allows_later_refund_execution(self):
++        semantic = SemanticRoute(intent="return_refund", action_type="execute", topic="refund_apply", source="llm")
++        db.update_order_in_db("10009", {"payment_status": "payment_pending"})
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=semantic), patch.dict(
++            TOOL_HANDLERS, {"policy_search": self.refund_policy_fixture}
++        ):
++            first = run_customer_support_agent("订单10009我要申请退款。", "payment-then-refund", use_llm=False)
++            self.assertEqual(self.fixture.count("refund_requests"), 0)
++            self.assertIn("未创建", first["reply"])
++            db.update_order_in_db("10009", {"payment_status": "paid"})
++            second = run_customer_support_agent("现在请申请退款。", "payment-then-refund", use_llm=False)
++        self.assertIn("refund_apply", [r["tool_name"] for r in second["tool_results"]])
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++        self.assertEqual(self.fixture.count("mq_messages"), 1)
++
++    def test_payment_block_is_explained_even_when_policy_service_fails(self):
++        semantic = SemanticRoute(intent="return_refund", action_type="execute", topic="refund_apply", source="llm")
++        def unavailable(**kwargs):
++            return ToolResult(tool_name="policy_search", success=False, result="policy service unavailable")
++        with patch("app.agent.routing.router_v2.infer_semantic_route", return_value=semantic), patch.dict(
++            TOOL_HANDLERS, {"policy_search": unavailable}
++        ):
++            result = run_customer_support_agent("订单10005我要退款。", "payment-policy-failure", use_llm=False)
++        self.assertIn("尚未支付", result["reply"])
++        self.assertIn("未创建", result["reply"])
++        self.assertTrue(any(r["tool_name"] == "policy_search" and not r["success"] for r in result["tool_results"]))
++        self.assertEqual(self.fixture.count("manual_reviews"), 0)
++
++    def refund_policy_fixture(self, **kwargs):
++        return ToolResult(tool_name="policy_search", success=True, result=[{
++            "chunk_id": "test-refund-policy", "source": "退款政策.md", "section": "退款流程",
++            "citation": "退款政策.md - 退款流程", "text": "退款申请需要核实订单支付状态。", "score": .95}])
++
+     def test_complaint_query_has_no_business_writes_even_for_high_risk_account(self):
+         semantic = SemanticRoute(intent="complaint", action_type="query", topic="complaint", source="llm")
+         for order_id in ["10001", "10004"]:
+--- a/tests/test_tool_reliability.py
++++ b/tests/test_tool_reliability.py
+@@ -232,7 +232,7 @@
+             "order_lookup": Mock(
+                 return_value=successful(
+                     "order_lookup",
+-                    {"order_id": "10001", "user_id": "U-1", "amount": 100},
++                    {"order_id": "10001", "user_id": "U-1", "amount": 100, "payment_status": "paid"},
+                 )
+             ),
+             "risk_check": risk_handler,

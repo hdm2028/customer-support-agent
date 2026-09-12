@@ -1,0 +1,74 @@
+{
+  "scope": "read-only routing and deterministic reply; no tools executed",
+  "rows": [
+    {
+      "message": "撤销订单10009的退款申请",
+      "route": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "refund_withdrawal",
+        "related_topics": [],
+        "confidence": 1.0,
+        "routing_reason": "退款撤销需选定已有申请，通过撤销接口检查当前状态",
+        "agent_plan": [],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": false,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "reply": "如需撤销已受理的退款，请在“退款申请查询与撤销”中选择对应申请，核对订单和状态后填写原因并提交撤销。当前聊天尚未撤销申请，也未创建新的退款申请。已提交支付或渠道结果待核实的申请，需要先由人工核实。",
+      "duration_ms": 0.07
+    },
+    {
+      "message": "取消退款申请，订单10009",
+      "route": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "refund_withdrawal",
+        "related_topics": [],
+        "confidence": 1.0,
+        "routing_reason": "退款撤销需选定已有申请，通过撤销接口检查当前状态",
+        "agent_plan": [],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": false,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "reply": "如需撤销已受理的退款，请在“退款申请查询与撤销”中选择对应申请，核对订单和状态后填写原因并提交撤销。当前聊天尚未撤销申请，也未创建新的退款申请。已提交支付或渠道结果待核实的申请，需要先由人工核实。",
+      "duration_ms": 0.01
+    }
+  ],
+  "frontend": {
+    "file": "web/index.html",
+    "sha256": "44375a6f17fe767528e9b14cf728f36724683e7ddccaeeea0113ad07da31fbe7",
+    "syntax_returncode": 0,
+    "stderr": "",
+    "visual_qa": "not_run_policy_verification_unavailable"
+  }
+}

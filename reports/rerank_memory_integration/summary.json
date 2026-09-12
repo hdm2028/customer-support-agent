@@ -1,0 +1,707 @@
+{
+  "datasets": {
+    "v2": {
+      "rule": {
+        "metrics": {
+          "passed_count": 2,
+          "hit_at_1": 0.6667,
+          "hit_at_3": 0.8333,
+          "hit_at_5": 0.8333,
+          "mrr": 0.75,
+          "evidence_coverage_rate": 0.65,
+          "requirements_hit": 11,
+          "requirements_total": 19,
+          "mean_ranking_ms": 0.44621666893363
+        },
+        "cases": [
+          {
+            "case_id": "rag_dev_candidate_b01_001",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_002",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.4,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_003",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_004",
+            "rank": "N/A",
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_005",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_006",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          }
+        ]
+      },
+      "rule_complementary": {
+        "metrics": {
+          "passed_count": 5,
+          "hit_at_1": 0.6667,
+          "hit_at_3": 0.8333,
+          "hit_at_5": 1.0,
+          "mrr": 0.7917,
+          "evidence_coverage_rate": 0.9167,
+          "requirements_hit": 18,
+          "requirements_total": 19,
+          "mean_ranking_ms": 36.349066610758506
+        },
+        "cases": [
+          {
+            "case_id": "rag_dev_candidate_b01_001",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_002",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_003",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_004",
+            "rank": 4,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_005",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_006",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          }
+        ]
+      },
+      "cross_encoder": {
+        "metrics": {
+          "passed_count": 1,
+          "hit_at_1": 0.3333,
+          "hit_at_3": 0.6667,
+          "hit_at_5": 0.8333,
+          "mrr": 0.5056,
+          "evidence_coverage_rate": 0.5917,
+          "requirements_hit": 13,
+          "requirements_total": 19,
+          "mean_ranking_ms": 703.8970665695766
+        },
+        "cases": [
+          {
+            "case_id": "rag_dev_candidate_b01_001",
+            "rank": 3,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_002",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.8,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_003",
+            "rank": 2,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_004",
+            "rank": 5,
+            "passed": false,
+            "coverage": 0.75,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_005",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_dev_candidate_b01_006",
+            "rank": "N/A",
+            "passed": false,
+            "coverage": 0.0,
+            "regressions_vs_rule": [
+              "primary_rank",
+              "evidence_coverage",
+              "previously_passed"
+            ]
+          }
+        ]
+      }
+    },
+    "v1": {
+      "rule": {
+        "metrics": {
+          "passed_count": 13,
+          "hit_at_1": 0.95,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "mrr": 0.9667,
+          "evidence_coverage_rate": 0.9,
+          "mean_ranking_ms": 0.42879004031419754
+        },
+        "cases": [
+          {
+            "case_id": "rag_refund_001",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_002",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_003",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_004",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_005",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_006",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_007",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_008",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_009",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_010",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_011",
+            "rank": 3,
+            "passed": false,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_012",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_013",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_014",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_015",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_016",
+            "rank": 1,
+            "passed": false,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_017",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_018",
+            "rank": 1,
+            "passed": false,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_019",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_020",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          }
+        ]
+      },
+      "rule_complementary": {
+        "metrics": {
+          "passed_count": 17,
+          "hit_at_1": 0.95,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0,
+          "mrr": 0.9667,
+          "evidence_coverage_rate": 0.975,
+          "mean_ranking_ms": 16.3062599953264
+        },
+        "cases": [
+          {
+            "case_id": "rag_refund_001",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_002",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_003",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_004",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_005",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_006",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_007",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_008",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_009",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_010",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_011",
+            "rank": 3,
+            "passed": false,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_012",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_013",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_014",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_015",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_016",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_017",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_018",
+            "rank": 1,
+            "passed": false,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_019",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_020",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          }
+        ]
+      },
+      "cross_encoder": {
+        "metrics": {
+          "passed_count": 18,
+          "hit_at_1": 0.45,
+          "hit_at_3": 0.95,
+          "hit_at_5": 1.0,
+          "mrr": 0.7017,
+          "evidence_coverage_rate": 0.95,
+          "mean_ranking_ms": 583.3436499116942
+        },
+        "cases": [
+          {
+            "case_id": "rag_refund_001",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_002",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_003",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_004",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_005",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_006",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_007",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_008",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_009",
+            "rank": 1,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_010",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_011",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_012",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_013",
+            "rank": 3,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_014",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_015",
+            "rank": 2,
+            "passed": false,
+            "coverage": 0.5,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_016",
+            "rank": 1,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": []
+          },
+          {
+            "case_id": "rag_refund_017",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_018",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_019",
+            "rank": 2,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          },
+          {
+            "case_id": "rag_refund_020",
+            "rank": 5,
+            "passed": true,
+            "coverage": 1.0,
+            "regressions_vs_rule": [
+              "primary_rank"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "dev_replay": {
+    "routing_v2": {
+      "passed": 23,
+      "total": 24,
+      "all_case_pass_flags_unchanged": true,
+      "artifact": "reports\\rerank_memory_integration\\dev_replay_final\\routing_v2\\reports\\eval_routing_v2.json"
+    },
+    "tools": {
+      "passed": 43,
+      "total": 55,
+      "all_case_pass_flags_unchanged": true,
+      "artifact": "reports\\rerank_memory_integration\\dev_replay_final\\tools\\reports\\eval_tools.json"
+    },
+    "answer": {
+      "passed": 1,
+      "total": 4,
+      "all_case_pass_flags_unchanged": true,
+      "artifact": "reports\\rerank_memory_integration\\dev_replay_final\\answer\\reports\\eval_answer.json"
+    },
+    "e2e": {
+      "passed": 7,
+      "total": 12,
+      "all_case_pass_flags_unchanged": true,
+      "artifact": "reports\\rerank_memory_integration\\dev_replay_final\\e2e\\reports\\eval_e2e.json"
+    }
+  },
+  "lifecycle": {
+    "before_repeated_mean_ms": 2548.198000062257,
+    "after_repeated_mean_ms": 713.8360000681132,
+    "reduction_percent": 71.98663525947855,
+    "model_instances_before": 3,
+    "model_instances_after": 1,
+    "outputs_identical": true,
+    "measured_repeated_requests_per_variant": 2
+  },
+  "final_application_sources_match_release_snapshot": true,
+  "external_integration": {
+    "payment_sandbox_verified": false,
+    "production_identity_configured": false,
+    "reason": "Channel, identity provider and external configuration not supplied"
+  }
+}

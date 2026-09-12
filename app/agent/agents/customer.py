@@ -4,6 +4,7 @@ from app.agent.state import AgentResult, AgentState
 from app.observability.tracing import add_trace_event
 from app.rag.query_builder import build_rag_query
 from app.tools.executor import execute_agent_tool
+from app.tools.policy import configured_evidence_selection, policy_query_scope
 
 
 class CustomerAgent:
@@ -29,17 +30,18 @@ class CustomerAgent:
             route=state.route,
             tool_results=state.tool_results,
         )
-        result = execute_agent_tool(
-            agent_key=self.key,
-            tool_name="policy_search",
-            arguments={
-                "semantic_query": query.semantic_query,
-                "lexical_query": query.lexical_query,
-            },
-            trace=state.trace,
-            fallback_action="handoff_to_human",
-        )
-        result = apply_policy_evidence_guardrail(state.user_message, result)
+        arguments = {"semantic_query": query.semantic_query, "lexical_query": query.lexical_query}
+        if configured_evidence_selection():
+            arguments["top_k"] = 5
+        with policy_query_scope(query):
+            result = execute_agent_tool(
+                agent_key=self.key,
+                tool_name="policy_search",
+                arguments=arguments,
+                trace=state.trace,
+                fallback_action="handoff_to_human",
+            )
+        result = apply_policy_evidence_guardrail(state.user_message, result, route=state.route)
 
         if state.trace:
             report = {}

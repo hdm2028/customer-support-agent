@@ -1,0 +1,2779 @@
+--- a/README.md
++++ b/README.md
+@@ -128,16 +128,6 @@
+ 
+ ## Evaluation
+ 
+-???????????????????????? [??????](docs/five_layer_evaluation.md)?
+-
+-????????????????????????????????????
+-
+-```powershell
+-python -X utf8 -m scripts.maintenance.check_release --output reports/release_check_<??????>
+-```
+-
+-???????
+-
+ ```powershell
+ py -3.13 -m scripts.eval.eval_routing
+ py -3.13 -m scripts.eval.eval_rag
+--- a/app/agent/README.md
++++ b/app/agent/README.md
+@@ -1,79 +1,125 @@
+-# Agent ????
++# Agent 模块说明
+ 
+-???????????????
++这个目录承载售后客服 Agent 的主逻辑。它不是按“代码文件创建时间”来读，而应该按一次请求的执行链路来读。
++
++## 一次请求怎么走
+ 
+ ```text
+-main.py
+-  -> entry/agent_core.py
+-  -> entry/workflow.py / entry/stream_runner.py
+-  -> ??????????
+-  -> orchestrator.py -> routing/router_v2.py
+-  -> agents/customer.py / after_sales.py / risk.py
+-  -> app/tools/executor.py -> app/tools/registry.py -> ???????
+-  -> response/ -> ???????? trace
++agent_core.py
++-> workflow.py / stream_runner.py
++-> orchestrator.py
++-> router.py
++-> pending_task.py / conversation_context.py / memory.py
++-> tool_executor.py
++-> tool_registry.py
++-> support_tools.py
++-> prompt_builder.py / fallback_policy.py
+ ```
+ 
+-## ?????
++简单理解：
+ 
+-| ?? | ?? |
+-| --- | --- |
+-| `entry/agent_core.py` | API ???????????????????????? |
+-| `entry/workflow.py` | LangGraph ?????????????????????????? |
+-| `entry/stream_runner.py` | ?????????? SSE ??????????token ?????? |
+-| `orchestrator.py` | ???????????? Agent????????????????? |
+-| `state.py` | Agent ????????? Agent ????? |
+-| `agents/customer.py` | ???????RAG ????? |
+-| `agents/after_sales.py` | ?????????????????????? |
+-| `agents/risk.py` | ?????????????????????? |
+-
+-## ??????
+-
+-| ?? | ?? |
+-| --- | --- |
+-| `routing/router_v2.py` | ??????????????????????????????? |
+-| `routing/llm_router.py` | ????????? JSON?????????????????????? |
+-| `routing/semantic_prompt.py` | ????????????????????? |
+-| `routing/semantic.py` | ????????? |
+-| `routing/decision.py` | ??????????????????????? |
+-| `routing/labels.py` | ??????????????? |
+-| `routing/parsing.py` | ??????????? |
+-| `routing/pending_task.py` | ????????????????????????? |
+-| `routing/conversation_context.py` | ???????????????????? |
+-| `routing/memory.py` | ???????????????????????????????? |
+-| `routing/refund_withdrawal.py` | ?????????????????????? |
+-
+-???????????????? 8 ???? 30 ???????????????? 8000 ??????????????????????????Redis/?????????????????? LangGraph ??????? checkpointer????????????????????
+-
+-## ????????
+-
+-| ?? | ?? |
+-| --- | --- |
+-| `app/tools/registry.py` | ???? schema?handler ? Agent ??? |
+-| `app/tools/executor.py` | ?????????????????? trace? |
+-| `tools/tool_validation.py` | ?????????????????? |
+-| `tools/tool_results.py` | ??????????????????? |
+-| `policies/guardrails.py` | ??????????????? |
+-| `policies/fallback_policy.py` | ?????????????????????????? `response/`? |
+-| `policies/ticket_policy.py` | ???????????? |
+-| `policies/evidence_guardrail.py` | ?????????????????????? |
+-| `response/prompt_builder.py` | ???????????????????? messages? |
+-| `response/fallback.py` | ????????????? |
+-| `response/grounded.py` | ?????????????????? |
+-
+-?? handler ?? `app/tools/`????????? `app/services/`????????? `app/domain/refund_policy.py`?????????? `app/storage/database.py`???? `app/storage/transactions.py` ???MQ ??????????? `app/mq/recovery.py`?
+-
+-## ???????
+-
+-- ???????`routing/semantic_prompt.py`?`routing/llm_router.py`?
+-- ?????????????`routing/decision.py`?`routing/router_v2.py`?
+-- ???????`routing/pending_task.py`?`routing/conversation_context.py`?`routing/memory.py`?
+-- ???????`app/tools/`?registry?executor??????????????
+-- ?????`response/`???????????? `app/rag/`?
+-
+-???????????????????????????? [??????](../../docs/five_layer_evaluation.md)?
+-
+-```powershell
+-python -X utf8 -m scripts.maintenance.check_release --output reports/release_check_<??????>
++```text
++入口
++-> 加载上下文
++-> 路由识别
++-> 多 Agent 分派
++-> 工具执行
++-> 风险和证据校验
++-> 回复生成
++-> 持久化 trace 与状态
+ ```
+ 
+-????????????????? SQLite ??????????????? MySQL?Redis???????????????
++## 1. 对外入口层
++
++| 文件 | 作用 |
++| --- | --- |
++| `agent_core.py` | API 层调用的统一入口。`run_customer_support_agent()` 负责非流式请求，`stream_customer_support_agent()` 负责流式请求。 |
++| `workflow.py` | 非流式主工作流。用 LangGraph 串起上下文加载、路由、工具执行、回复生成、持久化。 |
++| `stream_runner.py` | 流式主工作流。逻辑和 `workflow.py` 类似，但会按 SSE 事件返回路由、工具结果、token 和完成状态。 |
++
++想看“一个请求完整经过哪些节点”，先看 `workflow.py`。
++
++## 2. 多 Agent 编排层
++
++| 文件 | 作用 |
++| --- | --- |
++| `orchestrator.py` | Agent Orchestrator。根据路由结果决定本轮需要客服 Agent、售后 Agent、风控 Agent 中的哪些角色参与。 |
++| `customer_agent.py` | 客服问答 Agent。负责普通咨询、知识库 RAG、商品推荐、快捷回复。 |
++| `after_sales_agent.py` | 售后处理 Agent。负责订单、退款资格、退款申请、工单、人工审核等业务流程判断。 |
++| `risk_agent.py` | 风控 Agent。负责大额退款、异常账号、高频退款、恶意投诉、虚假描述等风险判断。 |
++
++想看“三个 Agent 怎么分工”，先看 `orchestrator.py`。
++
++## 3. 路由与意图识别层
++
++| 文件 | 作用 |
++| --- | --- |
++| `router.py` | 识别订单号、售后意图、是否需要 RAG、是否需要退款申请、是否需要风控、是否需要工单。最终输出 `RouteDecision`。 |
++| `pending_task.py` | 处理槽位补全。比如用户说“帮我改地址”但没给订单号或新地址，就保存待补全任务，下一轮继续接上。 |
++| `conversation_context.py` | 多轮上下文继承。比如上一轮提到订单号，下一轮用户只说“那可以退款吗”，这里会尝试继承最近订单和问题。 |
++| `memory.py` | 会话记忆管理。历史与 pending task 以数据库为准；整轮消息原子保存。执行上下文默认保留 30 分钟内、最多 8 条且合计不超过 8000 字符的完整轮次，持久化历史不删改。 |
++
++想改“什么话触发什么意图”，主要看 `router.py`。
++想改“缺什么信息要追问”，主要看 `pending_task.py`。
++
++## 4. 工具执行层
++
++| 文件 | 作用 |
++| --- | --- |
++| `tool_registry.py` | 工具白名单。所有可调用工具必须在这里注册 schema 和 handler，防止 Agent 越权调用不存在或危险工具。 |
++| `tool_executor.py` | 工具链执行器。按照路由结果顺序调用订单查询、RAG、风控、退款申请、工单、人工审核、转人工等工具。 |
++| `tool_validation.py` | 工具链校验。执行前后检查工具顺序是否合法，比如退款申请前必须先查订单和做风控。 |
++| `tool_results.py` | 工具结果辅助函数。负责按工具名取结果、判断订单查询失败、政策检索失败、系统工具异常等。 |
++
++
++## 5. 业务规则与安全控制层
++
++| 文件 | 作用 |
++| --- | --- |
++| `ticket_policy.py` | 工单创建规则。判断保修检测、物流异常、地址修改、支付异常、投诉升级等是否允许创建工单。 |
++| `fallback_policy.py` | 离线确定性回复。未开启真实 LLM 或必须走规则兜底时，用这里生成稳定回复。 |
++| `guardrails.py` | 输入安全检查。处理提示词注入、高风险动作等基础安全规则。 |
++| `evidence_guardrail.py` | RAG 证据校验。判断检索到的知识来源和关键词是否足够支撑后续业务动作。 |
++
++想改“什么情况必须人工审核/不能继续自动处理”，主要看 `ticket_policy.py`、`risk_agent.py`、`evidence_guardrail.py`。
++
++## 6. 回复与模型上下文层
++
++| 文件 | 作用 |
++| --- | --- |
++| `prompt_builder.py` | 把订单信息、RAG 证据、退款申请、人工审核、工单结果整理成 LLM messages。 |
++| `fallback_policy.py` | 不调用 LLM 时生成本地规则回复，也负责工具失败时避免谎称业务已完成。 |
++| `response_builder.py` | 预留文件，目前为空。后续如果要把回复拼装从 `fallback_policy.py` 拆出来，可以放到这里。 |
++
++想改“最终怎么回答用户”，优先看 `fallback_policy.py` 和 `prompt_builder.py`。
++
++## 建议阅读顺序
++
++1. `agent_core.py`：看 API 怎么进入 Agent。
++2. `workflow.py`：看一次请求的主节点。
++3. `orchestrator.py`：看多 Agent 如何分派。
++4. `router.py`：看意图和工具计划如何生成。
++5. `tool_executor.py`：看工具链如何真正执行。
++6. `fallback_policy.py`：看最终规则回复如何生成。
++
++## 常见修改入口
++
++| 需求 | 主要修改位置 |
++| --- | --- |
++| 新增一个售后意图 | `router.py`、`query_builder.py`、`evidence_guardrail.py` |
++| 新增一个业务工具 | `app/tools/support_tools.py`、`tool_registry.py`、`tool_executor.py`、`tool_validation.py` |
++| 修改退款判断 | `after_sales_agent.py` |
++| 修改风控规则 | `risk_agent.py` |
++| 修改工单资格 | `ticket_policy.py` |
++| 修改追问槽位 | `pending_task.py` |
++| 修改回复文案 | `fallback_policy.py` |
++| 修改 LLM Prompt | `prompt_builder.py` |
++| 调整流式返回 | `stream_runner.py` |
++
++## 设计边界
++
++- `router.py` 只判断“需要做什么”，不直接执行业务动作。
++- `tool_executor.py` 负责“按合法顺序执行工具”，不直接写具体业务 SQL。
++- 具体业务动作在 `app/tools/support_tools.py` 和 `app/services/` 中实现。
++- 高风险动作必须经过风控、工具链校验和人工审核机制。
++- RAG 证据不足时，不能继续创建自动业务动作。
+--- a/app/agent/agents/after_sales.py
++++ b/app/agent/agents/after_sales.py
+@@ -1,8 +1,14 @@
+ from app.agent.policies.ticket_policy import evaluate_ticket_creation
+-from app.agent.routing.labels import get_issue_type
++from app.agent.routing.router import get_issue_type
+ from app.agent.state import AgentResult, AgentState
+ from app.agent.tools.tool_results import get_tool_result
+ from app.core.schemas import RouteDecision, ToolResult
++from app.domain.refund_policy import (
++    days_since_signed,
++    evaluate_refund_eligibility,
++    infer_refund_reason,
++    is_quality_or_fault_request,
++)
+ from app.tools.executor import execute_agent_tool, safe_tool_call
+ from app.tools.human_review import review_context_scope
+ 
+--- a/app/agent/policies/fallback_policy.py
++++ b/app/agent/policies/fallback_policy.py
+@@ -1,3 +1,37 @@
++from app.agent.tools.tool_results import (
++    get_tool_result,
++    is_low_confidence_evidence,
++    is_system_tool_failure,
++)
++
++
++ORDER_RELATED_KEYWORDS = [
++    "订单",
++    "不想要",
++    "不要了",
++    "物流",
++    "发货",
++    "签收",
++    "退款",
++    "退钱",
++    "退货",
++    "换货",
++    "保修",
++    "维修",
++    "检测",
++    "发票",
++    "取消",
++    "地址",
++    "投诉",
++    "坏了",
++    "故障",
++    "质量问题",
++    "换新",
++    "售后",
++    "无法使用",
++    "不能用",
++]
++
+ ORDER_ID_REQUIRED_KEYWORDS = [
+     "我的订单",
+     "订单",
+@@ -74,6 +108,11 @@
+ ]
+ 
+ 
++def is_order_related(message: str) -> bool:
++    """判断问题是否和具体订单有关。"""
++    return any(keyword in message for keyword in ORDER_RELATED_KEYWORDS)
++
++
+ def requires_order_id(message: str) -> bool:
+     """判断当前问题是否必须依赖具体订单号才能继续处理。"""
+     if (
+@@ -102,6 +141,14 @@
+     return has_risky_action and has_bypass_intent
+ 
+ 
++def should_ask_order_id(
++    message: str,
++    order_id: str | None,
++) -> bool:
++    """如果问题必须查具体订单，但没有订单号，就应该先追问订单号。"""
++    return requires_order_id(message) and order_id is None
++
++
+ def should_handoff_to_human(
+     message: str,
+ ) -> tuple[bool, str | None]:
+--- a/app/agent/routing/labels.py
++++ /dev/null
+@@ -1,18 +0,0 @@
+-"""Business labels shared by agent decisions and ticket creation."""
+-
+-ISSUE_TYPE_LABELS = {
+-    "address_change": "地址修改",
+-    "cancel_order": "取消订单",
+-    "return_refund": "退货退款",
+-    "shipping_exception": "物流异常",
+-    "warranty_repair": "保修检测",
+-    "payment_invoice": "支付异常",
+-    "complaint": "投诉升级",
+-    "membership": "会员权益",
+-    "order_lookup": "订单查询",
+-    "general_support": "售后咨询",
+-}
+-
+-
+-def get_issue_type(intent: str) -> str:
+-    return ISSUE_TYPE_LABELS.get(intent, "售后咨询")
+--- a/app/agent/routing/llm_router.py
++++ b/app/agent/routing/llm_router.py
+@@ -6,8 +6,808 @@
+ from typing import Any
+ 
+ from app.agent.routing.semantic import SemanticRoute
+-from app.agent.routing.semantic_prompt import SYSTEM_PROMPT
+ from app.llm.llm_client import call_zhipu_chat
++
++
++SYSTEM_PROMPT = """
++你是一个客服系统中的 Semantic Router。
++
++你的职责只有一个：
++
++理解用户“想做什么”，并把用户请求转换成结构化语义。
++
++你不能直接决定：
++- 是否调用退款工具
++- 是否真的执行退款
++- 是否创建工单
++- 是否进行风险审核
++- 是否转人工
++- 是否因为缺少订单号而改变用户原始意图
++
++这些事情全部由后续 Business Decision 层决定。
++
++你只负责输出：
++
++1. intent
++2. action_type
++3. topic
++4. related_topics
++5. confidence
++6. reason
++
++
++==================================================
++一、intent 定义
++==================================================
++
++intent 必须且只能从下面选择：
++
++- address_change
++- cancel_order
++- return_refund
++- shipping_exception
++- warranty_repair
++- payment_invoice
++- complaint
++- membership
++- order_lookup
++- general_support
++
++
++1. address_change
++修改订单收货地址、配送地址、联系方式等。
++
++例如：
++- 我想修改收货地址
++- 订单地址填错了
++- 能不能改一下地址
++
++
++2. cancel_order
++明确要求取消、撤销尚未完成的订单。
++
++例如：
++- 我要取消订单
++- 把这个订单撤销
++- 还没发货，帮我取消掉
++
++注意：
++
++“这个东西我不要了”
++“买了之后不想要了”
++“商品不想要了”
++
++如果没有明确表达“取消订单 / 撤销订单 / 不要发货”，
++默认优先理解为售后退货退款，即 return_refund，
++而不是 cancel_order。
++
++
++3. return_refund
++退货、退款、七天无理由、退款资格、
++退款到账时间、退款申请等。
++
++例如：
++- 我要退款
++- 这个东西能退吗
++- 七天无理由是什么意思
++- 退款多久能到账
++- 包装拆了还能退吗
++
++
++4. shipping_exception
++物流查询、物流延迟、包裹丢失、运输异常等。
++
++例如：
++- 为什么还没送到
++- 包裹到哪里了
++- 物流一直没更新
++- 快递是不是丢了
++
++
++5. warranty_repair
++保修、维修、换货、产品故障售后。
++
++例如：
++- 坏了怎么维修
++- 在保修期吗
++- 可以换新吗
++
++
++6. payment_invoice
++支付状态、支付失败、重复扣款、发票等。
++
++例如：
++- 为什么支付失败
++- 扣了两次钱
++- 我要开发票
++- 发票抬头怎么修改
++
++
++7. complaint
++投诉、严重不满、要求升级处理等。
++
++例如：
++- 我要投诉
++- 我要投诉你们客服
++- 这个问题我要升级处理
++
++
++8. membership
++会员规则、会员权益等。
++
++例如：
++- 会员有什么权益
++- 怎么升级会员
++
++
++9. order_lookup
++单纯查询订单事实或状态。
++
++例如：
++- 帮我看看订单10001
++- 我的订单现在什么状态
++
++
++10. general_support
++不属于以上业务类别的普通客服问题。
++
++
++==================================================
++二、action_type 定义
++==================================================
++
++action_type 必须且只能从下面选择：
++
++- query
++- execute
++- handoff
++- unknown
++
++
++--------------------------------------------------
++1. query
++--------------------------------------------------
++
++用户是在询问信息、规则、条件、资格、状态、时间、
++原因或者其他事实。
++
++用户没有要求系统现在真正执行一个有业务副作用的动作。
++
++例如：
++
++- 能不能退？
++- 可以退款吗？
++- 退款需要什么条件？
++- 七天无理由是什么意思？
++- 退款多久到账？
++- 这个商品符合退款条件吗？
++- 我只是问一下
++- 先不要操作
++- 先不要提交退款
++- 不要直接给我退
++
++
++非常重要：
++
++下面这种表达仍然属于 query：
++
++“我想知道能不能退款”
++
++这里核心动作是“想知道”，
++用户是在咨询资格，不是在要求执行退款。
++
++
++--------------------------------------------------
++2. execute
++--------------------------------------------------
++
++用户明确希望客服或系统实际执行业务操作。
++
++例如：
++
++- 我要退款
++- 我想退款
++- 帮我退款
++- 给我退钱
++- 麻烦帮我申请退款
++- 这个商品我想退掉
++- 帮我取消订单
++- 帮我修改地址
++
++
++非常重要：
++
++“想退款”
++“我要退款”
++“给我退钱”
++“帮我退款”
++
++这些本身就是执行意图。
++
++不能因为用户没有提供订单号，
++就把 execute 改成 query。
++
++例如：
++
++“我买的商品质量有问题想退款”
++
++必须理解为：
++
++intent = return_refund
++action_type = execute
++topic = refund_apply
++
++即使用户没有提供订单号，
++仍然是 execute。
++
++订单号是否缺失，
++由后续 Business Decision 层决定。
++
++
++--------------------------------------------------
++3. handoff
++--------------------------------------------------
++
++用户明确要求人工客服、真人客服、人工处理。
++
++例如：
++
++- 转人工
++- 我要找真人客服
++- 让人工处理
++
++
++--------------------------------------------------
++4. unknown
++--------------------------------------------------
++
++只有确实无法判断用户当前想做什么时才使用。
++
++
++==================================================
++三、topic 定义
++==================================================
++
++
++--------------------------------------------------
++A. return_refund
++--------------------------------------------------
++
++return_refund 下允许的 topic：
++
++- refund_policy
++- refund_timing
++- refund_eligibility
++- refund_apply
++- return_apply
++
++
++1. refund_policy
++
++表示一般性的：
++
++- 退款规则
++- 退货规则
++- 七天无理由规则
++- 退款制度
++- 退款条件定义
++- 退款期限规则
++- 退货与退款概念区别
++
++判断核心：
++
++回答这个问题通常不需要结合某一个具体订单
++或者某一个具体商品的事实。
++
++例如：
++
++- 七天无理由是什么意思？
++- 退款条件是什么？
++- 退款有什么规定？
++- 哪些商品原则上不能退？
++- 超过七天是不是就一定不能退了？
++- 退货和退款有什么区别？
++- 七天以后原则上还能不能退？
++- 退货期限一般是多少？
++
++
++这些属于：
++
++intent = return_refund
++action_type = query
++topic = refund_policy
++
++
++2. refund_timing
++
++专门询问退款到账时间、
++退款处理周期或者退款进度时间。
++
++例如：
++
++- 退款多久到账？
++- 退的钱多久回来？
++- 钱什么时候退回来？
++- 已经退回商品了，退款还要多久？
++
++这些属于：
++
++intent = return_refund
++action_type = query
++topic = refund_timing
++
++
++3. refund_eligibility
++
++用于判断：
++
++某个具体商品、
++具体订单、
++或者用户当前具体情况
++
++是否满足退款条件。
++
++判断核心：
++
++回答问题通常需要结合具体交易事实。
++
++例如：
++
++- 商品购买了多少天
++- 是否拆封
++- 商品是否使用
++- 是否定制
++- 是否有质量问题
++- 某个订单当前状态
++- 某件商品是否符合退款条件
++
++
++例如：
++
++- 我这个商品还能退吗？
++- 买回来五天了，现在还能退吗？
++- 包装已经拆开了还能退吗？
++- 订单10003这个定制商品能不能退？
++- 商品有划痕，这种情况还能退吗？
++- 我这个订单现在还符合退款条件吗？
++
++
++这些属于：
++
++intent = return_refund
++action_type = query
++topic = refund_eligibility
++
++
++特别注意：
++
++“退款条件是什么？”
++是一般规则，
++属于 refund_policy。
++
++“我这个商品符合退款条件吗？”
++是在判断具体情况，
++属于 refund_eligibility。
++
++
++4. refund_apply
++
++用户明确希望真正申请或者执行退款。
++
++例如：
++
++- 我要退款
++- 我想退款
++- 帮我退款
++- 给我退钱
++- 麻烦申请退款
++- 订单10001直接退款
++- 商品质量有问题，我想退款
++
++
++这些属于：
++
++intent = return_refund
++action_type = execute
++topic = refund_apply
++
++
++5. return_apply
++
++用户明确要求执行“退货”流程，
++重点是退回商品，而不是单独表达退款。
++
++例如：
++
++- 我要申请退货
++- 帮我发起退货
++- 我要把商品退回去
++
++属于：
++
++intent = return_refund
++action_type = execute
++topic = return_apply
++
++
++--------------------------------------------------
++B. cancel_order
++--------------------------------------------------
++
++允许的 topic：
++
++- cancel_policy
++- cancel_apply
++
++
++cancel_policy：
++
++用户询问取消订单规则，
++没有要求实际取消。
++
++例如：
++
++- 订单发货后还能取消吗？
++- 什么情况下可以取消订单？
++
++
++cancel_apply：
++
++用户明确要求执行取消订单。
++
++例如：
++
++- 帮我取消订单10001
++- 这个订单不要了，帮我撤销
++
++
++--------------------------------------------------
++C. address_change
++--------------------------------------------------
++
++允许的 topic：
++
++- address_change_policy
++- address_change_apply
++
++
++address_change_policy：
++
++询问是否可以修改地址，
++但没有要求实际修改。
++
++
++address_change_apply：
++
++明确要求执行地址修改。
++
++
++--------------------------------------------------
++D. shipping_exception
++--------------------------------------------------
++
++允许的 topic：
++
++- shipping_status
++- shipping_delay
++- shipping_exception
++- lost_package
++- shipping_policy
++
++
++shipping_status：
++查询物流状态。
++
++shipping_delay：
++物流明显延迟。
++
++shipping_exception：
++物流出现其他异常。
++
++lost_package：
++疑似或明确包裹丢失。
++
++shipping_policy：
++询问一般物流规则。
++
++
++--------------------------------------------------
++E. warranty_repair
++--------------------------------------------------
++
++允许的 topic：
++
++- warranty_policy
++- repair_apply
++- replacement
++- product_failure
++
++
++warranty_policy：
++询问保修政策。
++
++repair_apply：
++要求发起维修。
++
++replacement：
++换货、换新。
++
++product_failure：
++产品故障问题。
++
++
++--------------------------------------------------
++F. payment_invoice
++--------------------------------------------------
++
++允许的 topic：
++
++- payment_status
++- payment_failed
++- duplicate_charge
++- invoice_policy
++- invoice_apply
++- invoice_change
++
++
++--------------------------------------------------
++G. complaint
++--------------------------------------------------
++
++允许的 topic：
++
++- complaint
++- escalation
++
++
++complaint：
++普通投诉。
++
++escalation：
++明确要求升级处理。
++
++
++--------------------------------------------------
++H. membership
++--------------------------------------------------
++
++允许的 topic：
++
++- membership_policy
++- membership_benefit
++
++
++--------------------------------------------------
++I. order_lookup
++--------------------------------------------------
++
++允许的 topic：
++
++- order_status
++
++
++--------------------------------------------------
++J. general_support
++--------------------------------------------------
++
++允许的 topic：
++
++- general_question
++
++
++--------------------------------------------------
++K. handoff
++--------------------------------------------------
++
++如果用户明确要求人工客服：
++
++topic = human_handoff
++
++
++==================================================
++四、最重要的语义边界
++==================================================
++
++
++【边界 1：execute 和 query】
++
++“我想退款”
++→ return_refund / execute / refund_apply
++
++“我想知道能不能退款”
++→ return_refund / query / refund_eligibility
++
++
++“商品质量有问题，我想退款”
++→ return_refund / execute / refund_apply
++
++“商品质量有问题，可以退款吗？”
++→ return_refund / query / refund_eligibility
++
++
++“帮我退款”
++→ return_refund / execute / refund_apply
++
++“帮我看看能不能退款”
++→ return_refund / query / refund_eligibility
++
++
++缺少订单号不能改变 action_type。
++
++
++--------------------------------------------------
++
++【边界 2：refund_policy 和 refund_eligibility】
++
++“退款有什么条件？”
++→ return_refund / query / refund_policy
++
++“我这个商品符合退款条件吗？”
++→ return_refund / query / refund_eligibility
++
++
++“超过七天是不是就一定不能退了？”
++→ return_refund / query / refund_policy
++
++“我这个商品已经买了十天，还能退吗？”
++→ return_refund / query / refund_eligibility
++
++
++“七天无理由是什么意思？”
++→ return_refund / query / refund_policy
++
++“我这个商品能不能走七天无理由？”
++→ return_refund / query / refund_eligibility
++
++
++“退货和退款有什么区别？”
++→ return_refund / query / refund_policy
++
++
++核心原则：
++
++refund_policy
++= 解释通用规则。
++
++refund_eligibility
++= 判断用户当前具体商品、订单、交易情况是否符合规则。
++
++
++--------------------------------------------------
++
++【边界 3：否定执行】
++
++如果用户明确表示：
++
++- 先别退款
++- 不要提交退款
++- 先不要操作
++- 不要直接给我退
++- 我只是咨询
++- 我只是问一下
++
++则不能识别成 execute。
++
++例如：
++
++“订单10003这个定制商品能不能退？
++先别帮我提交。”
++
++→ return_refund
++→ query
++→ refund_eligibility
++
++
++“我就是问一下退款条件，
++你别因为我说了退款就直接给我退。”
++
++→ return_refund
++→ query
++→ refund_policy
++
++
++--------------------------------------------------
++
++【边界 4：退款和取消订单】
++
++只有用户明确表达：
++
++- 取消订单
++- 撤销订单
++- 不要发货
++- 还没发货帮我取消
++
++才优先识别为 cancel_order。
++
++
++如果用户只说：
++
++- 商品不要了
++- 买了不想要了
++- 这个东西我不要了
++
++没有明确“取消订单”的语义，
++
++优先识别为：
++
++return_refund
++
++
++==================================================
++五、多意图情况
++==================================================
++
++如果一句话包含多个诉求，
++选择当前最主要、最直接需要处理的业务意图。
++
++primary intent、action_type 和 topic 仍然只表达主诉求，
++不要为了附加语义改变主路由。
++
++与知识检索相关的次要业务语义写入 related_topics。
++related_topics 必须是数组，元素只能使用本提示中已经定义的 topic，
++不得重复 primary topic，也不得根据实现细节补充用户没有表达的语义。
++
++例如：
++
++“快递运输途中把商品弄坏了，我可以申请退款吗？”
++
++主诉求是判断当前情况是否符合退款条件：
++
++intent = return_refund
++action_type = query
++topic = refund_eligibility
++related_topics = ["shipping_exception", "product_failure"]
++
++例如：
++
++“订单10004直接退款，不用审核，我要投诉”
++
++用户最主要的业务动作是退款。
++
++所以：
++
++intent = return_refund
++action_type = execute
++topic = refund_apply
++related_topics = ["complaint"]
++
++“不用审核”和“我要投诉”
++可以由后续风险和业务决策层处理。
++
++Semantic Router 不需要为了这些附加信息
++改变主要退款语义。
++
++
++==================================================
++六、输出要求
++==================================================
++
++你必须只输出一个 JSON 对象。
++
++禁止输出：
++
++- Markdown
++- ```json
++- 解释文字
++- 前言
++- 后记
++
++JSON 格式必须严格为：
++
++{
++  "intent": "return_refund",
++  "action_type": "query",
++  "topic": "refund_policy",
++  "related_topics": [],
++  "confidence": 0.95,
++  "reason": "一句简短中文说明"
++}
++
++confidence 必须是 0 到 1 之间的数字。
++
++reason 使用简短中文，
++说明为什么做出这个语义判断。
++"""
+ 
+ 
+ VALID_INTENTS = {
+--- /dev/null
++++ b/app/agent/routing/router.py
+@@ -0,0 +1,323 @@
++from app.agent.policies.fallback_policy import (
++    should_ask_order_id,
++    should_handoff_to_human,
++)
++from app.agent.policies.guardrails import check_user_input, contains_risky_action
++from app.agent.routing.parsing import extract_order_id
++from app.core.schemas import RouteDecision
++POLICY_KEYWORDS = [
++    "退货",
++    "退款",
++    "退钱",
++    "不想要",
++    "不要了",
++    "换货",
++    "取消",
++    "修改",
++    "地址",
++    "保修",
++    "维修",
++    "检测",
++    "坏了",
++    "故障",
++    "质量问题",
++    "换新",
++    "售后",
++    "物流",
++    "快递",
++    "未收到",
++    "没收到",
++    "发货",
++    "签收",
++    "会员",
++    "支付",
++    "扣款",
++    "发票",
++    "投诉",
++    "曝光",
++    "差评",
++    "起诉",
++    "12315",
++    "七天无理由",
++    "质量",
++    "黑屏",
++]
++
++HUMAN_HANDOFF_KEYWORDS = [
++    "转人工",
++    "人工客服",
++    "真人客服",
++    "不要机器人",
++    "升级处理",
++    "客服主管",
++]
++
++TICKET_KEYWORDS = [
++    "取消订单",
++    "修改地址",
++    "改地址",
++    "修改为",
++    "改收货地址",
++    "收货地址",
++    "投诉",
++    "曝光",
++    "差评",
++    "起诉",
++    "12315",
++
++    "赔付",
++    "工单",
++    "人工",
++    "坏了",
++    "故障",
++    "质量问题",
++    "换新",
++    "售后",
++    "检测",
++    "维修",
++    "物流异常",
++    "快递",
++    "未收到",
++    "没收到",
++    "没有更新",
++    "不更新",
++    "没更新",
++    "三天没动",
++    "超过48",
++    "停住",
++    "延迟",
++    "丢件",
++    "支付异常",
++    "扣款",
++    "重复扣款",
++    "改派",
++]
++
++REFUND_APPLY_KEYWORDS = [
++    "申请退款",
++    "我要退款",
++    "帮我退款",
++    "给我退款",
++    "退款",
++    "退钱",
++    "退款申请",
++    "退货退款",
++    "不想要了",
++    "不要了",
++]
++
++REFUND_QUESTION_KEYWORDS = [
++    "可以",
++    "能不能",
++    "能否",
++    "为什么",
++    "多久到账",
++    "还不到账",
++    "政策",
++    "吗",
++    "怎么办",
++]
++
++
++INTENT_RULES = [
++    {
++        "intent": "address_change",
++        "label": "修改收货地址",
++        "keywords": ["改收货地址", "修改地址", "改地址", "修改为", "收货地址"],
++    },
++    {
++        "intent": "cancel_order",
++        "label": "取消订单",
++        "keywords": ["取消订单", "取消", "不想买"],
++    },
++    {
++        "intent": "return_refund",
++        "label": "退货退款",
++        "keywords": ["退货", "退款", "退钱", "七天无理由", "不想要", "不要了"],
++    },
++    {
++        "intent": "shipping_exception",
++        "label": "物流异常",
++        "keywords": ["物流", "快递", "发货", "没更新", "没有更新", "不更新", "三天没动", "超过48", "停住", "延迟", "丢件", "未收到", "没收到"],
++    },
++    {
++        "intent": "warranty_repair",
++        "label": "保修维修",
++        "keywords": ["保修", "维修", "检测", "坏了", "故障", "质量问题", "质量", "黑屏", "换新"],
++    },
++    {
++        "intent": "payment_invoice",
++        "label": "支付与发票",
++        "keywords": ["支付", "扣款", "银行卡", "发票", "税号", "抬头"],
++    },
++    {
++        "intent": "complaint",
++        "label": "投诉升级",
++        "keywords": ["投诉", "没人处理", "人工", "客服", "曝光", "差评", "起诉", "12315"],
++    },
++    {
++        "intent": "membership",
++        "label": "会员权益",
++        "keywords": ["会员", "黑金", "权益"],
++    },
++]
++
++
++
++
++def infer_route_intent(user_message: str, order_id: str | None) -> tuple[str, float, str]:
++    best_rule = None
++    best_hits = []
++
++    for rule in INTENT_RULES:
++        hits = [
++            keyword for keyword in rule["keywords"]
++            if keyword in user_message
++        ]
++
++        if len(hits) > len(best_hits):
++            best_rule = rule
++            best_hits = hits
++
++    if best_rule:
++        confidence = min(0.95, 0.55 + len(best_hits) * 0.12 + (0.08 if order_id else 0))
++        reason = f"命中{best_rule['label']}意图关键词：{', '.join(best_hits)}。"
++        return best_rule["intent"], round(confidence, 2), reason
++
++    if order_id:
++        return "order_lookup", 0.62, "识别到订单号，按订单查询意图处理。"
++
++    return "general_support", 0.35, "未命中明确售后意图，按通用客服咨询处理。"
++
++
++def build_tool_plan(route: RouteDecision) -> list[str]:
++    if route.blocked_by_guardrail or route.need_clarification:
++        return []
++
++    if route.handoff_required and not route.order_id:
++        return []
++
++    plan = []
++
++    if route.need_order and route.order_id:
++        plan.append("order_lookup")
++
++    if route.need_policy:
++        plan.append("policy_search")
++
++    if route.need_risk_check:
++        plan.append("risk_check")
++
++    if route.need_refund_request:
++        plan.append("refund_apply")
++
++    if route.manual_review_required:
++        plan.append("create_manual_review")
++
++    if route.need_handoff:
++        plan.append("transfer_to_human")
++
++    if route.need_ticket:
++        plan.append("create_ticket")
++
++    return plan
++
++
++def is_refund_application(user_message: str, intent: str) -> bool:
++    if intent != "return_refund":
++        return False
++
++    has_apply_keyword = any(keyword in user_message for keyword in REFUND_APPLY_KEYWORDS)
++
++    if not has_apply_keyword:
++        return False
++
++    if any(keyword in user_message for keyword in REFUND_QUESTION_KEYWORDS):
++        return False
++
++    return True
++
++
++def route_tools(user_message: str) -> RouteDecision:
++    passed, reason = check_user_input(user_message)
++    if not passed:
++        return RouteDecision(
++            intent="unsafe_request",
++            confidence=1.0,
++            routing_reason=reason,
++            tool_plan=[],
++            blocked_by_guardrail=True,
++            guardrail_reason=reason,
++        )
++
++    order_id = extract_order_id(user_message)
++    intent, confidence, routing_reason = infer_route_intent(user_message, order_id)
++    need_clarification = should_ask_order_id(user_message, order_id)
++    handoff_required, handoff_reason = should_handoff_to_human(user_message)
++
++    need_order = order_id is not None
++    need_policy = any(keyword in user_message for keyword in POLICY_KEYWORDS)
++    need_handoff = (
++        any(keyword in user_message for keyword in HUMAN_HANDOFF_KEYWORDS)
++        or handoff_required
++    )
++    has_ticket_intent = any(keyword in user_message for keyword in TICKET_KEYWORDS)
++    need_refund_request = is_refund_application(user_message, intent) and order_id is not None
++    need_risk_check = bool(
++        order_id
++        and (
++            need_refund_request
++            or intent == "complaint"
++            or handoff_required
++            or contains_risky_action(user_message)
++        )
++    )
++
++    need_ticket = (
++        (need_order and has_ticket_intent)
++        or need_refund_request
++        or contains_risky_action(user_message)
++    )
++    manual_review_required = handoff_required
++
++    route = RouteDecision(
++        intent=intent,
++        confidence=confidence,
++        routing_reason=routing_reason,
++        order_id=order_id,
++        need_order=need_order,
++        need_policy=need_policy,
++        need_ticket=need_ticket,
++        need_refund_request=need_refund_request,
++        need_risk_check=need_risk_check,
++        manual_review_required=manual_review_required,
++        need_handoff=need_handoff,
++        need_clarification=need_clarification,
++        clarification_question="请您提供订单号，我才能继续查询订单状态并判断售后方案。"
++        if need_clarification
++        else None,
++        handoff_required=handoff_required,
++        handoff_reason=handoff_reason,
++        risk_level="high" if handoff_required else "low",
++    )
++    route.tool_plan = build_tool_plan(route)
++
++    return route
++
++
++ISSUE_TYPE_LABELS = {
++    "address_change": "地址修改",
++    "cancel_order": "取消订单",
++    "return_refund": "退货退款",
++    "shipping_exception": "物流异常",
++    "warranty_repair": "保修检测",
++    "payment_invoice": "支付异常",
++    "complaint": "投诉升级",
++    "membership": "会员权益",
++    "order_lookup": "订单查询",
++    "general_support": "售后咨询",
++}
++
++
++def get_issue_type(intent: str) -> str:
++    return ISSUE_TYPE_LABELS.get(intent, "售后咨询")
+--- a/app/agent/routing/semantic_prompt.py
++++ /dev/null
+@@ -1,801 +0,0 @@
+-"""Semantic router instructions, kept separate from parsing and validation."""
+-
+-SYSTEM_PROMPT = """
+-你是一个客服系统中的 Semantic Router。
+-
+-你的职责只有一个：
+-
+-理解用户“想做什么”，并把用户请求转换成结构化语义。
+-
+-你不能直接决定：
+-- 是否调用退款工具
+-- 是否真的执行退款
+-- 是否创建工单
+-- 是否进行风险审核
+-- 是否转人工
+-- 是否因为缺少订单号而改变用户原始意图
+-
+-这些事情全部由后续 Business Decision 层决定。
+-
+-你只负责输出：
+-
+-1. intent
+-2. action_type
+-3. topic
+-4. related_topics
+-5. confidence
+-6. reason
+-
+-
+-==================================================
+-一、intent 定义
+-==================================================
+-
+-intent 必须且只能从下面选择：
+-
+-- address_change
+-- cancel_order
+-- return_refund
+-- shipping_exception
+-- warranty_repair
+-- payment_invoice
+-- complaint
+-- membership
+-- order_lookup
+-- general_support
+-
+-
+-1. address_change
+-修改订单收货地址、配送地址、联系方式等。
+-
+-例如：
+-- 我想修改收货地址
+-- 订单地址填错了
+-- 能不能改一下地址
+-
+-
+-2. cancel_order
+-明确要求取消、撤销尚未完成的订单。
+-
+-例如：
+-- 我要取消订单
+-- 把这个订单撤销
+-- 还没发货，帮我取消掉
+-
+-注意：
+-
+-“这个东西我不要了”
+-“买了之后不想要了”
+-“商品不想要了”
+-
+-如果没有明确表达“取消订单 / 撤销订单 / 不要发货”，
+-默认优先理解为售后退货退款，即 return_refund，
+-而不是 cancel_order。
+-
+-
+-3. return_refund
+-退货、退款、七天无理由、退款资格、
+-退款到账时间、退款申请等。
+-
+-例如：
+-- 我要退款
+-- 这个东西能退吗
+-- 七天无理由是什么意思
+-- 退款多久能到账
+-- 包装拆了还能退吗
+-
+-
+-4. shipping_exception
+-物流查询、物流延迟、包裹丢失、运输异常等。
+-
+-例如：
+-- 为什么还没送到
+-- 包裹到哪里了
+-- 物流一直没更新
+-- 快递是不是丢了
+-
+-
+-5. warranty_repair
+-保修、维修、换货、产品故障售后。
+-
+-例如：
+-- 坏了怎么维修
+-- 在保修期吗
+-- 可以换新吗
+-
+-
+-6. payment_invoice
+-支付状态、支付失败、重复扣款、发票等。
+-
+-例如：
+-- 为什么支付失败
+-- 扣了两次钱
+-- 我要开发票
+-- 发票抬头怎么修改
+-
+-
+-7. complaint
+-投诉、严重不满、要求升级处理等。
+-
+-例如：
+-- 我要投诉
+-- 我要投诉你们客服
+-- 这个问题我要升级处理
+-
+-
+-8. membership
+-会员规则、会员权益等。
+-
+-例如：
+-- 会员有什么权益
+-- 怎么升级会员
+-
+-
+-9. order_lookup
+-单纯查询订单事实或状态。
+-
+-例如：
+-- 帮我看看订单10001
+-- 我的订单现在什么状态
+-
+-
+-10. general_support
+-不属于以上业务类别的普通客服问题。
+-
+-
+-==================================================
+-二、action_type 定义
+-==================================================
+-
+-action_type 必须且只能从下面选择：
+-
+-- query
+-- execute
+-- handoff
+-- unknown
+-
+-
+---------------------------------------------------
+-1. query
+---------------------------------------------------
+-
+-用户是在询问信息、规则、条件、资格、状态、时间、
+-原因或者其他事实。
+-
+-用户没有要求系统现在真正执行一个有业务副作用的动作。
+-
+-例如：
+-
+-- 能不能退？
+-- 可以退款吗？
+-- 退款需要什么条件？
+-- 七天无理由是什么意思？
+-- 退款多久到账？
+-- 这个商品符合退款条件吗？
+-- 我只是问一下
+-- 先不要操作
+-- 先不要提交退款
+-- 不要直接给我退
+-
+-
+-非常重要：
+-
+-下面这种表达仍然属于 query：
+-
+-“我想知道能不能退款”
+-
+-这里核心动作是“想知道”，
+-用户是在咨询资格，不是在要求执行退款。
+-
+-
+---------------------------------------------------
+-2. execute
+---------------------------------------------------
+-
+-用户明确希望客服或系统实际执行业务操作。
+-
+-例如：
+-
+-- 我要退款
+-- 我想退款
+-- 帮我退款
+-- 给我退钱
+-- 麻烦帮我申请退款
+-- 这个商品我想退掉
+-- 帮我取消订单
+-- 帮我修改地址
+-
+-
+-非常重要：
+-
+-“想退款”
+-“我要退款”
+-“给我退钱”
+-“帮我退款”
+-
+-这些本身就是执行意图。
+-
+-不能因为用户没有提供订单号，
+-就把 execute 改成 query。
+-
+-例如：
+-
+-“我买的商品质量有问题想退款”
+-
+-必须理解为：
+-
+-intent = return_refund
+-action_type = execute
+-topic = refund_apply
+-
+-即使用户没有提供订单号，
+-仍然是 execute。
+-
+-订单号是否缺失，
+-由后续 Business Decision 层决定。
+-
+-
+---------------------------------------------------
+-3. handoff
+---------------------------------------------------
+-
+-用户明确要求人工客服、真人客服、人工处理。
+-
+-例如：
+-
+-- 转人工
+-- 我要找真人客服
+-- 让人工处理
+-
+-
+---------------------------------------------------
+-4. unknown
+---------------------------------------------------
+-
+-只有确实无法判断用户当前想做什么时才使用。
+-
+-
+-==================================================
+-三、topic 定义
+-==================================================
+-
+-
+---------------------------------------------------
+-A. return_refund
+---------------------------------------------------
+-
+-return_refund 下允许的 topic：
+-
+-- refund_policy
+-- refund_timing
+-- refund_eligibility
+-- refund_apply
+-- return_apply
+-
+-
+-1. refund_policy
+-
+-表示一般性的：
+-
+-- 退款规则
+-- 退货规则
+-- 七天无理由规则
+-- 退款制度
+-- 退款条件定义
+-- 退款期限规则
+-- 退货与退款概念区别
+-
+-判断核心：
+-
+-回答这个问题通常不需要结合某一个具体订单
+-或者某一个具体商品的事实。
+-
+-例如：
+-
+-- 七天无理由是什么意思？
+-- 退款条件是什么？
+-- 退款有什么规定？
+-- 哪些商品原则上不能退？
+-- 超过七天是不是就一定不能退了？
+-- 退货和退款有什么区别？
+-- 七天以后原则上还能不能退？
+-- 退货期限一般是多少？
+-
+-
+-这些属于：
+-
+-intent = return_refund
+-action_type = query
+-topic = refund_policy
+-
+-
+-2. refund_timing
+-
+-专门询问退款到账时间、
+-退款处理周期或者退款进度时间。
+-
+-例如：
+-
+-- 退款多久到账？
+-- 退的钱多久回来？
+-- 钱什么时候退回来？
+-- 已经退回商品了，退款还要多久？
+-
+-这些属于：
+-
+-intent = return_refund
+-action_type = query
+-topic = refund_timing
+-
+-
+-3. refund_eligibility
+-
+-用于判断：
+-
+-某个具体商品、
+-具体订单、
+-或者用户当前具体情况
+-
+-是否满足退款条件。
+-
+-判断核心：
+-
+-回答问题通常需要结合具体交易事实。
+-
+-例如：
+-
+-- 商品购买了多少天
+-- 是否拆封
+-- 商品是否使用
+-- 是否定制
+-- 是否有质量问题
+-- 某个订单当前状态
+-- 某件商品是否符合退款条件
+-
+-
+-例如：
+-
+-- 我这个商品还能退吗？
+-- 买回来五天了，现在还能退吗？
+-- 包装已经拆开了还能退吗？
+-- 订单10003这个定制商品能不能退？
+-- 商品有划痕，这种情况还能退吗？
+-- 我这个订单现在还符合退款条件吗？
+-
+-
+-这些属于：
+-
+-intent = return_refund
+-action_type = query
+-topic = refund_eligibility
+-
+-
+-特别注意：
+-
+-“退款条件是什么？”
+-是一般规则，
+-属于 refund_policy。
+-
+-“我这个商品符合退款条件吗？”
+-是在判断具体情况，
+-属于 refund_eligibility。
+-
+-
+-4. refund_apply
+-
+-用户明确希望真正申请或者执行退款。
+-
+-例如：
+-
+-- 我要退款
+-- 我想退款
+-- 帮我退款
+-- 给我退钱
+-- 麻烦申请退款
+-- 订单10001直接退款
+-- 商品质量有问题，我想退款
+-
+-
+-这些属于：
+-
+-intent = return_refund
+-action_type = execute
+-topic = refund_apply
+-
+-
+-5. return_apply
+-
+-用户明确要求执行“退货”流程，
+-重点是退回商品，而不是单独表达退款。
+-
+-例如：
+-
+-- 我要申请退货
+-- 帮我发起退货
+-- 我要把商品退回去
+-
+-属于：
+-
+-intent = return_refund
+-action_type = execute
+-topic = return_apply
+-
+-
+---------------------------------------------------
+-B. cancel_order
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- cancel_policy
+-- cancel_apply
+-
+-
+-cancel_policy：
+-
+-用户询问取消订单规则，
+-没有要求实际取消。
+-
+-例如：
+-
+-- 订单发货后还能取消吗？
+-- 什么情况下可以取消订单？
+-
+-
+-cancel_apply：
+-
+-用户明确要求执行取消订单。
+-
+-例如：
+-
+-- 帮我取消订单10001
+-- 这个订单不要了，帮我撤销
+-
+-
+---------------------------------------------------
+-C. address_change
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- address_change_policy
+-- address_change_apply
+-
+-
+-address_change_policy：
+-
+-询问是否可以修改地址，
+-但没有要求实际修改。
+-
+-
+-address_change_apply：
+-
+-明确要求执行地址修改。
+-
+-
+---------------------------------------------------
+-D. shipping_exception
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- shipping_status
+-- shipping_delay
+-- shipping_exception
+-- lost_package
+-- shipping_policy
+-
+-
+-shipping_status：
+-查询物流状态。
+-
+-shipping_delay：
+-物流明显延迟。
+-
+-shipping_exception：
+-物流出现其他异常。
+-
+-lost_package：
+-疑似或明确包裹丢失。
+-
+-shipping_policy：
+-询问一般物流规则。
+-
+-
+---------------------------------------------------
+-E. warranty_repair
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- warranty_policy
+-- repair_apply
+-- replacement
+-- product_failure
+-
+-
+-warranty_policy：
+-询问保修政策。
+-
+-repair_apply：
+-要求发起维修。
+-
+-replacement：
+-换货、换新。
+-
+-product_failure：
+-产品故障问题。
+-
+-
+---------------------------------------------------
+-F. payment_invoice
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- payment_status
+-- payment_failed
+-- duplicate_charge
+-- invoice_policy
+-- invoice_apply
+-- invoice_change
+-
+-
+---------------------------------------------------
+-G. complaint
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- complaint
+-- escalation
+-
+-
+-complaint：
+-普通投诉。
+-
+-escalation：
+-明确要求升级处理。
+-
+-
+---------------------------------------------------
+-H. membership
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- membership_policy
+-- membership_benefit
+-
+-
+---------------------------------------------------
+-I. order_lookup
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- order_status
+-
+-
+---------------------------------------------------
+-J. general_support
+---------------------------------------------------
+-
+-允许的 topic：
+-
+-- general_question
+-
+-
+---------------------------------------------------
+-K. handoff
+---------------------------------------------------
+-
+-如果用户明确要求人工客服：
+-
+-topic = human_handoff
+-
+-
+-==================================================
+-四、最重要的语义边界
+-==================================================
+-
+-
+-【边界 1：execute 和 query】
+-
+-“我想退款”
+-→ return_refund / execute / refund_apply
+-
+-“我想知道能不能退款”
+-→ return_refund / query / refund_eligibility
+-
+-
+-“商品质量有问题，我想退款”
+-→ return_refund / execute / refund_apply
+-
+-“商品质量有问题，可以退款吗？”
+-→ return_refund / query / refund_eligibility
+-
+-
+-“帮我退款”
+-→ return_refund / execute / refund_apply
+-
+-“帮我看看能不能退款”
+-→ return_refund / query / refund_eligibility
+-
+-
+-缺少订单号不能改变 action_type。
+-
+-
+---------------------------------------------------
+-
+-【边界 2：refund_policy 和 refund_eligibility】
+-
+-“退款有什么条件？”
+-→ return_refund / query / refund_policy
+-
+-“我这个商品符合退款条件吗？”
+-→ return_refund / query / refund_eligibility
+-
+-
+-“超过七天是不是就一定不能退了？”
+-→ return_refund / query / refund_policy
+-
+-“我这个商品已经买了十天，还能退吗？”
+-→ return_refund / query / refund_eligibility
+-
+-
+-“七天无理由是什么意思？”
+-→ return_refund / query / refund_policy
+-
+-“我这个商品能不能走七天无理由？”
+-→ return_refund / query / refund_eligibility
+-
+-
+-“退货和退款有什么区别？”
+-→ return_refund / query / refund_policy
+-
+-
+-核心原则：
+-
+-refund_policy
+-= 解释通用规则。
+-
+-refund_eligibility
+-= 判断用户当前具体商品、订单、交易情况是否符合规则。
+-
+-
+---------------------------------------------------
+-
+-【边界 3：否定执行】
+-
+-如果用户明确表示：
+-
+-- 先别退款
+-- 不要提交退款
+-- 先不要操作
+-- 不要直接给我退
+-- 我只是咨询
+-- 我只是问一下
+-
+-则不能识别成 execute。
+-
+-例如：
+-
+-“订单10003这个定制商品能不能退？
+-先别帮我提交。”
+-
+-→ return_refund
+-→ query
+-→ refund_eligibility
+-
+-
+-“我就是问一下退款条件，
+-你别因为我说了退款就直接给我退。”
+-
+-→ return_refund
+-→ query
+-→ refund_policy
+-
+-
+---------------------------------------------------
+-
+-【边界 4：退款和取消订单】
+-
+-只有用户明确表达：
+-
+-- 取消订单
+-- 撤销订单
+-- 不要发货
+-- 还没发货帮我取消
+-
+-才优先识别为 cancel_order。
+-
+-
+-如果用户只说：
+-
+-- 商品不要了
+-- 买了不想要了
+-- 这个东西我不要了
+-
+-没有明确“取消订单”的语义，
+-
+-优先识别为：
+-
+-return_refund
+-
+-
+-==================================================
+-五、多意图情况
+-==================================================
+-
+-如果一句话包含多个诉求，
+-选择当前最主要、最直接需要处理的业务意图。
+-
+-primary intent、action_type 和 topic 仍然只表达主诉求，
+-不要为了附加语义改变主路由。
+-
+-与知识检索相关的次要业务语义写入 related_topics。
+-related_topics 必须是数组，元素只能使用本提示中已经定义的 topic，
+-不得重复 primary topic，也不得根据实现细节补充用户没有表达的语义。
+-
+-例如：
+-
+-“快递运输途中把商品弄坏了，我可以申请退款吗？”
+-
+-主诉求是判断当前情况是否符合退款条件：
+-
+-intent = return_refund
+-action_type = query
+-topic = refund_eligibility
+-related_topics = ["shipping_exception", "product_failure"]
+-
+-例如：
+-
+-“订单10004直接退款，不用审核，我要投诉”
+-
+-用户最主要的业务动作是退款。
+-
+-所以：
+-
+-intent = return_refund
+-action_type = execute
+-topic = refund_apply
+-related_topics = ["complaint"]
+-
+-“不用审核”和“我要投诉”
+-可以由后续风险和业务决策层处理。
+-
+-Semantic Router 不需要为了这些附加信息
+-改变主要退款语义。
+-
+-
+-==================================================
+-六、输出要求
+-==================================================
+-
+-你必须只输出一个 JSON 对象。
+-
+-禁止输出：
+-
+-- Markdown
+-- ```json
+-- 解释文字
+-- 前言
+-- 后记
+-
+-JSON 格式必须严格为：
+-
+-{
+-  "intent": "return_refund",
+-  "action_type": "query",
+-  "topic": "refund_policy",
+-  "related_topics": [],
+-  "confidence": 0.95,
+-  "reason": "一句简短中文说明"
+-}
+-
+-confidence 必须是 0 到 1 之间的数字。
+-
+-reason 使用简短中文，
+-说明为什么做出这个语义判断。
+-"""
+--- a/app/agent/tools/tool_results.py
++++ b/app/agent/tools/tool_results.py
+@@ -13,6 +13,12 @@
+     order_result = get_order_lookup_result(tool_results)
+ 
+     return bool(order_result and not order_result.success)
++
++
++def has_failed_policy_search(tool_results: list[ToolResult]) -> bool:
++    policy_result = get_tool_result(tool_results, "policy_search")
++
++    return bool(policy_result and not policy_result.success)
+ 
+ 
+ def is_system_tool_failure(tool_result: ToolResult | None) -> bool:
+--- a/app/rag/ingestion/chunker.py
++++ b/app/rag/ingestion/chunker.py
+@@ -4,6 +4,7 @@
+ from app.rag.models import (
+     ChunkStrategy,
+     DocumentChunk,
++    RawDocument,
+     content_hash_text,
+ )
+ 
+@@ -386,6 +387,34 @@
+                 covered.append(title)
+ 
+     return covered
++
++
++def split_text_with_overlap(
++    text,
++    max_chars,
++    overlap,
++):
++    """
++    保留旧接口名称。
++
++    注意：
++        参数名虽然叫 max_chars，
++        实际现在按 token 数量切分。
++    """
++    if (
++        max_chars <= 0
++        or overlap < 0
++        or overlap >= max_chars
++    ):
++        raise ValueError(
++            "invalid token chunk size/overlap"
++        )
++
++    return _fixed_token_chunks(
++        text,
++        max_chars,
++        overlap,
++    )
+ 
+ 
+ def choose_chunk_strategy(document):
+@@ -818,4 +847,4 @@
+             chunker_version=chunker_version,
+             chunk_strategy=chunk_strategy,
+         )
+-    ]
++    ]
+\ No newline at end of file
+--- a/app/storage/database.py
++++ b/app/storage/database.py
+@@ -1,5 +1,3 @@
+-"""Unified database facade with explicit SQLite implementations and MySQL dispatch."""
+-
+ import json
+ import os
+ import sqlite3
+@@ -173,8 +171,7 @@
+     )
+ 
+ 
+-# SQLite implementations; callers use the public facade below.
+-def _sqlite_init_database() -> None:
++def init_database() -> None:
+     """初始化数据库表，并把 orders.json 作为订单种子数据导入。"""
+ 
+     global _INITIALIZED
+@@ -314,7 +311,13 @@
+     _INITIALIZED = True
+ 
+ 
+-def _sqlite_seed_orders_from_json(path: Path = ORDERS_SEED_PATH) -> None:
++def ensure_database() -> None:
++    """确保任意数据读写前，数据库结构都已经存在。"""
++
++    init_database()
++
++
++def seed_orders_from_json(path: Path = ORDERS_SEED_PATH) -> None:
+     """把 JSON 种子订单同步到 SQLite，方便后续统一从数据库读取订单。"""
+ 
+     if not path.exists():
+@@ -357,7 +360,7 @@
+     return normalized
+ 
+ 
+-def _sqlite_seed_customer_profiles() -> None:
++def seed_customer_profiles() -> None:
+     """写入客户画像种子数据，供风控 Agent 判断高频退款、异常账号等风险。"""
+ 
+     with get_connection() as connection:
+@@ -376,7 +379,7 @@
+             )
+ 
+ 
+-def _sqlite_load_orders_from_db() -> list[dict]:
++def load_orders_from_db() -> list[dict]:
+     """读取全部订单。"""
+ 
+     ensure_database()
+@@ -392,7 +395,7 @@
+     ]
+ 
+ 
+-def _sqlite_get_order_from_db(order_id: str) -> dict | None:
++def get_order_from_db(order_id: str) -> dict | None:
+     """按订单号读取单个订单。"""
+ 
+     ensure_database()
+@@ -409,7 +412,7 @@
+     return json.loads(row["payload"])
+ 
+ 
+-def _sqlite_update_order_in_db(order_id: str, updates: dict) -> dict | None:
++def update_order_in_db(order_id: str, updates: dict) -> dict | None:
+     """更新订单 JSON payload，用于退款处理服务写回订单状态。"""
+ 
+     ensure_database()
+@@ -437,7 +440,7 @@
+     return order
+ 
+ 
+-def _sqlite_get_customer_profile_from_db(user_id: str | None) -> dict | None:
++def get_customer_profile_from_db(user_id: str | None) -> dict | None:
+     """读取客户画像。"""
+ 
+     if not user_id:
+@@ -457,7 +460,7 @@
+     return json.loads(row["payload"])
+ 
+ 
+-def _sqlite_save_refund_request_to_db(refund_request: dict) -> dict:
++def save_refund_request_to_db(refund_request: dict) -> dict:
+     """保存退款申请，返回带 refund_id、状态和时间戳的记录。"""
+ 
+     ensure_database()
+@@ -497,7 +500,7 @@
+     return saved
+ 
+ 
+-def _sqlite_get_refund_request_from_db(refund_id: str) -> dict | None:
++def get_refund_request_from_db(refund_id: str) -> dict | None:
+     """按退款申请号读取退款申请。"""
+ 
+     ensure_database()
+@@ -514,7 +517,7 @@
+     return json.loads(row["payload"])
+ 
+ 
+-def _sqlite_get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
++def get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
+     """按订单号读取最近一条仍有效的退款申请，用作数据库幂等检查。"""
+ 
+     ensure_database()
+@@ -538,7 +541,7 @@
+     return None
+ 
+ 
+-def _sqlite_update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
++def update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
+     """更新退款申请状态或处理结果。"""
+ 
+     ensure_database()
+@@ -569,7 +572,7 @@
+     return refund_request
+ 
+ 
+-def _sqlite_list_refund_requests_from_db(limit: int = 50) -> list[dict]:
++def list_refund_requests_from_db(limit: int = 50) -> list[dict]:
+     """按创建时间倒序读取退款申请。"""
+ 
+     ensure_database()
+@@ -587,7 +590,7 @@
+     return [json.loads(row["payload"]) for row in rows]
+ 
+ 
+-def _sqlite_save_manual_review_to_db(review: dict) -> dict:
++def save_manual_review_to_db(review: dict) -> dict:
+     """保存人工审核单。"""
+ 
+     ensure_database()
+@@ -625,7 +628,7 @@
+     return saved
+ 
+ 
+-def _sqlite_list_manual_reviews_from_db(limit: int = 50) -> list[dict]:
++def list_manual_reviews_from_db(limit: int = 50) -> list[dict]:
+     """按创建时间倒序读取人工审核单。"""
+ 
+     ensure_database()
+@@ -643,7 +646,7 @@
+     return [json.loads(row["payload"]) for row in rows]
+ 
+ 
+-def _sqlite_enqueue_mq_message_to_db(topic: str, payload: dict) -> dict:
++def enqueue_mq_message_to_db(topic: str, payload: dict) -> dict:
+     """写入一条待消费 MQ 消息。本地用 SQLite 模拟队列，生产可替换成 RabbitMQ/Kafka。"""
+ 
+     ensure_database()
+@@ -683,7 +686,62 @@
+     return message
+ 
+ 
+-def _sqlite_update_mq_message_status_in_db(message_id: str, status: str, result: dict | None = None) -> dict | None:
++def claim_mq_messages_from_db(topic: str | None = None, limit: int = 10) -> list[dict]:
++    """领取待消费消息，并标记为 processing。"""
++
++    ensure_database()
++
++    if topic:
++        query = """
++            SELECT message_id, topic, status, attempts, payload, result, created_at, updated_at
++            FROM mq_messages
++            WHERE status = 'pending' AND topic = ?
++            ORDER BY created_at
++            LIMIT ?
++        """
++        params = (topic, limit)
++    else:
++        query = """
++            SELECT message_id, topic, status, attempts, payload, result, created_at, updated_at
++            FROM mq_messages
++            WHERE status = 'pending'
++            ORDER BY created_at
++            LIMIT ?
++        """
++        params = (limit,)
++
++    with get_connection() as connection:
++        rows = connection.execute(query, params).fetchall()
++        messages = []
++
++        for row in rows:
++            attempts = int(row["attempts"] or 0) + 1
++            updated_at = now_text()
++            connection.execute(
++                """
++                UPDATE mq_messages
++                SET status = 'processing', attempts = ?, updated_at = ?
++                WHERE message_id = ? AND status = 'pending'
++                """,
++                (attempts, updated_at, row["message_id"]),
++            )
++            messages.append(
++                {
++                    "message_id": row["message_id"],
++                    "topic": row["topic"],
++                    "status": "processing",
++                    "attempts": attempts,
++                    "payload": json.loads(row["payload"]),
++                    "result": json.loads(row["result"]) if row["result"] else None,
++                    "created_at": row["created_at"],
++                    "updated_at": updated_at,
++                }
++            )
++
++    return messages
++
++
++def update_mq_message_status_in_db(message_id: str, status: str, result: dict | None = None) -> dict | None:
+     """更新 MQ 消息状态。"""
+ 
+     ensure_database()
+@@ -728,7 +786,7 @@
+     }
+ 
+ 
+-def _sqlite_list_mq_messages_from_db(limit: int = 50) -> list[dict]:
++def list_mq_messages_from_db(limit: int = 50) -> list[dict]:
+     """查看最近的 MQ 消息。"""
+ 
+     ensure_database()
+@@ -759,7 +817,7 @@
+     ]
+ 
+ 
+-def _sqlite_save_notification_to_db(notification: dict) -> dict:
++def save_notification_to_db(notification: dict) -> dict:
+     """保存用户通知记录。"""
+ 
+     ensure_database()
+@@ -792,7 +850,7 @@
+     return saved
+ 
+ 
+-def _sqlite_save_agent_metric_to_db(trace: dict) -> None:
++def save_agent_metric_to_db(trace: dict) -> None:
+     """把 trace 的关键指标落库，便于后续做评测和失败案例分析。"""
+ 
+     ensure_database()
+@@ -826,7 +884,7 @@
+         )
+ 
+ 
+-def _sqlite_list_agent_metrics_from_db(limit: int = 50) -> list[dict]:
++def list_agent_metrics_from_db(limit: int = 50) -> list[dict]:
+     """查看最近 Agent 指标记录。"""
+ 
+     ensure_database()
+@@ -844,7 +902,7 @@
+     return [json.loads(row["payload"]) for row in rows]
+ 
+ 
+-def _sqlite_save_ticket_to_db(ticket: dict) -> dict:
++def save_ticket_to_db(ticket: dict) -> dict:
+     """保存工单草稿，并返回带 ticket_id 和 created_at 的工单。"""
+ 
+     ensure_database()
+@@ -880,7 +938,7 @@
+     return saved_ticket
+ 
+ 
+-def _sqlite_list_tickets_from_db(limit: int = 50) -> list[dict]:
++def list_tickets_from_db(limit: int = 50) -> list[dict]:
+     """按创建时间倒序读取最近的工单草稿。"""
+ 
+     ensure_database()
+@@ -901,7 +959,7 @@
+     ]
+ 
+ 
+-def _sqlite_append_message_to_db(conversation_id: str, role: str, content: str) -> None:
++def append_message_to_db(conversation_id: str, role: str, content: str) -> None:
+     """保存一条会话消息。"""
+ 
+     ensure_database()
+@@ -916,7 +974,7 @@
+         )
+ 
+ 
+-def _sqlite_load_messages_from_db(conversation_id: str, limit: int) -> list[dict]:
++def load_messages_from_db(conversation_id: str, limit: int) -> list[dict]:
+     """读取某个会话最近的消息。"""
+ 
+     ensure_database()
+@@ -944,7 +1002,7 @@
+     return list(reversed(messages))
+ 
+ 
+-def _sqlite_set_pending_task_in_db(conversation_id: str, task: dict) -> None:
++def set_pending_task_in_db(conversation_id: str, task: dict) -> None:
+     """保存或更新某个会话的待补全任务。"""
+ 
+     ensure_database()
+@@ -966,7 +1024,7 @@
+         )
+ 
+ 
+-def _sqlite_get_pending_task_from_db(conversation_id: str) -> dict | None:
++def get_pending_task_from_db(conversation_id: str) -> dict | None:
+     """读取某个会话的待补全任务。"""
+ 
+     ensure_database()
+@@ -983,7 +1041,7 @@
+     return json.loads(row["task_json"])
+ 
+ 
+-def _sqlite_clear_pending_task_in_db(conversation_id: str) -> None:
++def clear_pending_task_in_db(conversation_id: str) -> None:
+     """清除某个会话已经完成的待补全任务。"""
+ 
+     ensure_database()
+@@ -995,7 +1053,7 @@
+         )
+ 
+ 
+-def _sqlite_save_feedback_to_db(conversation_id: str, score: int, comment: str | None) -> None:
++def save_feedback_to_db(conversation_id: str, score: int, comment: str | None) -> None:
+     """保存用户反馈。"""
+ 
+     ensure_database()
+@@ -1010,7 +1068,38 @@
+         )
+ 
+ 
+-# Public facade: backend selection, transaction-aware caching and shared MQ recovery.
++_sqlite_init_database = init_database
++_sqlite_ensure_database = ensure_database
++_sqlite_seed_orders_from_json = seed_orders_from_json
++_sqlite_seed_customer_profiles = seed_customer_profiles
++_sqlite_load_orders_from_db = load_orders_from_db
++_sqlite_get_order_from_db = get_order_from_db
++_sqlite_update_order_in_db = update_order_in_db
++_sqlite_get_customer_profile_from_db = get_customer_profile_from_db
++_sqlite_save_refund_request_to_db = save_refund_request_to_db
++_sqlite_get_refund_request_from_db = get_refund_request_from_db
++_sqlite_get_active_refund_request_by_order_id_from_db = get_active_refund_request_by_order_id_from_db
++_sqlite_update_refund_request_in_db = update_refund_request_in_db
++_sqlite_list_refund_requests_from_db = list_refund_requests_from_db
++_sqlite_save_manual_review_to_db = save_manual_review_to_db
++_sqlite_list_manual_reviews_from_db = list_manual_reviews_from_db
++_sqlite_enqueue_mq_message_to_db = enqueue_mq_message_to_db
++_sqlite_claim_mq_messages_from_db = claim_mq_messages_from_db
++_sqlite_update_mq_message_status_in_db = update_mq_message_status_in_db
++_sqlite_list_mq_messages_from_db = list_mq_messages_from_db
++_sqlite_save_notification_to_db = save_notification_to_db
++_sqlite_save_agent_metric_to_db = save_agent_metric_to_db
++_sqlite_list_agent_metrics_from_db = list_agent_metrics_from_db
++_sqlite_save_ticket_to_db = save_ticket_to_db
++_sqlite_list_tickets_from_db = list_tickets_from_db
++_sqlite_append_message_to_db = append_message_to_db
++_sqlite_load_messages_from_db = load_messages_from_db
++_sqlite_set_pending_task_in_db = set_pending_task_in_db
++_sqlite_get_pending_task_from_db = get_pending_task_from_db
++_sqlite_clear_pending_task_in_db = clear_pending_task_in_db
++_sqlite_save_feedback_to_db = save_feedback_to_db
++
++
+ def get_database_backend_name() -> str:
+     from app.core.config import get_settings
+ 
+--- a/app/storage/mysql_database.py
++++ b/app/storage/mysql_database.py
+@@ -719,6 +719,67 @@
+     }
+ 
+ 
++def claim_mq_messages_from_mysql(topic: str | None = None, limit: int = 10) -> list[dict]:
++    ensure_mysql_database()
++
++    connection = get_mysql_connection(autocommit=False)
++    try:
++        with connection.cursor() as cursor:
++            if topic:
++                cursor.execute(
++                    """
++                    SELECT message_id, topic, status, attempts, payload, result,
++                           created_at, updated_at
++                    FROM mq_messages
++                    WHERE status = 'pending' AND topic = %s
++                    ORDER BY created_at
++                    LIMIT %s
++                    FOR UPDATE
++                    """,
++                    (topic, limit),
++                )
++            else:
++                cursor.execute(
++                    """
++                    SELECT message_id, topic, status, attempts, payload, result,
++                           created_at, updated_at
++                    FROM mq_messages
++                    WHERE status = 'pending'
++                    ORDER BY created_at
++                    LIMIT %s
++                    FOR UPDATE
++                    """,
++                    (limit,),
++                )
++
++            rows = cursor.fetchall()
++            messages = []
++
++            for row in rows:
++                attempts = int(row["attempts"] or 0) + 1
++                updated_at = now_text()
++                cursor.execute(
++                    """
++                    UPDATE mq_messages
++                    SET status = 'processing', attempts = %s, updated_at = %s
++                    WHERE message_id = %s AND status = 'pending'
++                    """,
++                    (attempts, updated_at, row["message_id"]),
++                )
++                row["updated_at"] = updated_at
++                messages.append(
++                    build_message_from_row(row, status="processing", attempts=attempts)
++                )
++
++        connection.commit()
++        return messages
++    except Exception:
++        connection.rollback()
++        raise
++    finally:
++        connection.close()
++
++
+ def update_mq_message_status_in_mysql(
+     message_id: str,
+     status: str,
+--- a/app/storage/store.py
++++ b/app/storage/store.py
+@@ -1,6 +1,10 @@
+ from typing import Any
+ 
+-from app.storage.database import get_order_from_db
++from app.storage.database import get_order_from_db, load_orders_from_db
++
++
++def load_orders() -> list[dict[str, Any]]:
++    return load_orders_from_db()
+ 
+ 
+ def get_order_by_id(order_id: str) -> dict[str, Any] | None:

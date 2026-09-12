@@ -1,0 +1,240 @@
+...........F..............FFFFFFFFFFFFFFF           [100%]
+================================== FAILURES ===================================
+_ SemanticContractRepairTests.test_replay_input_mismatch_remains_fatal_even_if_router_catches_it _
+tests\test_semantic_contract_repair.py:76: in test_replay_input_mismatch_remains_fatal_even_if_router_catches_it
+    from scripts.eval.semantic_response_replay import install
+E   ModuleNotFoundError: No module named 'scripts.eval'
+_ APIAuthorizationTests.test_admin_address_approval_persists_confirmed_address_through_api _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_admin_routes_reject_customer_including_task_execution _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+___ APIAuthorizationTests.test_cached_refund_cannot_bypass_order_ownership ____
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_conversation_history_state_feedback_and_chat_are_scoped _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_customer_can_cancel_only_owned_refund_through_api _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+________ APIAuthorizationTests.test_customer_can_only_read_owned_order ________
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_liveness_and_readiness_have_different_status_codes _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_missing_bad_and_unconfigured_credentials_fail_closed _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_operator_directory_and_reassignment_require_admin _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_________ APIAuthorizationTests.test_refund_lists_filter_before_limit _________
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_review_supplement_owner_access_retry_and_material_version _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_____ APIAuthorizationTests.test_ticket_details_and_management_are_scoped _____
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+__ APIAuthorizationTests.test_ticket_list_http_paging_and_filter_validation ___
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+______ APIAuthorizationTests.test_tool_timeout_thread_preserves_identity ______
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+_ APIAuthorizationTests.test_unknown_or_legacy_conversation_cannot_be_claimed _
+tests\test_api_authorization.py:29: in setUp
+    self.main = importlib.import_module("main")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1395: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'main'
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_semantic_contract_repair.py::SemanticContractRepairTests::test_replay_input_mismatch_remains_fatal_even_if_router_catches_it
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_admin_routes_reject_customer_including_task_execution
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_cached_refund_cannot_bypass_order_ownership
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_conversation_history_state_feedback_and_chat_are_scoped
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_customer_can_cancel_only_owned_refund_through_api
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_customer_can_only_read_owned_order
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_liveness_and_readiness_have_different_status_codes
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_missing_bad_and_unconfigured_credentials_fail_closed
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_operator_directory_and_reassignment_require_admin
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_refund_lists_filter_before_limit
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_review_supplement_owner_access_retry_and_material_version
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_ticket_details_and_management_are_scoped
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_ticket_list_http_paging_and_filter_validation
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_tool_timeout_thread_preserves_identity
+FAILED tests/test_api_authorization.py::APIAuthorizationTests::test_unknown_or_legacy_conversation_cannot_be_claimed
+16 failed, 25 passed, 1 warning, 21 subtests passed in 1.56s

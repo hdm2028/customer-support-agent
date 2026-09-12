@@ -1,12 +1,14 @@
 import hashlib
 import json
+from threading import Lock
 
 from app.core.config import get_settings
 from app.rag.enterprise_knowledge import build_enterprise_catalog
 from app.rag.index_manager import RAGIndexManager, get_rag_index_manager
-from app.rag.query_context import RetrievalQuery
+from app.rag.query_context import RetrievalQuery, resolve_embedding_query
 from app.rag.ranking import (
     SEMANTIC_CONSTRAINT_MODE,
+    SEMANTIC_FUSION_MODE,
     SEMANTIC_RERANK_MODE,
     EvidenceConstraint,
     rank_candidates,
@@ -25,6 +27,7 @@ class HybridRetriever:
     ) -> None:
         self.index_manager = index_manager or get_rag_index_manager()
         self.semantic_reranker = semantic_reranker
+        self._reranker_lock = Lock()
 
     def candidate_cache_key(
         self,
@@ -35,7 +38,7 @@ class HybridRetriever:
     ) -> str:
         settings = get_settings()
         payload = {
-            "semantic_query": query.semantic_query,
+            "semantic_query": resolve_embedding_query(query),
             "lexical_query": query.lexical_query,
             "candidate_k": candidate_k,
             "kb_version": kb_version,
@@ -90,6 +93,7 @@ class HybridRetriever:
         mode: str | None = None,
         candidate_k: int | None = None,
         evidence_constraint: EvidenceConstraint | None = None,
+        evidence_selection: str | None = None,
     ) -> list[dict]:
         if top_k <= 0:
             return []
@@ -108,10 +112,12 @@ class HybridRetriever:
         )
         resolved_mode = mode or get_settings().rag_ranking_mode
         if (
-            resolved_mode in {SEMANTIC_RERANK_MODE, SEMANTIC_CONSTRAINT_MODE}
+            resolved_mode in {SEMANTIC_RERANK_MODE, SEMANTIC_CONSTRAINT_MODE, SEMANTIC_FUSION_MODE}
             and self.semantic_reranker is None
         ):
-            self.semantic_reranker = build_semantic_reranker()
+            with self._reranker_lock:
+                if self.semantic_reranker is None:
+                    self.semantic_reranker = build_semantic_reranker()
         ranked = rank_candidates(
             query,
             candidates,
@@ -119,6 +125,7 @@ class HybridRetriever:
             top_k=top_k,
             evidence_constraint=evidence_constraint,
             semantic_reranker=self.semantic_reranker,
+            evidence_selection=evidence_selection,
         )
         return ranked[:top_k]
 
@@ -130,6 +137,7 @@ class HybridRetriever:
         mode: str | None = None,
         candidate_k: int | None = None,
         evidence_constraint: EvidenceConstraint | None = None,
+        evidence_selection: str | None = None,
     ) -> list[dict]:
         return self.retrieve(
             query=query,
@@ -137,6 +145,7 @@ class HybridRetriever:
             mode=mode,
             candidate_k=candidate_k,
             evidence_constraint=evidence_constraint,
+            evidence_selection=evidence_selection,
         )
 
     def list_chunks(self) -> list[dict]:

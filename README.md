@@ -2,6 +2,8 @@
 
 面向电商售后的多 Agent 客服服务，覆盖咨询、订单查询、政策检索、风险判断、退款申请、人工审核、工单和退款异步处理。
 
+当前实现与未完成项见 [改进进度](docs/improvement_progress.md)；部署、权限、运行观测及备份回滚分别见 [部署说明](docs/deployment.md)、[运行观测](docs/observability.md) 和 [恢复发布](docs/recovery_and_release.md)。开发空库需要演示订单时显式设置 SEED_DEMO_DATA=true；重启不会覆盖已有业务记录。普通用户与管理接口均需配置访问令牌。
+
 ## Project Overview
 
 服务入口为 FastAPI。用户请求进入 Router 后，由 Orchestrator 调度 Customer、AfterSales、Risk 三个 Agent。业务动作全部通过受控工具执行，数据写入 MySQL 或 SQLite，Redis 负责状态缓存、锁和幂等缓存，退款事件通过数据库 MQ 表异步处理。
@@ -125,6 +127,16 @@ Swagger: http://127.0.0.1:8012/docs
 - MySQL 表结构见 `docs/mysql_schema.sql`。
 
 ## Evaluation
+
+???????????????????????? [??????](docs/five_layer_evaluation.md)?
+
+????????????????????????????????????
+
+```powershell
+python -X utf8 -m scripts.maintenance.check_release --output reports/release_check_<??????>
+```
+
+???????
 
 ```powershell
 py -3.13 -m scripts.eval.eval_routing

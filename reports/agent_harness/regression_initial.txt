@@ -1,0 +1,89 @@
+......................FF............F................s...............................................F............. [ 35%]
+.................................... [ 47%]
+...........................................ssssss.......s........ [ 67%]
+.s.......................................s.....s... [ 83%]
+............................................F........         [100%]
+================================== FAILURES ===================================
+_ ConversationTaskBoundaryTests.test_address_policy_query_with_order_uses_lookup_and_policy_in_sync_and_stream _
+tests\test_conversation_task_boundaries.py:304: in test_address_policy_query_with_order_uses_lookup_and_policy_in_sync_and_stream
+    self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["order_lookup", "policy_search"])
+E   AssertionError: Lists differ: ['order_lookup', 'policy_search', 'agent_execution'] != ['order_lookup', 'policy_search']
+E   
+E   First list contains 1 additional elements.
+E   First extra element 2:
+E   'agent_execution'
+E   
+E   - ['order_lookup', 'policy_search', 'agent_execution']
+E   ?                                 -------------------
+E   
+E   + ['order_lookup', 'policy_search']
+_ ConversationTaskBoundaryTests.test_address_policy_query_without_order_does_not_collect_execution_slots _
+tests\test_conversation_task_boundaries.py:289: in test_address_policy_query_without_order_does_not_collect_execution_slots
+    self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
+E   AssertionError: Lists differ: ['policy_search', 'agent_execution'] != ['policy_search']
+E   
+E   First list contains 1 additional elements.
+E   First extra element 1:
+E   'agent_execution'
+E   
+E   - ['policy_search', 'agent_execution']
+E   + ['policy_search']
+_ ConversationTaskBoundaryTests.test_eligibility_policy_failure_reports_missing_evidence_without_writing _
+tests\test_conversation_task_boundaries.py:413: in test_eligibility_policy_failure_reports_missing_evidence_without_writing
+    self.assertEqual([r["tool_name"] for r in result["tool_results"]], ["policy_search"])
+E   AssertionError: Lists differ: ['policy_search', 'agent_execution'] != ['policy_search']
+E   
+E   First list contains 1 additional elements.
+E   First extra element 1:
+E   'agent_execution'
+E   
+E   - ['policy_search', 'agent_execution']
+E   + ['policy_search']
+_ NonRefundReviewTests.test_semantic_change_cannot_open_review_for_another_users_order _
+tests\test_nonrefund_review_continuation.py:115: in test_semantic_change_cannot_open_review_for_another_users_order
+    self.assertEqual([item["tool_name"] for item in result["tool_results"]], ["order_lookup"])
+E   AssertionError: Lists differ: ['order_lookup', 'agent_execution'] != ['order_lookup']
+E   
+E   First list contains 1 additional elements.
+E   First extra element 1:
+E   'agent_execution'
+E   
+E   - ['order_lookup', 'agent_execution']
+E   + ['order_lookup']
+_________ RiskFailClosedTests.test_risk_exception_blocks_refund_apply _________
+tests\test_tool_reliability.py:252: in test_risk_exception_blocks_refund_apply
+    self.assertEqual(state.block_reason, "risk_check_failed")
+E   AssertionError: 'task_failed' != 'risk_check_failed'
+E   - task_failed
+E   + risk_check_failed
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\agent-harness-0p6cit9_\main.py:193: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_address_policy_query_with_order_uses_lookup_and_policy_in_sync_and_stream
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_address_policy_query_without_order_does_not_collect_execution_slots
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_eligibility_policy_failure_reports_missing_evidence_without_writing
+FAILED tests/test_nonrefund_review_continuation.py::NonRefundReviewTests::test_semantic_change_cannot_open_review_for_another_users_order
+FAILED tests/test_tool_reliability.py::RiskFailClosedTests::test_risk_exception_blocks_refund_apply
+5 failed, 304 passed, 11 skipped, 3 warnings, 104 subtests passed in 10.11s

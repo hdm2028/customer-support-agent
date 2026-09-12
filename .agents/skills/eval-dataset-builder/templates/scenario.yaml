@@ -1,0 +1,33 @@
+scenario_id: ""
+name: ""
+
+layer: rag
+
+capability: ""
+
+description: ""
+
+category: happy_path
+priority: p1
+
+preconditions: []
+
+ground_truth:
+  source_type: knowledge_base
+  source: ""
+  section: ""
+  rule: ""
+
+expected_behavior:
+  expected_sources: []
+  expected_sections: []
+  required_evidence: []
+
+variation_dimensions:
+  linguistic_variation: true
+  business_state_variation: false
+
+generation:
+  recommended_cases: 3
+
+review_required: false

@@ -293,11 +293,11 @@ TOOL_RUNTIME_POLICIES = {
         fallback_action="handoff_to_human",
     ),
     "transfer_to_human": ToolRuntimePolicy(
-        timeout_seconds=2.0,
+        timeout_seconds=5.0,
         max_attempts=1,
         retry_on=(),
         side_effect_class=SIDE_EFFECT,
-        idempotent=True,
+        idempotent=False,
         fallback_action="manual_queue",
     ),
 }

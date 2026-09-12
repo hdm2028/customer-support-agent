@@ -1,0 +1,211 @@
+========================================================================
+Answer Evaluation
+========================================================================
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-2yj8ac8n\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 20,
+  "passed_count": 13,
+  "failed_count": 7,
+  "deterministic_metrics": {
+    "correctness": 0.75,
+    "relevance": 1.0,
+    "completeness": 0.75,
+    "faithfulness_groundedness": 0.7273,
+    "hallucination_rate": 0.05
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "退换货政策.md - 退款人工审核",
+          "退款政策.md - 重要限制",
+          "退款政策.md - 退款到账",
+          "退款政策.md - 退款处理状态"
+        ]
+      },
+      "actual": {
+        "reply": "本轮可核实的政策内容：\n\n《退款政策.md - 退款到账》：\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理时间影响。\n\n退款系统显示 `SUCCEEDED` 表示平台退款处理已经成功，但不代表用户资金一定立即到账。\n\n《退换货政策.md - 退款人工审核》（退款到账时间）：\n退款成功后，实际到账时间可能受到原支付渠道影响。\n\n平台完成退款操作不代表资金一定立即到账。\n\n如果退款状态已经显示成功，但用户长时间未收到退款，可以进一步查询支付渠道处理状态。",
+        "matched_citations": [
+          "退换货政策.md - 退款人工审核",
+          "退款政策.md - 退款到账"
+        ]
+      },
+      "trace_id": "21a0ee46-bd07-4aac-a473-7d8ed52fec4f",
+      "reason": "forbidden_keywords_present=['立即到账']"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": [
+          "退换货政策.md - 不支持七天无理由退货的情况",
+          "退换货政策.md - 七天无理由退货",
+          "退换货政策.md - 退款与退货政策",
+          "物流规则.md - 物流异常与退款",
+          "物流配送政策.md - 物流异常"
+        ]
+      },
+      "actual": {
+        "reply": "订单 10003，商品：定制刻字保温杯，当前订单状态：已签收。\n\n订单备注记录：定制商品通常不支持七天无理由退货，质量问题除外。\n\n本轮可核实的政策内容：\n\n《退换货政策.md - 不支持七天无理由退货的情况》（已签收订单）：\n符合七天无理由退货条件的，可以创建退货申请。\n\n《退换货政策.md - 退款与退货政策》（七天无理由退货）：\n用户自商品签收之日起 7 天内，可以申请七天无理由退货。\n\n申请七天无理由退货需要满足以下条件：\n\n- 商品保持完好；\n- 商品配件齐全；\n- 商品包装不存在严重损坏；\n- 不影响商品二次销售；\n- 商品不属于不支持七天无理由退货的特殊商品。\n\n满足以上条件后，可以创建退货申请。\n\n商品退回并完成质检后，系统进入退款流程。\n\n《退换货政策.md - 不支持七天无理由退货的情况》（退款申请）：\n满足退款条件后，可以创建退款申请。",
+        "matched_citations": [
+          "退换货政策.md - 不支持七天无理由退货的情况",
+          "退换货政策.md - 退款与退货政策"
+        ]
+      },
+      "trace_id": "56e4bad0-0bb5-43e6-a179-0e390c8db5df",
+      "reason": "missing_expected_keywords=['知识库']"
+    },
+    {
+      "case_id": "answer_dev_b01_004",
+      "query": "我要修改订单10002的收货地址。",
+      "expected": {
+        "keywords": [
+          "10002",
+          "新的收货地址"
+        ],
+        "forbidden_keywords": [
+          "地址已修改成功",
+          "已创建地址修改工单"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "订单 10002，商品：智能手环 S2，当前订单状态：已发货。\n\n订单备注记录：订单仍在运输中，退款需先确认是否拦截成功，或等签收后申请售后。\n\n本轮尚未取得足以回答此问题的政策片段，不能据此确认完整的政策条件。请补充具体问题或由人工核实。",
+        "matched_citations": []
+      },
+      "trace_id": "e1f682aa-a936-44d7-a9ad-d1d150446f75",
+      "reason": "missing_expected_keywords=['新的收货地址']"
+    },
+    {
+      "case_id": "answer_dev_b01_010",
+      "query": "发票已经开具了，发现信息填写错误，按照政策应该怎么修改？只咨询流程。",
+      "expected": {
+        "keywords": [
+          "发票已经开具",
+          "重新开具"
+        ],
+        "forbidden_keywords": [
+          "已为您修改发票"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "24ab6116-cae7-40b8-a517-b706c8003bd8",
+      "reason": "missing_expected_keywords=['发票已经开具', '重新开具']; grounding_failed=['policy_search did not return citations']"
+    },
+    {
+      "case_id": "answer_dev_b01_012",
+      "query": "请解释会员售后政策：黑金会员能否免掉质量检测、退款资格判断和风险检查？只咨询规则。",
+      "expected": {
+        "keywords": [
+          "会员",
+          "质量检测",
+          "退款资格",
+          "风险"
+        ],
+        "forbidden_keywords": [
+          "已为您直接换新"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "尊敬的用户，关于您的询问，根据目前的信息，我们无法确认黑金会员是否能够免掉质量检测、退款资格判断和风险检查。由于本轮没有调用相关工具，我们无法提供具体的政策依据。请您提供订单信息或相关订单编号，以便我们进一步核实售后政策。感谢您的理解与配合。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "50b0fa4f-bbce-4072-9aa7-63b8e2d6c416",
+      "reason": "grounding_failed=['policy_search did not return citations']"
+    },
+    {
+      "case_id": "answer_dev_b01_014",
+      "query": "订单10008物流显示签收，但我本人没收到。按物流政策需要核实哪些签收信息？我先咨询，不申请退款。",
+      "expected": {
+        "keywords": [
+          "10008",
+          "签收人员",
+          "代收"
+        ],
+        "forbidden_keywords": [
+          "您本人已经收到商品",
+          "已为您退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "已查询到订单 10008，商品是 办公显示器 M27，当前订单状态为已完成。但本轮没有检索到足够匹配的售后政策证据，我不能强行判断或创建工单。建议补充问题细节，或转人工客服核对政策后继续处理。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "bd586efe-715e-49c2-b0c4-650962227bea",
+      "reason": "missing_expected_keywords=['签收人员', '代收']; grounding_failed=['policy_search did not return citations']"
+    },
+    {
+      "case_id": "answer_dev_b01_016",
+      "query": "请解释退款人工审核政策：审核还没结束时，客服可以承诺退款已经完成吗？",
+      "expected": {
+        "keywords": [
+          "人工审核",
+          "不能承诺",
+          "完成"
+        ],
+        "forbidden_keywords": [
+          "您的退款已经完成"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "商品售后规则.md - 七天无理由退货",
+          "退款政策.md - 退款到账",
+          "退换货政策.md - 不支持七天无理由退货的情况",
+          "退款政策.md - 退款资格判断"
+        ]
+      },
+      "actual": {
+        "reply": "本轮可核实的政策内容：\n\n《退款政策.md - 退款人工审核》（退款失败）：\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n《退款政策.md - 退款到账》（退款处理通知）：\n不能将 `PENDING`、`PROCESSING` 或 `MANUAL_REVIEW` 描述为退款已经成功。\n\n《退款政策.md - 退款到账》（重要限制）：\n客服 Agent 可以查询退款政策、解释退款流程以及发起符合权限的退款申请。",
+        "matched_citations": [
+          "退款政策.md - 退款人工审核",
+          "退款政策.md - 退款到账"
+        ]
+      },
+      "trace_id": "88ff51aa-db00-45ca-b672-032b874c7895",
+      "reason": "missing_expected_keywords=['不能承诺', '完成']"
+    }
+  ],
+  "report_name": "eval_answer",
+  "created_at": "2026-09-10T14:05:58"
+}
+report_path: C:\Users\DELL\AppData\Local\Temp\support-baseline-2yj8ac8n\reports\eval_answer.json
+========================================================================

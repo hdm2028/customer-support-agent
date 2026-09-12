@@ -10,9 +10,65 @@ from app.storage.database import (
     update_order_in_db,
     update_refund_request_in_db,
 )
+from app.storage.transactions import lock_record, transaction
+import json
+
+
+def repair_missing_refund_events(limit: int = 100) -> dict:
+    """Repair legacy committed intents lacking any queue event, never re-pay.
+
+    Failed/dead-letter events are intentionally retained for explicit inspection;
+    they are not mistaken for absent events and duplicated.
+    """
+    import json
+    from app.mq.queue import publish_message
+    from app.storage.transactions import execute
+    if not 1 <= limit <= 100:
+        raise ValueError("limit must be between 1 and 100")
+    repaired = []
+    with transaction() as state:
+        refund_ref = "JSON_EXTRACT(m.payload, '$.refund_id')"
+        if state.mysql:
+            refund_ref = f"JSON_UNQUOTE({refund_ref})"
+        rows = execute("SELECT r.refund_id FROM refund_requests r WHERE r.status IN ('queued', 'pending_manual_review') "
+                       "AND NOT EXISTS (SELECT 1 FROM mq_messages m WHERE m.topic = ? AND " + refund_ref +
+                       " = r.refund_id) ORDER BY r.created_at LIMIT ?" + (" FOR UPDATE" if state.mysql else ""),
+                       (REFUND_CREATED_TOPIC, limit), fetch=True)
+        for row in rows:
+            locked = lock_record("refund_requests", "refund_id", row["refund_id"])
+            refund = locked["payload"] if isinstance(locked["payload"], dict) else json.loads(locked["payload"])
+            message = publish_message(REFUND_CREATED_TOPIC, {
+                "refund_id": refund["refund_id"], "order_id": refund["order_id"],
+                "user_id": refund.get("user_id"),
+                "review_required": refund["status"] == "pending_manual_review" or refund.get("eligibility", {}).get("review_required", False),
+            })
+            update_refund_request_in_db(refund["refund_id"], {"mq_message_id": message["message_id"]})
+            state.invalidate_keys.add(f"idempotency:refund_apply:{refund['order_id']}")
+            repaired.append(refund["refund_id"])
+    return {"success": True, "repaired_count": len(repaired), "refund_ids": repaired}
 
 
 def process_refund_message(message: dict) -> dict:
+    # Lock before reading state. Refund, order, notification and ack either all
+    # commit or all roll back; an expired lease can safely retry after a crash.
+    with transaction() as state:
+        stored = lock_record("mq_messages", "message_id", message["message_id"])
+        if not stored:
+            return {"success": False, "business_executed": False, "action": "message_not_found"}
+        if stored["attempts"] != message.get("attempts", 0):
+            return {"success": True, "business_executed": False, "duplicate_ignored": True, "action": "stale_delivery"}
+        if stored["status"] == "done":
+            return {"success": True, "business_executed": False, "duplicate_ignored": True,
+                    "action": "message_already_done"}
+        lock_record("refund_requests", "refund_id", message["payload"]["refund_id"])
+        result = _process_refund_message(message)
+        order = result.get("refund_request", {}).get("order_id")
+        if order:
+            state.invalidate_keys.add(f"idempotency:refund_apply:{order}")
+        return result
+
+
+def _process_refund_message(message: dict) -> dict:
     """
     处理退款创建消息。
 
@@ -36,6 +92,12 @@ def process_refund_message(message: dict) -> dict:
         return result
 
     current_status = refund_request.get("status")
+
+    if current_status in {"cancelled", "canceled", "rejected", "failed", "refund_succeeded", "refund_unknown", "payment_submitting"}:
+        result = {"success": True, "action": "refund_event_noop", "business_executed": False,
+                  "duplicate_ignored": True, "refund_request": refund_request}
+        ack_message(message_id, result)
+        return result
 
     # 已经进入人工审核，不再执行自动退款处理。
     if current_status == "pending_manual_review":
@@ -61,7 +123,7 @@ def process_refund_message(message: dict) -> dict:
         return result
 
     # 当前消息要求进入人工审核。
-    if payload.get("review_required"):
+    if payload.get("review_required") and not refund_request.get("review_approved"):
         if current_status != "queued":
             result = {
                 "success": True,
@@ -148,10 +210,16 @@ def process_refund_message(message: dict) -> dict:
 
     # 核心业务状态迁移：
     # queued -> refund_processing
+    order_row = lock_record("orders", "order_id", refund_request["order_id"])
+    if order_row is None:
+        raise RuntimeError("Refund order is missing; transaction rolled back")
+    original_order = order_row["payload"] if isinstance(order_row["payload"], dict) else json.loads(order_row["payload"])
     updated_refund = update_refund_request_in_db(
         refund_id,
         {
             "status": "refund_processing",
+            "order_before_refund": {key: original_order.get(key) for key in
+                                    ("order_status", "after_sales_status", "last_refund_id", "shipping_status", "signed_date")},
             "processor_note": (
                 "退款任务已被业务处理服务消费，"
                 "订单状态已更新为退款处理中。"
@@ -167,6 +235,8 @@ def process_refund_message(message: dict) -> dict:
             "last_refund_id": refund_id,
         },
     )
+    if updated_order is None:
+        raise RuntimeError("Refund order is missing; transaction rolled back")
 
     notification = save_notification_to_db(
         {
@@ -213,11 +283,11 @@ def process_refund_tasks(limit: int = 10) -> dict:
                 "error_message": str(error),
             }
 
-            fail_message(message["message_id"], result)
+            fail_message(message["message_id"], result, attempts=message.get("attempts"))
             results.append(result)
 
     return {
-        "success": True,
+        "success": all(result.get("success", False) for result in results),
         "processed": len(results),
         "results": results,
     }

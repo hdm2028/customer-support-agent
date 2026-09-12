@@ -1,0 +1,109 @@
+.....................................s......................................................FF........................... [ 50%]
+....................................ssssss.......s.........s..... [ 77%]
+......................................................                   [100%]
+================================== FAILURES ===================================
+_ PaymentReconciliationTests.test_submit_rechecks_confirmed_payment_before_dispatch (payment_status='unpaid') _
+tests\test_payment_reconciliation.py:86: in test_submit_rechecks_confirmed_payment_before_dispatch
+    self.gateway.submit_refund.assert_not_called()
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:940: in assert_not_called
+    raise AssertionError(msg)
+E   AssertionError: Expected 'submit_refund' to not have been called. Called 1 times.
+E   Calls: [call(RefundPaymentRequest(refund_id='R-8137dd0acf68', order_id='10009', amount=Decimal('899.00'), currency='CNY', idempotency_key='refund:R-8137dd0acf68'))].
+_ PaymentReconciliationTests.test_submit_rechecks_confirmed_payment_before_dispatch (payment_status='pending') _
+ValueError: 退款未就绪或结果尚待核实，请查询状态，不能重复提交
+
+During handling of the above exception, another exception occurred:
+tests\test_payment_reconciliation.py:84: in test_submit_rechecks_confirmed_payment_before_dispatch
+    with self.assertRaisesRegex(ValueError, "支付"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: "支付" does not match "退款未就绪或结果尚待核实，请查询状态，不能重复提交"
+_ PaymentReconciliationTests.test_submit_rechecks_confirmed_payment_before_dispatch (payment_status='failed') _
+ValueError: 退款未就绪或结果尚待核实，请查询状态，不能重复提交
+
+During handling of the above exception, another exception occurred:
+tests\test_payment_reconciliation.py:84: in test_submit_rechecks_confirmed_payment_before_dispatch
+    with self.assertRaisesRegex(ValueError, "支付"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: "支付" does not match "退款未就绪或结果尚待核实，请查询状态，不能重复提交"
+_ PaymentReconciliationTests.test_submit_rechecks_confirmed_payment_before_dispatch (payment_status='unknown') _
+ValueError: 退款未就绪或结果尚待核实，请查询状态，不能重复提交
+
+During handling of the above exception, another exception occurred:
+tests\test_payment_reconciliation.py:84: in test_submit_rechecks_confirmed_payment_before_dispatch
+    with self.assertRaisesRegex(ValueError, "支付"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: "支付" does not match "退款未就绪或结果尚待核实，请查询状态，不能重复提交"
+_ PaymentReconciliationTests.test_submit_rechecks_confirmed_payment_before_dispatch (payment_status=None) _
+ValueError: 退款未就绪或结果尚待核实，请查询状态，不能重复提交
+
+During handling of the above exception, another exception occurred:
+tests\test_payment_reconciliation.py:84: in test_submit_rechecks_confirmed_payment_before_dispatch
+    with self.assertRaisesRegex(ValueError, "支付"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: "支付" does not match "退款未就绪或结果尚待核实，请查询状态，不能重复提交"
+_ RefundPaymentPreconditionTests.test_confirmed_payment_can_retry_after_initial_rejection _
+tests\test_payment_reconciliation.py:166: in test_confirmed_payment_can_retry_after_initial_rejection
+    self.assertFalse(refund_tool.refund_apply("10009", "申请退款").success)
+E   AssertionError: True is not false
+_ RefundPaymentPreconditionTests.test_stale_paid_snapshot_is_rechecked_in_creation_transaction _
+tests\test_payment_reconciliation.py:159: in test_stale_paid_snapshot_is_rechecked_in_creation_transaction
+    self.assertFalse(result.success)
+E   AssertionError: True is not false
+_ RefundPaymentPreconditionTests.test_unconfirmed_payment_never_creates_refund_or_event (payment_status='pending') _
+tests\test_payment_reconciliation.py:147: in test_unconfirmed_payment_never_creates_refund_or_event
+    self.assertFalse(result.success)
+E   AssertionError: True is not false
+_ RefundPaymentPreconditionTests.test_unconfirmed_payment_never_creates_refund_or_event (payment_status='failed') _
+tests\test_payment_reconciliation.py:147: in test_unconfirmed_payment_never_creates_refund_or_event
+    self.assertFalse(result.success)
+E   AssertionError: True is not false
+_ RefundPaymentPreconditionTests.test_unconfirmed_payment_never_creates_refund_or_event (payment_status='unknown') _
+tests\test_payment_reconciliation.py:147: in test_unconfirmed_payment_never_creates_refund_or_event
+    self.assertFalse(result.success)
+E   AssertionError: True is not false
+_ RefundPaymentPreconditionTests.test_unconfirmed_payment_never_creates_refund_or_event (payment_status='') _
+tests\test_payment_reconciliation.py:147: in test_unconfirmed_payment_never_creates_refund_or_event
+    self.assertFalse(result.success)
+E   AssertionError: True is not false
+_ RefundPaymentPreconditionTests.test_unconfirmed_payment_never_creates_refund_or_event (payment_status=None) _
+tests\test_payment_reconciliation.py:147: in test_unconfirmed_payment_never_creates_refund_or_event
+    self.assertFalse(result.success)
+E   AssertionError: True is not false
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-cq8gkipf\main.py:179: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SUBFAILED(payment_status='unpaid') tests/test_payment_reconciliation.py::PaymentReconciliationTests::test_submit_rechecks_confirmed_payment_before_dispatch
+SUBFAILED(payment_status='pending') tests/test_payment_reconciliation.py::PaymentReconciliationTests::test_submit_rechecks_confirmed_payment_before_dispatch
+SUBFAILED(payment_status='failed') tests/test_payment_reconciliation.py::PaymentReconciliationTests::test_submit_rechecks_confirmed_payment_before_dispatch
+SUBFAILED(payment_status='unknown') tests/test_payment_reconciliation.py::PaymentReconciliationTests::test_submit_rechecks_confirmed_payment_before_dispatch
+SUBFAILED(payment_status=None) tests/test_payment_reconciliation.py::PaymentReconciliationTests::test_submit_rechecks_confirmed_payment_before_dispatch
+FAILED tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_confirmed_payment_can_retry_after_initial_rejection
+FAILED tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_stale_paid_snapshot_is_rechecked_in_creation_transaction
+SUBFAILED(payment_status='pending') tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_unconfirmed_payment_never_creates_refund_or_event
+SUBFAILED(payment_status='failed') tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_unconfirmed_payment_never_creates_refund_or_event
+SUBFAILED(payment_status='unknown') tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_unconfirmed_payment_never_creates_refund_or_event
+SUBFAILED(payment_status='') tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_unconfirmed_payment_never_creates_refund_or_event
+SUBFAILED(payment_status=None) tests/test_payment_reconciliation.py::RefundPaymentPreconditionTests::test_unconfirmed_payment_never_creates_refund_or_event
+12 failed, 229 passed, 9 skipped, 3 warnings, 20 subtests passed in 6.18s

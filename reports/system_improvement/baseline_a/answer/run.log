@@ -1,0 +1,100 @@
+========================================================================
+Answer Evaluation
+========================================================================
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-6lbbo6nk\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 4,
+  "passed_count": 1,
+  "failed_count": 3,
+  "deterministic_metrics": {
+    "correctness": 0.25,
+    "relevance": 1.0,
+    "completeness": 0.25,
+    "faithfulness_groundedness": 0.0,
+    "hallucination_rate": 0.0
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "ad6d4eef-75da-476d-ae82-d9ae172a0d32",
+      "reason": "missing_expected_keywords=['退款', '订单']; grounding_failed=['policy_search did not return citations']"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "6ea793ef-35fd-4e1c-b2a5-cad6c80ed698",
+      "reason": "missing_expected_keywords=['到账', '支付渠道']; grounding_failed=['policy_search did not return citations']"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "2d1d9ec2-df7c-4823-a5b3-5d09837d041d",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']"
+    }
+  ],
+  "report_name": "eval_answer",
+  "created_at": "2026-09-08T17:10:53"
+}
+report_path: C:\Users\DELL\AppData\Local\Temp\support-baseline-6lbbo6nk\reports\eval_answer.json
+========================================================================

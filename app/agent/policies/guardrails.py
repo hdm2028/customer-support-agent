@@ -1,3 +1,5 @@
+from app.domain.request_signals import asserted_mentions
+
 RISKY_ACTION_KEYWORDS = [
     "直接退款",
     "马上退款",
@@ -27,4 +29,4 @@ def check_user_input(message: str) -> tuple[bool, str | None]:
 
 
 def contains_risky_action(message: str) -> bool:
-    return any(keyword in message for keyword in RISKY_ACTION_KEYWORDS)
+    return bool(asserted_mentions(message, RISKY_ACTION_KEYWORDS))

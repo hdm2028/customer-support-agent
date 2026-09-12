@@ -1,11 +1,13 @@
 from collections.abc import AsyncGenerator
 
 from app.agent.agents import AfterSalesAgent, CustomerAgent, RiskAgent
-from app.agent.routing.router_v2 import route_tools_v2
+from app.agent.routing.router_v2 import build_tool_plan, route_tools_v2
+from app.agent.routing.pending_task import can_retrieve_policy_while_clarifying
 from app.agent.state import AgentResult, AgentState
 from app.agent.tools.tool_results import get_tool_result
 from app.agent.tools.tool_validation import validate_tool_chain, validate_tool_plan
 from app.core.schemas import RouteDecision, ToolResult
+from app.domain.refund_policy import RefundPaymentNotConfirmed, require_confirmed_refund_payment, existing_after_sales_reason
 from app.observability.tracing import add_trace_event, timed_step
 from app.tools.executor import add_tool_failure_trace
 
@@ -56,7 +58,7 @@ class AgentOrchestrator:
     def should_skip_agents(self, route: RouteDecision) -> bool:
         return (
             route.blocked_by_guardrail
-            or route.need_clarification
+            or (route.need_clarification and not can_retrieve_policy_while_clarifying(route))
             or (route.handoff_required and not route.order_id and not route.need_handoff)
         )
 
@@ -147,48 +149,6 @@ class AgentOrchestrator:
             or risk.get("review_required")
             or refund_requires_review
         )
-    def decide_next_agent(self, state: AgentState) -> str | None:
-        if state.blocked:
-            return None
-
-        if state.next_agent:
-            next_agent = state.next_agent
-            state.next_agent = None
-            return next_agent
-
-        route = state.route
-
-        if route.need_order and route.order_id and state.order is None:
-            return "after_sales_agent"
-
-        if route.need_policy and state.policy is None:
-            return "customer_agent"
-
-        if route.need_risk_check and state.risk is None:
-            return "risk_agent"
-
-        if self.needs_manual_review(state):
-            return "after_sales_agent"
-
-        if self.manual_review_blocks_auto_refund(state):
-            if route.need_handoff and state.handoff is None:
-                return "after_sales_agent"
-
-            return None
-
-        if route.need_refund_request and state.refund is None:
-            return "after_sales_agent"
-
-        if route.need_ticket and state.ticket is None:
-            refund_result = get_tool_result(state.tool_results, "refund_apply")
-            if not route.need_refund_request or (refund_result and refund_result.success):
-                return "after_sales_agent"
-
-        if route.need_handoff and state.handoff is None:
-            return "after_sales_agent"
-
-        return None
-
     def dispatch_agent(self, agent_key: str, state: AgentState) -> AgentResult:
         agent = self.agents_by_key[agent_key]
         state.current_agent = agent_key
@@ -244,6 +204,30 @@ class AgentOrchestrator:
                 self.block_execution(state, "order_lookup_failed")
                 return
 
+            if tool_result.tool_name == "order_lookup" and tool_result.success:
+                self.apply_refund_preconditions(state)
+
+            if (tool_result.tool_name == "refund_apply" and tool_result.success
+                    and isinstance(tool_result.result, dict) and tool_result.result.get("idempotent_replay")):
+                self.record_refund_precondition(state, {
+                    "kind": "existing_refund", "reason": "已有退款申请，本轮不重复创建。",
+                    "existing_refund": {key: tool_result.result.get(key) for key in ("refund_id", "order_id", "status")},
+                    "origin": "refund_apply_replay",
+                })
+
+            if (tool_result.tool_name == "create_manual_review" and tool_result.success
+                    and isinstance(tool_result.result, dict) and tool_result.result.get("idempotent_replay")):
+                review = tool_result.result
+                if review.get("existing_refund"):
+                    self.record_refund_precondition(state, {"kind": "existing_refund", "origin": "review_creation_check",
+                        "supplement_recorded": review.get("supplement_recorded", False),
+                        "existing_refund": review["existing_refund"], "reason": "已有退款申请，无需再创建审核。"})
+                elif review.get("review_type") == "refund":
+                    self.record_refund_precondition(state, {"kind": "existing_refund_review", "origin": "review_creation_check",
+                        "supplement_recorded": review.get("supplement_recorded", False),
+                        "existing_review": {key: review.get(key) for key in ("review_id", "status")},
+                        "reason": "已有待处理退款审核，本轮不重复创建。"})
+
             if tool_result.tool_name == "policy_search" and not tool_result.success:
                 self.block_execution(state, "policy_search_failed")
                 return
@@ -270,6 +254,43 @@ class AgentOrchestrator:
             ):
                 self.block_execution(state, "tool_permission_denied")
                 return
+
+    def apply_refund_preconditions(self, state: AgentState) -> None:
+        if not state.route.need_refund_request or not isinstance(state.order, dict):
+            return
+        existing = state.order.get("active_refund")
+        if existing:
+            self.record_refund_precondition(state, {"kind": "existing_refund", "existing_refund": existing,
+                                                   "reason": "已有退款申请，本轮不重复创建。"})
+            return
+        try:
+            require_confirmed_refund_payment(state.order)
+        except RefundPaymentNotConfirmed as error:
+            self.record_refund_precondition(state, {"kind": "payment_not_confirmed", "reason": str(error)})
+            return
+        reason = existing_after_sales_reason(state.order)
+        if reason:
+            self.record_refund_precondition(state, {"kind": "order_after_sales", "reason": reason})
+
+    def record_refund_precondition(self, state: AgentState, decision: dict) -> None:
+        order = state.order or {}
+        decision = {"can_create": False, "order_id": state.order_id,
+                    "payment_status": order.get("payment_status"), "order_status": order.get("order_status"),
+                    "origin": "order_lookup", **decision}
+        # An internal business decision, not an external call or dependency failure.
+        state.add_tool_result(ToolResult(tool_name="refund_decision", success=True, result=decision))
+        previous_plan = list(state.route.tool_plan)
+        for flag in ("need_refund_request", "need_risk_check", "need_ticket",
+                     "manual_review_required", "need_handoff", "handoff_required"):
+            setattr(state.route, flag, False)
+        state.route.handoff_reason = None
+        state.route.tool_plan = build_tool_plan(state.route)
+        state.route.agent_plan = self.build_agent_plan(state.route)
+        if state.trace:
+            add_trace_event(state.trace, event_type="refund_precondition", data={
+                **decision, "previous_tool_plan": previous_plan,
+                "effective_tool_plan": list(state.route.tool_plan),
+            })
 
     def block_execution(self, state: AgentState, reason: str) -> None:
         state.block(reason)
@@ -339,27 +360,9 @@ class AgentOrchestrator:
                 data=self.describe_plan(route),
             )
 
-        if self.should_skip_agents(route):
-            return state
+        from app.agent.harness import AgentHarness
 
-        plan_validation_result = self.validate_route_plan(route, trace)
-        if plan_validation_result:
-            state.add_tool_result(plan_validation_result)
-            return state
-
-        for _ in range(12):
-            next_agent = self.decide_next_agent(state)
-
-            if next_agent is None:
-                break
-
-            self.dispatch_agent(next_agent, state)
-        else:
-            self.block_execution(state, "agent_loop_guard_reached")
-
-        self.append_chain_validation_result(state)
-
-        return state
+        return AgentHarness(self).run(state)
 
     def run(
         self,

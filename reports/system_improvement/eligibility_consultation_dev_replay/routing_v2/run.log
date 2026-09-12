@@ -1,0 +1,15 @@
+# Routing V2 Evaluation
+
+total_cases: 24
+passed_count: 19
+failed_count: 5
+routing_accuracy: 0.7917
+semantic_accuracy: 0.9583
+intent_accuracy: 1.0
+action_type_accuracy: 1.0
+topic_accuracy: 0.9583
+route_accuracy: 0.8333
+clarification_accuracy: 0.8182
+side_effect_false_positive_count: 0
+llm_fallback_count: 0
+report_path: C:\Users\DELL\AppData\Local\Temp\support-baseline-7me77mc8\reports\eval_routing_v2.json

@@ -1,5 +1,39 @@
 from app.agent.routing.parsing import extract_order_id
 from app.core.schemas import RouteDecision
+import re
+
+
+def is_address_question(message: str) -> bool:
+    return bool(re.search(r"[?？]|是否|能否|能不能|可不可以|怎么|如何|为什么|什么|吗[。！!\s]*$", message))
+
+
+def cancels_pending_request(message: str) -> bool:
+    cleaned = re.sub(r"[\s，,。！!；;]", "", message)
+    return cleaned in {"算了", "算了取消申请", "取消申请", "取消刚才的申请", "取消刚才的操作",
+                       "不申请了", "先不退了", "不用处理了", "不改了", "先不改了"}
+
+
+def pending_message_kind(message: str, pending: dict | None) -> str:
+    """Merge only slot values; new instructions must reach the router intact."""
+    if not pending:
+        return "new"
+    if cancels_pending_request(message):
+        return "cancel"
+    missing = pending.get("missing_slots", [])
+    explicit_order = re.search(r"订单(?:号)?\s*(?:是|为|[:：])?\s*(\d{4,})", message)
+    previous_order = (pending.get("slots") or {}).get("order_id")
+    if explicit_order and previous_order and explicit_order.group(1) != previous_order:
+        return "replace"
+    if "order_id" in missing and re.fullmatch(r"\s*(?:订单(?:号)?\s*(?:是|为|:|：)?\s*)?\d{4,}[。\s]*", message):
+        return "slots"
+    if "new_address" in missing:
+        # A follow-up question is a new request, not a free-text address value.
+        if is_address_question(message):
+            return "replace"
+        business_change = any(word in message for word in ("退款", "退货", "投诉", "取消", "不用", "不改", "不想", "先别"))
+        if not business_change and extract_new_address(message, pending):
+            return "slots"
+    return "replace"
 
 
 ADDRESS_CHANGE_KEYWORDS = [
@@ -20,6 +54,7 @@ def is_order_id_only_message(user_message: str) -> bool:
 
 
 def is_address_change_request(user_message: str) -> bool:
+    user_message = re.sub(r"(?:不用|不再|先别|别|不)(?:修改|更改|改)(?:收货)?地址", "", user_message)
     return any(
         keyword in user_message
         for keyword in ADDRESS_CHANGE_KEYWORDS
@@ -34,6 +69,9 @@ def extract_new_address(
     user_message: str,
     pending_task: dict | None = None,
 ) -> str | None:
+    if is_address_question(user_message):
+        return None
+
     address_prefixes = [
         "新地址是",
         "新地址为",
@@ -109,6 +147,10 @@ def collect_slots(
         user_message,
         pending_task,
     )
+
+    if pending_task and new_address and not re.search(r"订单(?:号)?\s*(?:是|为|[:：])?\s*\d{4,}", user_message):
+        # House/unit numbers inside an address must not replace the bound order.
+        order_id = None
 
     if order_id:
         slots["order_id"] = order_id
@@ -221,15 +263,33 @@ def build_clarification_question(
     return "请您补充必要信息后，我再继续处理。"
 
 
+def can_retrieve_policy_while_clarifying(route: RouteDecision) -> bool:
+    """Only explain eligibility policy while waiting for an order number."""
+    return bool(
+        route.need_clarification and route.intent == "return_refund"
+        and route.action_type == "query" and route.topic == "refund_eligibility"
+        and route.need_policy and not route.order_id
+        and not any((route.blocked_by_guardrail, route.need_order, route.need_ticket,
+                     route.need_refund_request, route.need_risk_check,
+                     route.manual_review_required, route.need_handoff, route.handoff_required))
+    )
+
+
 def apply_slot_requirements(
     route: RouteDecision,
     required_slots: list[str],
     slots: dict,
-) -> tuple[RouteDecision, list[str]]:
+) -> tuple[RouteDecision, list[str], list[str]]:
     if route.blocked_by_guardrail:
-        return route, []
+        return route, [], []
 
-    final_required_slots = list(required_slots)
+    # Pre-routing keywords are only hints. A consultation must never inherit
+    # execution-only slots, including from a previously pending operation.
+    final_required_slots = []
+    if route.action_type == "execute":
+        final_required_slots = [slot for slot in required_slots if slot not in {"order_id", "new_address"}]
+        if route.intent == "address_change":
+            final_required_slots.extend(["order_id", "new_address"])
 
     if (
         route.need_clarification
@@ -251,11 +311,11 @@ def apply_slot_requirements(
             )
         )
 
-        # 当前 Router 的规则是：
-        # 只要还需要用户补充信息，本轮就不执行任何业务工具。
-        route.tool_plan = []
+        # Preserve the missing-order task; consultation may retrieve policy,
+        # but may not execute the user's potential future business operation.
+        route.tool_plan = ["policy_search"] if can_retrieve_policy_while_clarifying(route) else []
 
-    return route, missing_slots
+    return route, missing_slots, final_required_slots
 
 
 def should_store_pending_task(

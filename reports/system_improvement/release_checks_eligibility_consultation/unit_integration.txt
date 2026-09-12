@@ -1,0 +1,73 @@
+................................................s.........F [ 21%]
+.F............................................................................................................ssss [ 61%]
+ss.......s.........s.................................... [ 81%]
+s.....s............................................                    [100%]
+================================== FAILURES ===================================
+_ GroundedReplyTests.test_stream_buffers_unvalidated_output_and_never_exposes_generated_claim _
+tests\test_grounded_reply.py:88: in test_stream_buffers_unvalidated_output_and_never_exposes_generated_claim
+    events, state = asyncio.run(run())
+                    ^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests\test_grounded_reply.py:86: in run
+    events = [event async for event in stream_llm_reply(state, "stream-test")]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\agent\entry\stream_runner.py:167: in stream_llm_reply
+    reply = add_order_scope_note(reply, state["route"], state["tool_results"])
+                                        ^^^^^^^^^^^^^^
+E   KeyError: 'route'
+_ GroundedReplyTests.test_valid_stream_and_sync_render_the_same_verified_evidence _
+tests\test_grounded_reply.py:103: in test_valid_stream_and_sync_render_the_same_verified_evidence
+    state, events = asyncio.run(run())
+                    ^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests\test_grounded_reply.py:101: in run
+    events = [event async for event in stream_llm_reply(state, "stream-valid")]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\agent\entry\stream_runner.py:167: in stream_llm_reply
+    reply = add_order_scope_note(reply, state["route"], state["tool_results"])
+                                        ^^^^^^^^^^^^^^
+E   KeyError: 'route'
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-zgfu6h45\main.py:193: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_grounded_reply.py::GroundedReplyTests::test_stream_buffers_unvalidated_output_and_never_exposes_generated_claim
+FAILED tests/test_grounded_reply.py::GroundedReplyTests::test_valid_stream_and_sync_render_the_same_verified_evidence
+2 failed, 267 passed, 11 skipped, 3 warnings, 61 subtests passed in 9.52s

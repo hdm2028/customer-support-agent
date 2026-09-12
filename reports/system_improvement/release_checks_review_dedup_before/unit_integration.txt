@@ -1,0 +1,51 @@
+.........................................s.......................... [ 26%]
+................................................. [ 45%]
+.............................................ssssss.......s...... [ 70%]
+...s......................F....sFF................................ [ 96%]
+.........                                                                [100%]
+================================== FAILURES ===================================
+_ ReviewResolutionTests.test_concurrent_first_refund_reviews_create_one_pending_item _
+tests\test_review_resolution.py:126: in test_concurrent_first_refund_reviews_create_one_pending_item
+    self.assertEqual(len({r["review_id"] for r in results}), 1)
+E   AssertionError: 4 != 1
+_ ReviewResolutionTests.test_repeated_refund_review_returns_same_pending_item _
+tests\test_review_resolution.py:114: in test_repeated_refund_review_returns_same_pending_item
+    self.assertEqual(second["review_id"], first["review_id"])
+E   AssertionError: 'H-ae97926407fc' != 'H-ed3dee7ba841'
+E   - H-ae97926407fc
+E   + H-ed3dee7ba841
+_ ReviewResolutionTests.test_review_after_approval_reports_existing_refund_without_new_review _
+tests\test_review_resolution.py:135: in test_review_after_approval_reports_existing_refund_without_new_review
+    self.assertEqual(result["status"], "not_required")
+E   AssertionError: 'pending_review' != 'not_required'
+E   - pending_review
+E   + not_required
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-_28vbxo7\main.py:179: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_review_resolution.py::ReviewResolutionTests::test_concurrent_first_refund_reviews_create_one_pending_item
+FAILED tests/test_review_resolution.py::ReviewResolutionTests::test_repeated_refund_review_returns_same_pending_item
+FAILED tests/test_review_resolution.py::ReviewResolutionTests::test_review_after_approval_reports_existing_refund_without_new_review
+3 failed, 244 passed, 10 skipped, 3 warnings, 40 subtests passed in 7.21s

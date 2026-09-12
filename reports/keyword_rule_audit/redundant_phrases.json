@@ -1,0 +1,72 @@
+[
+  {
+    "file": "app/agent/routing/decision.py",
+    "line": 45,
+    "constant": "REVIEW_BYPASS_PATTERNS",
+    "redundant_phrase": "跳过审核流程",
+    "covered_by": "跳过审核"
+  },
+  {
+    "file": "app/agent/routing/decision.py",
+    "line": 45,
+    "constant": "REVIEW_BYPASS_PATTERNS",
+    "redundant_phrase": "绕过审核流程",
+    "covered_by": "绕过审核"
+  },
+  {
+    "file": "app/agent/routing/decision.py",
+    "line": 45,
+    "constant": "REVIEW_BYPASS_PATTERNS",
+    "redundant_phrase": "别走审核流程",
+    "covered_by": "别走审核"
+  },
+  {
+    "file": "app/agent/routing/decision.py",
+    "line": 45,
+    "constant": "REVIEW_BYPASS_PATTERNS",
+    "redundant_phrase": "不要走审核流程",
+    "covered_by": "不要走审核"
+  },
+  {
+    "file": "app/agent/policies/fallback_policy.py",
+    "line": 1,
+    "constant": "ORDER_ID_REQUIRED_KEYWORDS",
+    "redundant_phrase": "我的订单",
+    "covered_by": "订单"
+  },
+  {
+    "file": "app/agent/policies/fallback_policy.py",
+    "line": 1,
+    "constant": "ORDER_ID_REQUIRED_KEYWORDS",
+    "redundant_phrase": "退货仓库",
+    "covered_by": "退货"
+  },
+  {
+    "file": "app/agent/policies/fallback_policy.py",
+    "line": 1,
+    "constant": "ORDER_ID_REQUIRED_KEYWORDS",
+    "redundant_phrase": "修改地址",
+    "covered_by": "改地址"
+  },
+  {
+    "file": "app/agent/policies/fallback_policy.py",
+    "line": 43,
+    "constant": "RISKY_OPERATION_KEYWORDS",
+    "redundant_phrase": "修改地址",
+    "covered_by": "改地址"
+  },
+  {
+    "file": "app/agent/policies/fallback_policy.py",
+    "line": 57,
+    "constant": "RISKY_ACTION_KEYWORDS",
+    "redundant_phrase": "修改地址",
+    "covered_by": "改地址"
+  },
+  {
+    "file": "app/agent/routing/conversation_context.py",
+    "line": 5,
+    "constant": "ISSUE_CONTEXT_KEYWORDS",
+    "redundant_phrase": "修改地址",
+    "covered_by": "改地址"
+  }
+]

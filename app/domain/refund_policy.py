@@ -1,7 +1,28 @@
 from datetime import datetime
 
 from app.domain.risk_policy import evaluate_refund_risk
+from app.domain.request_signals import asserted_mentions
 from app.storage.database import get_customer_profile_from_db
+
+
+class RefundPaymentNotConfirmed(ValueError):
+    """The order has no confirmed payment from which to create a refund."""
+
+
+def require_confirmed_refund_payment(order: dict) -> None:
+    if order.get("payment_status") == "unpaid" or any(
+        status in (order.get("order_status") or "") for status in ("待支付", "待付款")
+    ):
+        raise RefundPaymentNotConfirmed("订单尚未支付，不会产生退款；用户可自行取消待支付订单。")
+    if order.get("payment_status") != "paid":
+        raise RefundPaymentNotConfirmed("订单尚未确认支付成功，暂不能创建或提交退款；请先核实支付结果。")
+
+
+def existing_after_sales_reason(order: dict) -> str | None:
+    status = order.get("order_status") or ""
+    if "退货审核中" in status or "退款" in status:
+        return "订单已有售后或退款流程在处理中，不能重复创建退款申请。"
+    return None
 
 
 def parse_business_date(value: str | None) -> datetime | None:
@@ -20,23 +41,20 @@ def parse_business_date(value: str | None) -> datetime | None:
 
 
 def is_quality_or_fault_request(user_request: str) -> bool:
-    return any(
-        keyword in user_request
-        for keyword in ["质量问题", "坏了", "故障", "不能用", "无法使用", "破损", "少件"]
-    )
+    return bool(asserted_mentions(user_request, ["质量问题", "坏了", "故障", "不能用", "无法使用", "破损", "少件"]))
 
 
 def infer_refund_reason(user_request: str) -> str:
     if is_quality_or_fault_request(user_request):
         return "quality_issue"
 
-    if "未收到" in user_request or "没收到" in user_request:
+    if asserted_mentions(user_request, ["未收到", "没收到"]):
         return "not_received"
 
-    if "不想要" in user_request or "不要了" in user_request or "七天无理由" in user_request:
+    if asserted_mentions(user_request, ["不想要", "不要了", "七天无理由"]):
         return "no_reason_return"
 
-    if "重复扣款" in user_request or "支付异常" in user_request or "扣款" in user_request:
+    if asserted_mentions(user_request, ["重复扣款", "支付异常", "扣款"]):
         return "payment_issue"
 
     return "refund_request"
@@ -58,6 +76,12 @@ def evaluate_refund_eligibility(
 ) -> dict:
     """判断退款申请是否可以进入自动业务流。"""
 
+    try:
+        require_confirmed_refund_payment(order)
+    except RefundPaymentNotConfirmed as error:
+        return {"eligible": False, "reason": str(error),
+                "refund_reason": infer_refund_reason(user_request), "review_required": False}
+
     if risk_assessment is None:
         profile = get_customer_profile_from_db(order.get("user_id"))
         risk_assessment = evaluate_refund_risk(order, profile, user_request)
@@ -69,18 +93,11 @@ def evaluate_refund_eligibility(
     signed_days = days_since_signed(order)
     return_window_days = int(order.get("return_window_days") or 0)
 
-    if order.get("payment_status") == "unpaid" or "待支付" in order_status:
+    existing_reason = existing_after_sales_reason(order)
+    if existing_reason:
         return {
             "eligible": False,
-            "reason": "订单尚未支付，不会产生退款；用户可自行取消待支付订单。",
-            "refund_reason": reason,
-            "review_required": False,
-        }
-
-    if "退货审核中" in order_status or "退款" in order_status:
-        return {
-            "eligible": False,
-            "reason": "订单已有售后或退款流程在处理中，不能重复创建退款申请。",
+            "reason": existing_reason,
             "refund_reason": reason,
             "review_required": False,
         }

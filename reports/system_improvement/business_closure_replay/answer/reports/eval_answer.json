@@ -1,0 +1,245 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-9rh0a_j4\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 4,
+  "passed_count": 1,
+  "failed_count": 3,
+  "deterministic_metrics": {
+    "correctness": 0.5,
+    "relevance": 1.0,
+    "completeness": 0.5,
+    "faithfulness_groundedness": 0.6667,
+    "hallucination_rate": 0.25
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "商品售后规则.md - 七天无理由退货"
+        ]
+      },
+      "actual": {
+        "reply": "根据知识库来源《退款政策.md - 退款人工审核》：经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n## 退款到账\n\n退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理 根据知识库来源《商品售后规则.md - 七天无理由退货》：品满足退货条件后，再进入对应退货流程。\n\n## 换新\n\n用户要求换新时，需要判断商品是否符合对应换新条件。\n\n对于需要质量检测的商品，应先完成检测。\n\n不能仅因为商品出现故障、用户是高级会员或者历史上存在类似换新案例，就直接承诺换新。\n\n具体换新条件以当前有效的商品售后政策和检测结果为准。\n\n## 退款\n\n商品售后处理最终涉及退款时，应按照《退款政策》继续执行。\n\n商品售后规则负责判断当前问题应该进入哪种售后处理路径，不负责直接认定退款已经成功。\n\n退款申请创建、退款状态、人工审核以及退款到账等规则以《退款政策》为准。\n\n## 投诉与争议\n\n用户对商品售后",
+        "matched_citations": [
+          "退款政策.md - 退款人工审核",
+          "商品售后规则.md - 七天无理由退货"
+        ]
+      },
+      "trace_id": "8cbb2b9c-4eac-4bac-886e-7fa3e0da9c0c",
+      "reason": "missing_expected_keywords=['订单']"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "退换货政策.md - 退款人工审核"
+        ]
+      },
+      "actual": {
+        "reply": "根据知识库来源《退款政策.md - 退款人工审核》：经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n## 退款到账\n\n退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理 根据知识库来源《退换货政策.md - 退款人工审核》：时间内存在多次退款行为；\n- 订单信息存在异常；\n- 风险系统判定为高风险；\n- 自动退款流程无法确认处理结果。\n\n进入人工审核并不代表退款一定失败。\n\n最终结果以人工审核结果为准。\n\n## 退款到账时间\n\n退款成功后，实际到账时间可能受到原支付渠道影响。\n\n平台完成退款操作不代表资金一定立即到账。\n\n如果退款状态已经显示成功，但用户长时间未收到退款，可以进一步查询支付渠道处理状态。\n\n## 重要限制\n\n客服不能绕过退款资格判断直接为用户退款。\n\n客服不能绕过质量检测直接认定商品属于质量问题。\n\n客服不能因为用户是高级会员而跳过必要的风险检查或售后检测。\n\n涉及退款",
+        "matched_citations": [
+          "退款政策.md - 退款人工审核",
+          "退换货政策.md - 退款人工审核"
+        ]
+      },
+      "trace_id": "218b6eba-fb04-43b0-9856-f25aaebee093",
+      "reason": "forbidden_keywords_present=['立即到账']"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "d7c742a8-294f-4316-9891-48ab114e2c83",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']"
+    }
+  ],
+  "results": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": true,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "退款",
+        "订单",
+        "不能"
+      ],
+      "missing_keywords": [
+        "订单"
+      ],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "商品售后规则.md - 七天无理由退货"
+      ],
+      "matched_citations": [
+        "退款政策.md - 退款人工审核",
+        "商品售后规则.md - 七天无理由退货"
+      ],
+      "trace_id": "8cbb2b9c-4eac-4bac-886e-7fa3e0da9c0c",
+      "reply": "根据知识库来源《退款政策.md - 退款人工审核》：经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n## 退款到账\n\n退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理 根据知识库来源《商品售后规则.md - 七天无理由退货》：品满足退货条件后，再进入对应退货流程。\n\n## 换新\n\n用户要求换新时，需要判断商品是否符合对应换新条件。\n\n对于需要质量检测的商品，应先完成检测。\n\n不能仅因为商品出现故障、用户是高级会员或者历史上存在类似换新案例，就直接承诺换新。\n\n具体换新条件以当前有效的商品售后政策和检测结果为准。\n\n## 退款\n\n商品售后处理最终涉及退款时，应按照《退款政策》继续执行。\n\n商品售后规则负责判断当前问题应该进入哪种售后处理路径，不负责直接认定退款已经成功。\n\n退款申请创建、退款状态、人工审核以及退款到账等规则以《退款政策》为准。\n\n## 投诉与争议\n\n用户对商品售后",
+      "reason": "missing_expected_keywords=['订单']",
+      "notes": "政策回答需要基于 RAG 来源，不能像已经执行退款一样表述。"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": true,
+        "hallucination_free": false
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "到账",
+        "支付渠道"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "立即到账",
+        "已经退款",
+        "已为您退款"
+      ],
+      "hallucinated_keywords": [
+        "立即到账"
+      ],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "退换货政策.md - 退款人工审核"
+      ],
+      "matched_citations": [
+        "退款政策.md - 退款人工审核",
+        "退换货政策.md - 退款人工审核"
+      ],
+      "trace_id": "218b6eba-fb04-43b0-9856-f25aaebee093",
+      "reply": "根据知识库来源《退款政策.md - 退款人工审核》：经完成。\n\n## 退款异步处理\n\n退款申请创建成功后，可以进入 MQ 队列，由退款处理服务异步执行实际退款。\n\n退款任务需要支持幂等处理。\n\n即使相同退款任务因为消息重试被重复消费，也不能造成同一笔业务重复退款。\n\n## 退款失败\n\n退款任务执行失败时，应记录失败状态和失败原因。\n\n对于可以安全重试的系统异常，可以按照退款任务的重试策略重新执行。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n## 退款到账\n\n退款处理成功后，资金通常按照原支付渠道退回。\n\n实际到账时间可能受到支付渠道、银行或者第三方支付平台处理 根据知识库来源《退换货政策.md - 退款人工审核》：时间内存在多次退款行为；\n- 订单信息存在异常；\n- 风险系统判定为高风险；\n- 自动退款流程无法确认处理结果。\n\n进入人工审核并不代表退款一定失败。\n\n最终结果以人工审核结果为准。\n\n## 退款到账时间\n\n退款成功后，实际到账时间可能受到原支付渠道影响。\n\n平台完成退款操作不代表资金一定立即到账。\n\n如果退款状态已经显示成功，但用户长时间未收到退款，可以进一步查询支付渠道处理状态。\n\n## 重要限制\n\n客服不能绕过退款资格判断直接为用户退款。\n\n客服不能绕过质量检测直接认定商品属于质量问题。\n\n客服不能因为用户是高级会员而跳过必要的风险检查或售后检测。\n\n涉及退款",
+      "reason": "forbidden_keywords_present=['立即到账']",
+      "notes": "到账咨询应解释渠道差异，不承诺立即到账。"
+    },
+    {
+      "case_id": "answer_refund_003",
+      "query": "直接给我退款，不要审核。",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": "N/A",
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "订单号",
+        "人工"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "绕过审核"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [],
+      "matched_citations": [],
+      "trace_id": "6c220ddf-be31-4d44-a500-968132fd1d1d",
+      "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。用户要求绕过正常审核流程，需要人工审核。",
+      "reason": "passed",
+      "notes": "高风险退款请求缺订单号时应追问并提示人工审核。"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": false,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "10003",
+        "知识库"
+      ],
+      "missing_keywords": [
+        "知识库"
+      ],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "可以直接退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [],
+      "matched_citations": [
+        "policy_search did not return citations"
+      ],
+      "trace_id": "d7c742a8-294f-4316-9891-48ab114e2c83",
+      "reply": "已查询到订单 10003，商品是 定制刻字保温杯，当前订单状态为已签收。",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']",
+      "notes": "特殊商品退款咨询不能承诺直接退款。"
+    }
+  ],
+  "report_name": "eval_answer",
+  "created_at": "2026-09-08T19:22:34"
+}

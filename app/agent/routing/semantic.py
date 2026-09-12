@@ -33,6 +33,7 @@ class SemanticRoute(BaseModel):
     topic: str | None = None
 
     related_topics: list[str] = Field(default_factory=list)
+    ignored_related_topics: list[str] = Field(default_factory=list)
 
     confidence: float = 0.0
 

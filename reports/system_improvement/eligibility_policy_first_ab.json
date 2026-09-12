@@ -1,0 +1,2673 @@
+{
+  "baseline": "reports/system_improvement/review_supplements_dev_replay",
+  "modified": "reports/system_improvement/eligibility_policy_first_dev_replay",
+  "suites": {
+    "routing_v2": {
+      "metrics": {
+        "total_cases": {
+          "A": 24,
+          "B": 24
+        },
+        "passed_count": {
+          "A": 23,
+          "B": 23
+        },
+        "failed_count": {
+          "A": 1,
+          "B": 1
+        },
+        "routing_accuracy": {
+          "A": 0.9583,
+          "B": 0.9583
+        },
+        "semantic_accuracy": {
+          "A": 0.9583,
+          "B": 0.9583
+        },
+        "intent_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "action_type_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "topic_accuracy": {
+          "A": 0.9583,
+          "B": 0.9583
+        },
+        "route_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "clarification_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "side_effect_false_positive_count": {
+          "A": 0,
+          "B": 0
+        },
+        "llm_fallback_count": {
+          "A": 0,
+          "B": 0
+        }
+      },
+      "metric_changes": {},
+      "newly_passed": [],
+      "regressed": [],
+      "still_failed": [
+        "routing_refund_002"
+      ],
+      "per_case": {},
+      "fixed_first_semantic_count": 24,
+      "first_messages_and_responses_identical": true,
+      "semantic_sources": [
+        "recorded_first_response"
+      ],
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    "tools": {
+      "metrics": {
+        "execute_writes": {
+          "A": true,
+          "B": true
+        },
+        "total_cases": {
+          "A": 55,
+          "B": 55
+        },
+        "passed_count": {
+          "A": 42,
+          "B": 43
+        },
+        "failed_count": {
+          "A": 13,
+          "B": 12
+        },
+        "tool_selection_accuracy": {
+          "A": 0.8364,
+          "B": 0.8545
+        },
+        "tool_argument_accuracy": {
+          "A": 0.7647,
+          "B": 0.7714
+        },
+        "tool_execution_success_rate": {
+          "A": 0.88,
+          "B": 0.9
+        },
+        "dangerous_tool_misuse_count": {
+          "A": 0,
+          "B": 0
+        }
+      },
+      "metric_changes": {
+        "passed_count": {
+          "A": 42,
+          "B": 43
+        },
+        "failed_count": {
+          "A": 13,
+          "B": 12
+        },
+        "tool_selection_accuracy": {
+          "A": 0.8364,
+          "B": 0.8545
+        },
+        "tool_argument_accuracy": {
+          "A": 0.7647,
+          "B": 0.7714
+        },
+        "tool_execution_success_rate": {
+          "A": 0.88,
+          "B": 0.9
+        }
+      },
+      "newly_passed": [
+        "tool_policy_002"
+      ],
+      "regressed": [],
+      "still_failed": [
+        "tool_boundary_complaint_only",
+        "tool_boundary_complaint_refund",
+        "tool_boundary_duplicate_refund",
+        "tool_boundary_not_found_refund",
+        "tool_boundary_payment_pending_refund",
+        "tool_boundary_unpaid_refund",
+        "tool_contrast_progress_002",
+        "tool_contrast_quality_002",
+        "tool_contrast_refund_002",
+        "tool_order_005",
+        "tool_ticket_pending_cancel",
+        "tool_ticket_shipped_address"
+      ],
+      "per_case": {
+        "tool_refund_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_refund_002": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_refund_003": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_ticket"
+            ]
+          }
+        },
+        "tool_refund_004": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_refund_005": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "refund_apply"
+            ],
+            "B": [
+              "refund_apply"
+            ]
+          }
+        },
+        "tool_order_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_order_002": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_order_003": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_order_004": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_order_005": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": false,
+            "B": false
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_order_006": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          }
+        },
+        "tool_order_007": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_policy_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_policy_002": {
+          "passed": {
+            "A": false,
+            "B": true
+          },
+          "selection_pass": {
+            "A": false,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": true
+          },
+          "execution_pass": {
+            "A": false,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_policy_003": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_policy_004": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_policy_005": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_policy_006": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_contrast_refund_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_contrast_refund_002": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": false,
+            "B": false
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_manual_review"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_manual_review"
+            ]
+          }
+        },
+        "tool_contrast_quality_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_contrast_quality_002": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": false,
+            "B": false
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_manual_review",
+              "refund_decision"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_manual_review",
+              "refund_decision"
+            ]
+          }
+        },
+        "tool_contrast_progress_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_contrast_progress_002": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_boundary_unpaid_refund": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_boundary_duplicate_refund": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_boundary_payment_pending_refund": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ]
+          }
+        },
+        "tool_boundary_not_found_refund": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": false,
+            "B": false
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_boundary_missing_refund": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          }
+        },
+        "tool_boundary_complaint_only": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_boundary_complaint_refund": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_boundary_risk_medium": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "create_manual_review"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "create_manual_review"
+            ]
+          }
+        },
+        "tool_ticket_payment_exception": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "create_ticket"
+            ]
+          }
+        },
+        "tool_ticket_shipped_address": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": false,
+            "B": false
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          }
+        },
+        "tool_ticket_pending_cancel": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "selection_pass": {
+            "A": false,
+            "B": false
+          },
+          "argument_pass": {
+            "A": false,
+            "B": false
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "risk_check",
+              "create_manual_review",
+              "create_ticket",
+              "transfer_to_human"
+            ],
+            "B": [
+              "order_lookup",
+              "risk_check",
+              "create_manual_review",
+              "create_ticket",
+              "transfer_to_human"
+            ]
+          }
+        },
+        "tool_ticket_recent_shipping": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_ticket_warranty_material": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "create_ticket"
+            ]
+          }
+        },
+        "tool_handoff_001": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "transfer_to_human"
+            ],
+            "B": [
+              "transfer_to_human"
+            ]
+          }
+        },
+        "tool_handoff_002": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": true,
+            "B": true
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "transfer_to_human"
+            ],
+            "B": [
+              "transfer_to_human"
+            ]
+          }
+        },
+        "tool_handoff_003": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          }
+        },
+        "tool_missing_ambiguous": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          }
+        },
+        "tool_missing_after_sales": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          }
+        },
+        "tool_permission_customer_order": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_permission_customer_risk": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "risk_check"
+            ],
+            "B": [
+              "risk_check"
+            ]
+          }
+        },
+        "tool_permission_customer_manual": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "create_manual_review"
+            ],
+            "B": [
+              "create_manual_review"
+            ]
+          }
+        },
+        "tool_permission_customer_ticket": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "create_ticket"
+            ],
+            "B": [
+              "create_ticket"
+            ]
+          }
+        },
+        "tool_permission_customer_handoff": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "transfer_to_human"
+            ],
+            "B": [
+              "transfer_to_human"
+            ]
+          }
+        },
+        "tool_permission_after_sales_policy": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_permission_after_sales_risk": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "risk_check"
+            ],
+            "B": [
+              "risk_check"
+            ]
+          }
+        },
+        "tool_permission_risk_order": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          }
+        },
+        "tool_permission_risk_policy": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          }
+        },
+        "tool_permission_risk_refund": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "refund_apply"
+            ],
+            "B": [
+              "refund_apply"
+            ]
+          }
+        },
+        "tool_permission_risk_manual": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "create_manual_review"
+            ],
+            "B": [
+              "create_manual_review"
+            ]
+          }
+        },
+        "tool_permission_risk_ticket": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "create_ticket"
+            ],
+            "B": [
+              "create_ticket"
+            ]
+          }
+        },
+        "tool_permission_risk_handoff": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "selection_pass": {
+            "A": true,
+            "B": true
+          },
+          "argument_pass": {
+            "A": "N/A",
+            "B": "N/A"
+          },
+          "execution_pass": {
+            "A": true,
+            "B": true
+          },
+          "dangerous_misuse": {
+            "A": [],
+            "B": []
+          },
+          "actual_tools": {
+            "A": [
+              "transfer_to_human"
+            ],
+            "B": [
+              "transfer_to_human"
+            ]
+          }
+        }
+      },
+      "fixed_first_semantic_count": 41,
+      "first_messages_and_responses_identical": true,
+      "semantic_sources": [
+        "recorded_first_response"
+      ],
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    "answer": {
+      "metrics": {
+        "total_cases": {
+          "A": 4,
+          "B": 4
+        },
+        "passed_count": {
+          "A": 1,
+          "B": 1
+        },
+        "failed_count": {
+          "A": 3,
+          "B": 3
+        },
+        "deterministic_metrics": {
+          "A": {
+            "correctness": 0.5,
+            "relevance": 1.0,
+            "completeness": 0.5,
+            "faithfulness_groundedness": 0.6667,
+            "hallucination_rate": 0.25
+          },
+          "B": {
+            "correctness": 0.5,
+            "relevance": 1.0,
+            "completeness": 0.5,
+            "faithfulness_groundedness": 0.6667,
+            "hallucination_rate": 0.25
+          }
+        },
+        "llm_judge_metrics": {
+          "A": "N/A",
+          "B": "N/A"
+        }
+      },
+      "metric_changes": {},
+      "newly_passed": [],
+      "regressed": [],
+      "still_failed": [
+        "answer_refund_001",
+        "answer_refund_002",
+        "answer_refund_004"
+      ],
+      "per_case": {
+        "answer_refund_001": {
+          "passed": {
+            "A": false,
+            "B": false
+          }
+        },
+        "answer_refund_002": {
+          "passed": {
+            "A": false,
+            "B": false
+          }
+        },
+        "answer_refund_003": {
+          "passed": {
+            "A": true,
+            "B": true
+          }
+        },
+        "answer_refund_004": {
+          "passed": {
+            "A": false,
+            "B": false
+          }
+        }
+      },
+      "fixed_first_semantic_count": 4,
+      "first_messages_and_responses_identical": true,
+      "semantic_sources": [
+        "recorded_first_response"
+      ],
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    "e2e": {
+      "metrics": {
+        "total_cases": {
+          "A": 12,
+          "B": 12
+        },
+        "passed_count": {
+          "A": 7,
+          "B": 7
+        },
+        "failed_count": {
+          "A": 5,
+          "B": 5
+        },
+        "task_success_rate": {
+          "A": 0.5833,
+          "B": 0.5833
+        },
+        "routing_success_rate": {
+          "A": 0.75,
+          "B": 0.75
+        },
+        "agent_success_rate": {
+          "A": 0.7,
+          "B": 0.7
+        },
+        "rag_success_rate": {
+          "A": 0.8889,
+          "B": 0.8889
+        },
+        "tool_success_rate": {
+          "A": 0.75,
+          "B": 0.75
+        },
+        "tool_argument_success_rate": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "risk_success_rate": {
+          "A": 0.5714,
+          "B": 0.5714
+        },
+        "refund_success_rate": {
+          "A": 0.5,
+          "B": 0.5
+        },
+        "database_success_rate": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "mq_success_rate": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "workflow_success_rate": {
+          "A": 0.75,
+          "B": 0.75
+        },
+        "answer_success_rate": {
+          "A": 0.5833,
+          "B": 0.5833
+        }
+      },
+      "metric_changes": {},
+      "newly_passed": [],
+      "regressed": [],
+      "still_failed": [
+        "e2e_refund_001",
+        "e2e_refund_003",
+        "e2e_refund_007",
+        "e2e_refund_008",
+        "e2e_refund_009"
+      ],
+      "per_case": {
+        "e2e_refund_001": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_ticket"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": true,
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": false
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": true,
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": false
+            }
+          }
+        },
+        "e2e_refund_002": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_ticket"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": true,
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": true,
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        },
+        "e2e_refund_003": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "actual_tools": {
+            "A": [
+              "policy_search"
+            ],
+            "B": [
+              "policy_search"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": true,
+              "answer_pass": false
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": true,
+              "answer_pass": false
+            }
+          }
+        },
+        "e2e_refund_004": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        },
+        "e2e_refund_005": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": "N/A",
+              "rag_pass": "N/A",
+              "tool_pass": true,
+              "tool_argument_pass": "N/A",
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": "N/A",
+              "rag_pass": "N/A",
+              "tool_pass": true,
+              "tool_argument_pass": "N/A",
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        },
+        "e2e_refund_006": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup"
+            ],
+            "B": [
+              "order_lookup"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": "N/A",
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": "N/A",
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        },
+        "e2e_refund_007": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": false,
+              "agent_pass": false,
+              "rag_pass": true,
+              "tool_pass": false,
+              "tool_argument_pass": true,
+              "risk_pass": false,
+              "refund_pass": false,
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": false,
+              "answer_pass": false
+            },
+            "B": {
+              "route_pass": false,
+              "agent_pass": false,
+              "rag_pass": true,
+              "tool_pass": false,
+              "tool_argument_pass": true,
+              "risk_pass": false,
+              "refund_pass": false,
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": false,
+              "answer_pass": false
+            }
+          }
+        },
+        "e2e_refund_008": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ],
+            "B": [
+              "order_lookup",
+              "refund_decision",
+              "policy_search"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": false,
+              "agent_pass": false,
+              "rag_pass": true,
+              "tool_pass": false,
+              "tool_argument_pass": true,
+              "risk_pass": false,
+              "refund_pass": false,
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": false,
+              "answer_pass": false
+            },
+            "B": {
+              "route_pass": false,
+              "agent_pass": false,
+              "rag_pass": true,
+              "tool_pass": false,
+              "tool_argument_pass": true,
+              "risk_pass": false,
+              "refund_pass": false,
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": false,
+              "answer_pass": false
+            }
+          }
+        },
+        "e2e_refund_009": {
+          "passed": {
+            "A": false,
+            "B": false
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "create_ticket"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": false,
+              "agent_pass": false,
+              "rag_pass": false,
+              "tool_pass": false,
+              "tool_argument_pass": true,
+              "risk_pass": false,
+              "refund_pass": false,
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": false,
+              "answer_pass": false
+            },
+            "B": {
+              "route_pass": false,
+              "agent_pass": false,
+              "rag_pass": false,
+              "tool_pass": false,
+              "tool_argument_pass": true,
+              "risk_pass": false,
+              "refund_pass": false,
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": false,
+              "answer_pass": false
+            }
+          }
+        },
+        "e2e_refund_010": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_manual_review",
+              "create_ticket"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "refund_apply",
+              "create_manual_review",
+              "create_ticket"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": true,
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": true,
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        },
+        "e2e_refund_011": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "create_manual_review",
+              "transfer_to_human"
+            ],
+            "B": [
+              "order_lookup",
+              "policy_search",
+              "risk_check",
+              "create_manual_review",
+              "transfer_to_human"
+            ]
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": "N/A",
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": true,
+              "rag_pass": true,
+              "tool_pass": true,
+              "tool_argument_pass": true,
+              "risk_pass": true,
+              "refund_pass": "N/A",
+              "database_pass": true,
+              "mq_pass": true,
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        },
+        "e2e_refund_012": {
+          "passed": {
+            "A": true,
+            "B": true
+          },
+          "actual_tools": {
+            "A": [],
+            "B": []
+          },
+          "checks": {
+            "A": {
+              "route_pass": true,
+              "agent_pass": "N/A",
+              "rag_pass": "N/A",
+              "tool_pass": true,
+              "tool_argument_pass": "N/A",
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": true,
+              "answer_pass": true
+            },
+            "B": {
+              "route_pass": true,
+              "agent_pass": "N/A",
+              "rag_pass": "N/A",
+              "tool_pass": true,
+              "tool_argument_pass": "N/A",
+              "risk_pass": "N/A",
+              "refund_pass": "N/A",
+              "database_pass": "N/A",
+              "mq_pass": "N/A",
+              "action_pass": true,
+              "answer_pass": true
+            }
+          }
+        }
+      },
+      "fixed_first_semantic_count": 11,
+      "first_messages_and_responses_identical": true,
+      "semantic_sources": [
+        "recorded_first_response"
+      ],
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    }
+  },
+  "target_case": {
+    "query": {
+      "A": "定制商品不合适，可以走七天无理由退货吗？",
+      "B": "定制商品不合适，可以走七天无理由退货吗？"
+    },
+    "passed": {
+      "A": false,
+      "B": true
+    },
+    "actual_tools": {
+      "A": [],
+      "B": [
+        "policy_search"
+      ]
+    },
+    "route": {
+      "A": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "refund_eligibility",
+        "related_topics": [
+          "return_apply"
+        ],
+        "confidence": 0.85,
+        "routing_reason": "用户询问定制商品是否可以走七天无理由退货，属于判断具体商品是否符合退款条件。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": true,
+        "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "B": {
+        "intent": "return_refund",
+        "action_type": "query",
+        "topic": "refund_eligibility",
+        "related_topics": [
+          "return_apply"
+        ],
+        "confidence": 0.85,
+        "routing_reason": "用户询问定制商品是否可以走七天无理由退货，属于判断具体商品是否符合退款条件。",
+        "agent_plan": [
+          "客服 Agent"
+        ],
+        "tool_plan": [
+          "policy_search"
+        ],
+        "order_id": null,
+        "need_order": false,
+        "need_policy": true,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": true,
+        "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      }
+    },
+    "reply": {
+      "A": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+      "B": "本轮可核实的政策内容：\n\n《退换货政策.md - 七天无理由退货》（质量问题退款）：\n如果商品存在无法正常使用、功能异常、明显质量缺陷等问题，用户可以申请售后处理。\n\n质量问题通常需要经过售后检测。\n\n检测确认属于商品质量问题后，可以根据具体情况进行：\n\n- 维修；\n- 换新；\n- 退货退款。\n\n不能仅根据用户描述直接认定商品属于质量问题。\n\n《退换货政策.md - 七天无理由退货》（不支持七天无理由退货的情况）：\n以下情况原则上不支持七天无理由退货：\n\n- 定制商品；\n- 用户已经明显使用并影响二次销售的商品；\n- 商品或主要配件缺失；\n- 商品因用户人为原因损坏；\n- 超过七天无理由退货期限；\n- 其他明确标注不支持无理由退货的商品。\n\n《退换货政策.md - 退款与退货政策》（适用范围）：\n本政策适用于平台销售的普通商品退款、退货以及售后退款申请。\n\n特殊商品、定制商品以及明确标注不支持无理由退货的商品，按照对应商品规则处理。\n\n《退换货政策.md - 退款与退货政策》（七天无理由退货）：\n用户自商品签收之日起 7 天内，可以申请七天无理由退货。\n\n申请七天无理由退货需要满足以下条件：\n\n- 商品保持完好；\n- 商品配件齐全；\n- 商品包装不存在严重损坏；\n- 不影响商品二次销售；\n- 商品不属于不支持七天无理由退货的特殊商品。\n\n满足以上条件后，可以创建退货申请。\n\n商品退回并完成质检后，系统进入退款流程。\n\n尚未核实具体订单的退款资格；如需核实您的订单，请提供订单号。"
+    }
+  },
+  "configuration_identical": true,
+  "changed_replay_inputs": [
+    "app/agent/orchestrator.py",
+    "app/agent/response/fallback.py",
+    "app/agent/routing/decision.py",
+    "app/agent/routing/pending_task.py",
+    "app/agent/routing/router_v2.py"
+  ],
+  "protected_inputs_identical": true,
+  "replay_durations_seconds": {
+    "routing_v2": 0.5,
+    "tools": 3.06,
+    "answer": 1.49,
+    "e2e": 1.93
+  },
+  "changed_current_source_files": [
+    "app/agent/orchestrator.py",
+    "app/agent/response/fallback.py",
+    "app/agent/routing/pending_task.py",
+    "app/agent/routing/router_v2.py",
+    "tests/test_conversation_task_boundaries.py"
+  ],
+  "test_snapshot_byte_differences": [
+    "app/agent/routing/decision.py"
+  ],
+  "test_snapshot_differences_only_line_endings": true
+}

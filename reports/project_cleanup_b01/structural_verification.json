@@ -1,0 +1,85 @@
+{
+  "database": {
+    "duplicate_function_names_before": 30,
+    "duplicate_function_names_after": 0,
+    "unchanged_public_and_shared_functions": 44,
+    "sqlite_bodies_unchanged_after_rename": 28
+  },
+  "semantic_router": {
+    "prompt_identical": true,
+    "prompt_characters": 9414,
+    "prompt_sha256": "a46bd102a8e2cb1eec5dc446c46b0aa6db932f445cd5700436ee596cf682a9f4",
+    "functions_and_allowed_labels_identical": true
+  },
+  "business_labels_identical": true,
+  "other_retained_functions_and_classes_identical": true,
+  "files": [
+    {
+      "path": "README.md",
+      "before_lines": 166,
+      "after_lines": 176
+    },
+    {
+      "path": "app/agent/README.md",
+      "before_lines": 125,
+      "after_lines": 79
+    },
+    {
+      "path": "app/agent/agents/after_sales.py",
+      "before_lines": 278,
+      "after_lines": 272
+    },
+    {
+      "path": "app/agent/policies/fallback_policy.py",
+      "before_lines": 162,
+      "after_lines": 115
+    },
+    {
+      "path": "app/agent/routing/labels.py",
+      "before_lines": 0,
+      "after_lines": 18
+    },
+    {
+      "path": "app/agent/routing/llm_router.py",
+      "before_lines": 1201,
+      "after_lines": 401
+    },
+    {
+      "path": "app/agent/routing/router.py",
+      "before_lines": 323,
+      "after_lines": 0
+    },
+    {
+      "path": "app/agent/routing/semantic_prompt.py",
+      "before_lines": 0,
+      "after_lines": 801
+    },
+    {
+      "path": "app/agent/tools/tool_results.py",
+      "before_lines": 43,
+      "after_lines": 37
+    },
+    {
+      "path": "app/rag/ingestion/chunker.py",
+      "before_lines": 850,
+      "after_lines": 821
+    },
+    {
+      "path": "app/storage/database.py",
+      "before_lines": 1456,
+      "after_lines": 1367
+    },
+    {
+      "path": "app/storage/mysql_database.py",
+      "before_lines": 1096,
+      "after_lines": 1035
+    },
+    {
+      "path": "app/storage/store.py",
+      "before_lines": 12,
+      "after_lines": 8
+    }
+  ],
+  "python_net_lines_removed": 546,
+  "after_sales_class_identical": true
+}

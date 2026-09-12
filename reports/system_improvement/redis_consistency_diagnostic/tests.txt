@@ -1,0 +1,13 @@
+..F.                                                                     [100%]
+================================== FAILURES ===================================
+_ RedisConsistencyTests.test_post_commit_redis_outage_does_not_report_refund_creation_failure _
+tests\test_redis_consistency.py:128: in test_post_commit_redis_outage_does_not_report_refund_creation_failure
+    self.assertTrue(result.success, result.result)
+E   AssertionError: False is not true : {'failure_origin': 'runtime_exception', 'error_type': 'ToolTransientError', 'error_message': 'Timeout connecting to server', 'reason': 'refund_apply 工具调用失败，已进入降级处理。', 'fallback_action': 'recover_refund_status_or_handoff', 'retryable': False, 'attempt': 1, 'max_attempts': 1, 'duration_ms': 3803.6, 'attempt_duration_ms': 3803.61, 'side_effect_class': 'SIDE_EFFECT', 'recovery_action': 'check_order_idempotency_state_before_any_replay'}
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_expired_owner_cannot_delete_successors_lock
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_four_processes_create_one_refund_and_event_using_redis
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_terminated_owner_recovers_by_ttl
+FAILED tests/test_redis_consistency.py::RedisConsistencyTests::test_post_commit_redis_outage_does_not_report_refund_creation_failure
+1 failed, 3 passed in 12.86s

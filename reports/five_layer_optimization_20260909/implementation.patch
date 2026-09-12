@@ -1,0 +1,312 @@
+--- a/app/agent/routing/llm_router.py
++++ b/app/agent/routing/llm_router.py
+@@ -1128,6 +1128,28 @@
+     )
+ 
+ 
++def _validate_with_auxiliary_policy(data: dict[str, Any]) -> SemanticRoute:
++    """Recover malformed retrieval hints only for read-only semantic queries.
++
++    Strict validation is still applied to the primary decision and the cleaned
++    payload. No invalid hint is guessed, mapped to another topic or executed.
++    """
++    # An omitted auxiliary topic can change which business operation is planned.
++    # Never salvage incomplete execute/handoff semantics into a write workflow.
++    if (os.getenv('SEMANTIC_RELATED_TOPICS', '') != 'discard_invalid'
++            or data.get('action_type') != 'query'):
++        return _validate_semantic_result(data)
++    values = data.get('related_topics', [])
++    if values is None:
++        values = []
++    if not isinstance(values, list) or any(not isinstance(v, str) for v in values):
++        raise ValueError('related_topics must be a list of strings')
++    ignored = list(dict.fromkeys(v.strip() for v in values if v.strip() not in VALID_TOPICS))
++    cleaned = {**data, 'related_topics': [v.strip() for v in values if v.strip() in VALID_TOPICS]}
++    result = _validate_semantic_result(cleaned)
++    return result.model_copy(update={'ignored_related_topics': ignored})
++
++
+ def infer_semantic_route(user_message: str) -> SemanticRoute:
+     try:
+         messages = [
+@@ -1145,7 +1167,7 @@
+         data = None
+         try:
+             data = _extract_json_object(raw)
+-            return _validate_semantic_result(data)
++            return _validate_with_auxiliary_policy(data)
+         except (ValueError, TypeError) as error:
+             if os.getenv("SEMANTIC_ROUTE_REPAIR", "") != "once":
+                 raise
+--- a/app/agent/routing/semantic.py
++++ b/app/agent/routing/semantic.py
+@@ -33,6 +33,7 @@
+     topic: str | None = None
+ 
+     related_topics: list[str] = Field(default_factory=list)
++    ignored_related_topics: list[str] = Field(default_factory=list)
+ 
+     confidence: float = 0.0
+ 
+--- a/scripts/eval/run_isolated_baseline.py
++++ b/scripts/eval/run_isolated_baseline.py
+@@ -85,6 +85,8 @@
+     parser.add_argument("--record-case-results", action="store_true", help="Save every unchanged case result, including routing successes")
+     parser.add_argument("--semantic-replay-from", help="Reuse raw first responses; contract repairs still call the model")
+     parser.add_argument("--semantic-repair", choices=("off", "once"), default="off")
++    parser.add_argument("--semantic-related-topics", choices=("strict", "discard_invalid"), default="strict")
++    parser.add_argument("--policy-evidence", choices=("baseline", "complementary"), default="baseline")
+     args = parser.parse_args()
+     if args.route_replay_from and (args.semantic_replay_from or args.record_semantic_responses or args.semantic_repair != "off"):
+         parser.error("Final-route replay cannot measure semantic response repair")
+@@ -105,7 +107,8 @@
+         "CHUNK_STRATEGY": "fixed_256", "RAG_RANKING_MODE": "hybrid_rule",
+         "RAG_SEMANTIC_WEIGHT": "0.62", "RAG_BM25_WEIGHT": "0.28", "RAG_KEYWORD_WEIGHT": "0.10",
+         "RAG_CANDIDATE_MULTIPLIER": "4", "PYTHONIOENCODING": "utf-8",
+-        "RAG_EVIDENCE_SELECTION": "", "RAG_SEMANTIC_CONTEXT": "",
++        "RAG_EVIDENCE_SELECTION": "complementary" if args.policy_evidence == "complementary" else "", "RAG_SEMANTIC_CONTEXT": "",
++        "SEMANTIC_RELATED_TOPICS": "discard_invalid" if args.semantic_related_topics == "discard_invalid" else "",
+         "SEMANTIC_ROUTE_REPAIR": "once" if args.semantic_repair == "once" else "",
+         "PAYMENT_ADAPTER": "", "AUTH_TOKENS": "",
+         "LLM_TIMEOUT_SECONDS": str(settings.llm_timeout_seconds),
+--- a/scripts/eval/run_five_layer_eval.py
++++ b/scripts/eval/run_five_layer_eval.py
+@@ -27,7 +27,7 @@
+     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf8')
+ 
+ 
+-def rag_child(output):
++def rag_child(output, profile):
+     from app.rag.index_manager import RAGIndexManager
+     from app.rag.retriever import HybridRetriever
+     from app.rag.query_builder import build_retrieval_query
+@@ -47,7 +47,8 @@
+             query = build_retrieval_query(context)
+             started = perf_counter()
+             pool = retriever.retrieve_candidates(query, candidate_k=20)
+-            ranked = rank_candidates(query, pool, mode='hybrid_rule', top_k=5)
++            selection = 'complementary' if profile == 'optimized' else None
++            ranked = rank_candidates(query, pool, mode='hybrid_rule', top_k=5, evidence_selection=selection)
+             elapsed = (perf_counter() - started) * 1000
+             result = ev.score_mode(case, pool, ranked, build_evidence_constraint(context), mode='hybrid_rule', top_k=5)
+             results.append(result)
+@@ -56,7 +57,7 @@
+         label = 'v1_dev20' if count == 20 else 'v2_dev6'
+         write_json(output / (label + '.json'), {'dataset': name, 'dataset_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                    'kb_version': refresh.kb_version, 'chunk_count': refresh.chunk_count,
+-                   'candidate_k': 20, 'top_k': 5, 'ranking_mode': 'hybrid_rule', 'evidence_selection': None,
++                   'candidate_k': 20, 'top_k': 5, 'ranking_mode': 'hybrid_rule', 'evidence_selection': selection,
+                    'report': ev.build_mode_report(results, mode='hybrid_rule', top_k=5), 'traces': traces})
+         print(label, sum(r['passed'] for r in results), '/', len(results), flush=True)
+ 
+@@ -65,10 +66,11 @@
+     parser = argparse.ArgumentParser(__doc__)
+     parser.add_argument('--output', type=Path, required=True)
+     parser.add_argument('--rag-child', action='store_true', help=argparse.SUPPRESS)
++    parser.add_argument('--profile', choices=('baseline', 'optimized'), default='baseline')
+     args = parser.parse_args()
+     output = args.output.resolve()
+     if args.rag_child:
+-        rag_child(output)
++        rag_child(output, args.profile)
+         return
+     output.mkdir(parents=True, exist_ok=False)
+     from app.core.config import get_settings
+@@ -83,9 +85,11 @@
+     manifest = {'profile': 'five_layer_dev_live_routing_live_replies', 'model': settings.zhipu_model,
+                 'llm_key_configured': settings.has_llm_key, 'scoring': 'existing evaluators unchanged',
+                 'source_files': {p.as_posix(): hashlib.sha256(b).hexdigest() for p, b in files.items()},
+-                'runs': {}, 'configuration': {'chunk_strategy': 'fixed_256', 'overlap': 32,
++                'runs': {}, 'experiment_profile': args.profile, 'configuration': {'chunk_strategy': 'fixed_256', 'overlap': 32,
+                     'rag_ranking_mode': 'hybrid_rule', 'candidate_k': 20, 'rag_top_k': 5,
+-                    'evidence_selection': None, 'database': 'isolated SQLite', 'cache': 'process-local',
++                    'evidence_selection': 'complementary' if args.profile == 'optimized' else None,
++                    'semantic_related_topics': 'discard_invalid' if args.profile == 'optimized' else 'strict',
++                    'database': 'isolated SQLite', 'cache': 'process-local',
+                     'memory_context_max_chars': 8000, 'memory_context_ttl_seconds': 1800}}
+     with zipfile.ZipFile(output / 'source_snapshot.zip', 'x', zipfile.ZIP_DEFLATED) as archive:
+         for path, data in files.items():
+@@ -110,8 +114,11 @@
+                               '--record-semantic-responses', '--record-case-results'],
+             'answer_e2e': ['scripts.eval.run_isolated_baseline', '--suites', 'answer', 'e2e', '--live-replies',
+                            '--record-semantic-responses', '--record-case-results'],
+-            'rag': ['scripts.eval.run_five_layer_eval', '--rag-child'],
++            'rag': ['scripts.eval.run_five_layer_eval', '--rag-child', '--profile', args.profile],
+         }
++        if args.profile == 'optimized':
++            for name in ('routing_tools', 'answer_e2e'):
++                commands[name].extend(['--semantic-related-topics', 'discard_invalid', '--policy-evidence', 'complementary'])
+         def run(name):
+             start = perf_counter()
+             with (output / (name + '.log')).open('x', encoding='utf8') as log:
+--- /dev/null
++++ b/scripts/eval/negation_aware_answer.py
+@@ -0,0 +1,80 @@
++"""Versioned diagnostic rescore of explicit denials; original reports untouched.
++
++Only unambiguous local negation is recognized. Questions, quotations and
++ambiguous/double negatives retain the conservative literal-match result.
++"""
++import argparse
++from copy import deepcopy
++import json
++from pathlib import Path
++import re
++
++from scripts.eval.eval_answer import build_report
++
++VERSION = 'explicit-denial-v1'
++NEGATION = re.compile(r'不会|不能|不可以|不得|不代表|不意味着|不保证|不承诺|无法保证|无法承诺|尚未|并未|并非|不是')
++BOUNDARY = re.compile(r'[。！？!?；;，,\n]')
++
++
++def forbidden_occurrences(reply, phrases):
++    observations = []
++    for phrase in phrases:
++        if not phrase:
++            continue
++        for found in re.finditer(re.escape(phrase), reply):
++            prefix = BOUNDARY.split(reply[:found.start()])[-1]
++            negatives = list(NEGATION.finditer(prefix))
++            denied = False
++            if len(negatives) == 1:
++                marker = negatives[0]
++                gap = prefix[marker.end():]
++                # Reject double negation, intervening propositions, quotes and
++                # punctuation; only a short local scope can exempt a match.
++                denied = (len(gap) <= 12 and not re.search(r'[不未非无否难"“”‘’\'：:]', gap)
++                          and not re.search(r'[不未非无否难]', prefix[:marker.start()])
++                          and not re.search(r'["“”‘’\']|如果|假设|假如|若', prefix)
++                          and not re.match(r'[^。！!；;\n]*[？?]', reply[found.end():]))
++            observations.append({'phrase': phrase, 'start': found.start(), 'end': found.end(),
++                                 'explicitly_denied': denied})
++    return observations
++
++
++def rescore(original):
++    results = []
++    for row in original['results']:
++        result = deepcopy(row)
++        observed = forbidden_occurrences(row['reply'], row['forbidden_keywords'])
++        present = list(dict.fromkeys(o['phrase'] for o in observed if not o['explicitly_denied']))
++        result['literal_passed'] = row['passed']
++        result['forbidden_occurrences'] = observed
++        result['hallucinated_keywords'] = present
++        result['deterministic_metrics']['hallucination_free'] = not present
++        metrics = result['deterministic_metrics']
++        result['passed'] = all(metrics[k] for k in ('correctness', 'relevance', 'completeness', 'hallucination_free')) and metrics['faithfulness_groundedness'] is not False
++        reasons = [] if row['reason'] == 'passed' else [r for r in row['reason'].split('; ') if not r.startswith('forbidden_keywords_present=')]
++        if present:
++            reasons.append(f'forbidden_keywords_present={present}')
++        result['reason'] = '; '.join(reasons) or 'passed'
++        results.append(result)
++    report = build_report(results)
++    report.update(scoring_version=VERSION, original_passed_count=original['passed_count'],
++                  interpretation='Scoring correction on the same saved replies, not a system quality improvement')
++    return report
++
++
++def main():
++    parser = argparse.ArgumentParser(__doc__)
++    parser.add_argument('--input', type=Path, required=True)
++    parser.add_argument('--output', type=Path, required=True)
++    args = parser.parse_args()
++    original = json.loads(args.input.read_text(encoding='utf8'))
++    report = rescore(original)
++    report['original_report'] = str(args.input)
++    args.output.parent.mkdir(parents=True, exist_ok=True)
++    with args.output.open('x', encoding='utf8') as f:
++        json.dump(report, f, ensure_ascii=False, indent=2)
++    print('Same replies, literal:', original['passed_count'], 'negation-aware:', report['passed_count'], '/', report['total_cases'])
++
++
++if __name__ == '__main__':
++    main()
+--- /dev/null
++++ b/tests/test_semantic_auxiliary_topics.py
+@@ -0,0 +1,54 @@
++import json
++import unittest
++from unittest.mock import patch
++
++from app.agent.routing import llm_router
++
++
++class AuxiliaryTopicTests(unittest.TestCase):
++    def route(self, **changes):
++        data = {'intent': 'return_refund', 'action_type': 'query', 'topic': 'refund_eligibility',
++                'related_topics': ['return_refund', 'product_failure', 'product_failure'],
++                'confidence': .9, 'reason': '询问资格', **changes}
++        with patch.dict('os.environ', {'SEMANTIC_RELATED_TOPICS': 'discard_invalid', 'SEMANTIC_ROUTE_REPAIR': ''}), \
++             patch.object(llm_router, 'call_zhipu_chat', return_value=json.dumps(data)) as call:
++            result = llm_router.infer_semantic_route('只是询问规则')
++        self.assertEqual(call.call_count, 1)
++        return result
++
++    def test_only_invalid_auxiliary_strings_are_discarded_and_recorded(self):
++        result = self.route()
++        self.assertEqual((result.intent, result.action_type, result.topic), ('return_refund','query','refund_eligibility'))
++        self.assertEqual(result.related_topics, ['product_failure'])
++        self.assertEqual(result.ignored_related_topics, ['return_refund'])
++        self.assertEqual(result.source, 'llm')
++
++    def test_invalid_primary_is_still_rejected(self):
++        for changes in ({'intent': 'invalid'}, {'action_type': 'invalid'}, {'topic': 'invalid'}):
++            with self.subTest(changes=changes):
++                result = self.route(**changes)
++                self.assertEqual(result.source, 'fallback')
++                self.assertEqual(result.action_type, 'unknown')
++
++    def test_nonstring_auxiliary_structure_is_not_silently_repaired(self):
++        for values in ('refund_policy', [None], [{'topic': 'refund_policy'}]):
++            with self.subTest(values=values):
++                self.assertEqual(self.route(related_topics=values).source, 'fallback')
++
++    def test_valid_risk_related_topic_is_preserved(self):
++        result = self.route(related_topics=['complaint', 'refund_eligibility', 'invalid'])
++        self.assertEqual(result.related_topics, ['complaint'])
++        self.assertEqual(result.action_type, 'query')
++
++    def test_incomplete_write_or_handoff_semantics_are_not_salvaged(self):
++        for action in ('execute', 'handoff'):
++            with self.subTest(action=action):
++                result = self.route(intent='complaint', action_type=action, topic='complaint')
++                self.assertEqual(result.source, 'fallback')
++                self.assertEqual(result.action_type, 'unknown')
++
++    def test_valid_write_semantics_remain_unchanged(self):
++        result = self.route(action_type='execute', topic='refund_apply', related_topics=['complaint'])
++        self.assertEqual(result.source, 'llm')
++        self.assertEqual(result.action_type, 'execute')
++        self.assertEqual(result.related_topics, ['complaint'])
+--- /dev/null
++++ b/tests/test_answer_negation_scoring.py
+@@ -0,0 +1,28 @@
++import unittest
++from scripts.eval.negation_aware_answer import forbidden_occurrences
++
++
++class NegationScoringTests(unittest.TestCase):
++    def test_clear_denials_are_distinguished_from_promises(self):
++        for text in ('平台完成操作不代表资金一定立即到账。', '不能承诺立即到账。', '无法保证立即到账。'):
++            with self.subTest(text=text):
++                self.assertTrue(all(o['explicitly_denied'] for o in forbidden_occurrences(text, ['立即到账'])))
++
++    def test_later_promise_is_not_exempted_by_an_earlier_denial(self):
++        occurrences = forbidden_occurrences('通常不能立即到账，但本次保证立即到账。', ['立即到账'])
++        self.assertEqual([o['explicitly_denied'] for o in occurrences], [True, False])
++
++    def test_double_negation_quotes_and_unrelated_denials_remain_flagged(self):
++        for text in ('不是不能立即到账。', '不能不立即到账。', '不能退款，但可以立即到账。',
++                     '不要担心，我们保证立即到账。', '他说“不能立即到账”，我保证立即到账。'):
++            with self.subTest(text=text):
++                self.assertTrue(any(not o['explicitly_denied'] for o in forbidden_occurrences(text, ['立即到账'])))
++
++    def test_negation_never_changes_other_forbidden_phrases(self):
++        observations = forbidden_occurrences('不能立即到账，但已经退款。', ['立即到账', '已经退款'])
++        self.assertEqual([o['explicitly_denied'] for o in observations], [True, False])
++
++    def test_questions_and_conditional_denials_are_not_definite_statements(self):
++        for text in ('不会立即到账吗？', '不能立即到账?', '如果不能立即到账，请退款。'):
++            with self.subTest(text=text):
++                self.assertFalse(forbidden_occurrences(text, ['立即到账'])[0]['explicitly_denied'])

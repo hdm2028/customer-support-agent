@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "scope": "isolated_sqlite_operational_rollback_not_production_schema_compatibility",
+  "previous_image_id": "sha256:3015e283dee0b44286843b5c5d036df3328ad58a4df9d3d60bdf04c7f2400318",
+  "checks": {
+    "initial_ready": true,
+    "authorization": true,
+    "failed_candidate_rejected": true,
+    "previous_image_restored": true,
+    "business_state_preserved": true,
+    "no_replayed_completed_event": true
+  },
+  "created_resources_removed": true,
+  "rejected_image_id": "sha256:916774ba912bc9cc1d403afa8f7967a4f8f628de4a9986600021909b04c3477e",
+  "duration_seconds": 37.396
+}

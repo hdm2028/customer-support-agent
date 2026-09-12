@@ -5,12 +5,15 @@ from langgraph.graph import END, START, StateGraph
 
 from app.agent.routing.conversation_context import apply_conversation_context
 from app.agent.response.fallback import build_fallback_answer
+from app.agent.response.grounded import needs_grounded_reply, policy_excerpts, checked_reply, render_grounded_reply
+from app.agent.routing.refund_withdrawal import WITHDRAWAL_TOPIC
 from app.agent.routing.memory import ConversationMemory
 from app.agent.routing.pending_task import (
     apply_slot_requirements,
     build_pending_task,
     prepare_pending_task_context,
     should_store_pending_task,
+    pending_message_kind,
 )
 from app.agent.response.prompt_builder import build_model_messages
 from app.agent.orchestrator import (
@@ -19,7 +22,7 @@ from app.agent.orchestrator import (
     route_user_request,
     run_orchestrated_state,
 )
-from app.agent.tools.tool_results import has_failed_order_lookup, has_failed_tool_call
+from app.agent.tools.tool_results import get_tool_result, has_failed_order_lookup, has_failed_tool_call
 from app.core.schemas import RouteDecision, ToolResult
 from app.llm.llm_client import call_zhipu_chat
 from app.observability.tracing import (
@@ -64,11 +67,14 @@ class AgentWorkflowState(TypedDict, total=False):
     conversation_id: str | None
     real_conversation_id: str
     use_llm: bool
+    stream_tokens: bool
+    durable_turn: bool
     trace: dict[str, Any]
     history: list[dict]
     pending_task: dict | None
     effective_user_message: str
     used_pending_task: bool
+    cancelled_pending_request: bool
     used_conversation_context: bool
     conversation_context: dict
     slots: dict
@@ -107,7 +113,10 @@ def should_force_fallback(
     tool_results = tool_results or []
 
     return (
-        route.blocked_by_guardrail
+        route.topic == WITHDRAWAL_TOPIC
+        or get_tool_result(tool_results, "refund_apply") is not None
+        or get_tool_result(tool_results, "refund_decision") is not None
+        or route.blocked_by_guardrail
         or route.need_clarification
         or (route.handoff_required and not route.order_id)
         or has_failed_order_lookup(tool_results)
@@ -142,8 +151,12 @@ def load_context_node(state: AgentWorkflowState) -> dict:
     def work() -> dict:
         mark_agent_state(state, "load_context", "running")
         real_conversation_id = state["real_conversation_id"]
-        history = memory.load(real_conversation_id)
+        history = memory.load_context(real_conversation_id)
         pending_task = memory.get_pending_task(real_conversation_id)
+        pending_kind = pending_message_kind(state["user_message"], pending_task)
+        if pending_kind in {"cancel", "replace"}:
+            memory.clear_pending_task(real_conversation_id)
+            pending_task = None
         (
             effective_user_message,
             used_pending_task,
@@ -159,7 +172,7 @@ def load_context_node(state: AgentWorkflowState) -> dict:
             conversation_context,
         ) = apply_conversation_context(
             user_message=effective_user_message,
-            history=history,
+            history=[] if pending_kind == "cancel" else history,
             used_pending_task=used_pending_task,
         )
 
@@ -172,6 +185,7 @@ def load_context_node(state: AgentWorkflowState) -> dict:
             "conversation_context": conversation_context,
             "slots": slots,
             "required_slots": required_slots,
+            "cancelled_pending_request": pending_kind == "cancel",
         }
         mark_agent_state(
             state,
@@ -196,15 +210,23 @@ def route_node(state: AgentWorkflowState) -> dict:
         real_conversation_id = state["real_conversation_id"]
         pending_task = state.get("pending_task")
         effective_user_message = state["effective_user_message"]
-        slots = state["slots"]
+        slots = dict(state["slots"])
         required_slots = state["required_slots"]
 
-        route = route_user_request(effective_user_message)
-        route, missing_slots = apply_slot_requirements(
+        if state.get("cancelled_pending_request"):
+            route = RouteDecision(intent="general_support", action_type="unknown", topic="general_question",
+                                  routing_reason="用户取消尚未提交的待补充任务")
+        else:
+            route = route_user_request(effective_user_message)
+        if route.order_id:
+            slots["order_id"] = route.order_id
+        route, missing_slots, required_slots = apply_slot_requirements(
             route=route,
             required_slots=required_slots,
             slots=slots,
         )
+        if "new_address" not in required_slots:
+            slots.pop("new_address", None)
         route.agent_plan = build_agent_plan(route)
         orchestration = describe_agent_plan(route)
 
@@ -259,6 +281,8 @@ def route_node(state: AgentWorkflowState) -> dict:
         return {
             "route": route,
             "missing_slots": missing_slots,
+            "required_slots": required_slots,
+            "slots": slots,
             "orchestration": orchestration,
         }
 
@@ -291,6 +315,7 @@ def orchestrate_agents_node(state: AgentWorkflowState) -> dict:
             **state.get("orchestration", {}),
             "runtime_agent_steps": agent_state.agent_steps,
             "shared_state": agent_state.to_summary(),
+            "harness": agent_state.harness,
         }
         add_trace_event(
             state["trace"],
@@ -350,17 +375,44 @@ def build_model_context_node(state: AgentWorkflowState) -> dict:
     return timed_step(state["trace"], "node.build_model_context", work)
 
 
+def _reply_model(state: AgentWorkflowState) -> str:
+    if not state.get("stream_tokens"):
+        return call_zhipu_chat(state["model_messages"])
+    from langgraph.config import get_stream_writer
+    from app.llm.llm_client import call_zhipu_chat_stream
+    writer = get_stream_writer()
+    parts = []
+    for token in call_zhipu_chat_stream(state["model_messages"], usage_trace=state["trace"]):
+        parts.append(token)
+        if not needs_grounded_reply(state["tool_results"]):
+            writer({"type": "token", "content": token})
+    return "".join(parts)
+
+
 def generate_reply_node(state: AgentWorkflowState) -> dict:
     """根据配置选择真实大模型回复或本地确定性回复。"""
 
     def work() -> dict:
         mark_agent_state(state, "generate_reply", "running")
-        if should_force_fallback(state["route"], state["tool_results"]):
+        if state.get("cancelled_pending_request"):
+            reply = "已取消本次待补充的申请，不会继续提交。"
+            reply_mode = "pending_request_cancelled"
+        elif should_force_fallback(state["route"], state["tool_results"]):
             reply = build_fallback_answer(state["route"], state["tool_results"])
             reply_mode = "rule_fallback"
         elif state["use_llm"]:
-            reply = call_zhipu_chat(state["model_messages"])
-            reply_mode = "llm"
+            if needs_grounded_reply(state["tool_results"]):
+                if policy_excerpts(state["tool_results"]):
+                    raw = _reply_model(state)
+                    reply, check = checked_reply(raw, state["tool_results"])
+                    add_trace_event(state["trace"], event_type="reply_evidence_check", data=check)
+                    reply_mode = "grounded_llm" if check["passed"] else "grounded_llm_partial" if check.get("partial") else "grounded_reply_rejected"
+                else:
+                    reply = render_grounded_reply(state["tool_results"], [])
+                    reply_mode = "grounded_no_evidence"
+            else:
+                reply = _reply_model(state)
+                reply_mode = "llm"
         else:
             reply = build_fallback_answer(state["route"], state["tool_results"])
             reply_mode = "fallback"
@@ -401,8 +453,10 @@ def persist_result_node(state: AgentWorkflowState) -> dict:
     reply = state["reply"]
 
     try:
-        memory.append(real_conversation_id, "user", state["user_message"])
-        memory.append(real_conversation_id, "assistant", reply)
+        if state.get("durable_turn"):
+            memory.append_turn(real_conversation_id, state["user_message"], reply, turn_id=state["trace"]["trace_id"])
+        else:
+            memory.append_turn(real_conversation_id, state["user_message"], reply)
     except Exception as error:
         add_trace_timing(
             state["trace"],
@@ -458,16 +512,19 @@ def persist_result_node(state: AgentWorkflowState) -> dict:
     }
 
 
-def build_agent_workflow():
-    """构建 LangGraph 状态图。"""
+def build_agent_workflow(*, checkpointer=None, node_adapter=None):
+    """构建同一张业务图；持久化原型可显式注入 checkpoint 和节点适配器。"""
 
     graph = StateGraph(AgentWorkflowState)
-    graph.add_node("load_context", load_context_node)
-    graph.add_node("route", route_node)
-    graph.add_node("orchestrate_agents", orchestrate_agents_node)
-    graph.add_node("build_model_context", build_model_context_node)
-    graph.add_node("generate_reply", generate_reply_node)
-    graph.add_node("persist_result", persist_result_node)
+    for name, node in (
+        ("load_context", load_context_node),
+        ("route", route_node),
+        ("orchestrate_agents", orchestrate_agents_node),
+        ("build_model_context", build_model_context_node),
+        ("generate_reply", generate_reply_node),
+        ("persist_result", persist_result_node),
+    ):
+        graph.add_node(name, node_adapter(name, node) if node_adapter else node)
 
     graph.add_edge(START, "load_context")
     graph.add_edge("load_context", "route")
@@ -477,7 +534,7 @@ def build_agent_workflow():
     graph.add_edge("generate_reply", "persist_result")
     graph.add_edge("persist_result", END)
 
-    return graph.compile()
+    return graph.compile(checkpointer=checkpointer)
 
 
 agent_workflow = build_agent_workflow()

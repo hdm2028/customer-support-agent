@@ -1,0 +1,6 @@
+{
+  "command": "node --check <extracted web/index.html script>",
+  "returncode": 0,
+  "stderr": "",
+  "visual_verification": "not_performed"
+}

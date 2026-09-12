@@ -1,0 +1,10 @@
+....F
+================================== FAILURES ===================================
+_ RefundConsistencyTests.test_independent_processes_create_claim_and_deliver_once _
+tests\test_refund_consistency.py:143: in test_independent_processes_create_claim_and_deliver_once
+    self.assertEqual(sum(not row["idempotent_replay"] for row in created), 1)
+E   AssertionError: 4 != 1
+=========================== short test summary info ===========================
+FAILED tests/test_refund_consistency.py::RefundConsistencyTests::test_independent_processes_create_claim_and_deliver_once
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 passed in 3.44s

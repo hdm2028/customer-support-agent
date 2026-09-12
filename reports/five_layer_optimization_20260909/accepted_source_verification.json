@@ -1,0 +1,10 @@
+{
+  "restored_from": "release_final/source_snapshot.zip",
+  "restored_files": [
+    "app/agent/routing/llm_router.py",
+    "scripts/eval/run_isolated_baseline.py",
+    "scripts/eval/run_five_layer_eval.py"
+  ],
+  "checked_files": 207,
+  "all_tested_source_bytes_equal": true
+}

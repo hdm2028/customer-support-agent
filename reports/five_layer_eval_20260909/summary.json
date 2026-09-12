@@ -1,0 +1,746 @@
+{
+  "layers": {
+    "routing": {
+      "passed": 23,
+      "total": 24,
+      "metrics": {
+        "routing_accuracy": 0.9583,
+        "semantic_accuracy": 0.9583,
+        "intent_accuracy": 1.0,
+        "action_type_accuracy": 1.0,
+        "topic_accuracy": 0.9583,
+        "route_accuracy": 1.0,
+        "clarification_accuracy": 1.0
+      },
+      "first_failed_checks": {
+        "semantic_route": 1
+      },
+      "dependency_affected_cases": [],
+      "model_contract_fallback_cases": [],
+      "trace_linked_cases": 0,
+      "trace_records": 0,
+      "mean_traced_request_ms": null,
+      "semantic_calls_recorded": 24,
+      "semantic_call_errors": {},
+      "traced_chat_calls": 0,
+      "traced_chat_failed_calls": 0,
+      "traced_provider_tokens": null,
+      "provider_usage_scope": "Traced calls only; direct routing/permission calls may lack usage. Not total billing.",
+      "dangerous_tool_misuse_count": null,
+      "report": "routing_tools/routing_v2/reports/eval_routing_v2.json"
+    },
+    "tool": {
+      "passed": 42,
+      "total": 55,
+      "metrics": {
+        "tool_selection_accuracy": 0.8364,
+        "tool_argument_accuracy": 0.7647,
+        "tool_execution_success_rate": 0.88
+      },
+      "first_failed_checks": {
+        "execution": 3,
+        "selection": 9,
+        "argument": 1
+      },
+      "dependency_affected_cases": [],
+      "model_contract_fallback_cases": [
+        "tool_order_004",
+        "tool_policy_002",
+        "tool_boundary_complaint_refund"
+      ],
+      "trace_linked_cases": 41,
+      "trace_records": 41,
+      "mean_traced_request_ms": 5729.199756097561,
+      "semantic_calls_recorded": 41,
+      "semantic_call_errors": {},
+      "traced_chat_calls": 41,
+      "traced_chat_failed_calls": 0,
+      "traced_provider_tokens": {
+        "prompt_tokens": 121783,
+        "completion_tokens": 2941,
+        "total_tokens": 124724
+      },
+      "provider_usage_scope": "Traced calls only; direct routing/permission calls may lack usage. Not total billing.",
+      "dangerous_tool_misuse_count": 0,
+      "report": "routing_tools/tools/reports/eval_tools.json"
+    },
+    "answer": {
+      "passed": 1,
+      "total": 4,
+      "metrics": {
+        "deterministic_metrics": {
+          "correctness": 0.5,
+          "relevance": 1.0,
+          "completeness": 0.5,
+          "faithfulness_groundedness": 0.6667,
+          "hallucination_rate": 0.25
+        }
+      },
+      "first_failed_checks": {
+        "answer_checks": 3
+      },
+      "dependency_affected_cases": [],
+      "model_contract_fallback_cases": [
+        "answer_refund_004"
+      ],
+      "trace_linked_cases": 4,
+      "trace_records": 4,
+      "mean_traced_request_ms": 6718.48,
+      "semantic_calls_recorded": 4,
+      "semantic_call_errors": {},
+      "traced_chat_calls": 6,
+      "traced_chat_failed_calls": 0,
+      "traced_provider_tokens": {
+        "prompt_tokens": 15286,
+        "completion_tokens": 357,
+        "total_tokens": 15643
+      },
+      "provider_usage_scope": "Traced calls only; direct routing/permission calls may lack usage. Not total billing.",
+      "dangerous_tool_misuse_count": null,
+      "report": "answer_e2e/answer/reports/eval_answer.json"
+    },
+    "e2e": {
+      "passed": 7,
+      "total": 12,
+      "metrics": {
+        "task_success_rate": 0.5833,
+        "routing_success_rate": 0.75,
+        "agent_success_rate": 0.7,
+        "rag_success_rate": 0.8889,
+        "tool_success_rate": 0.75,
+        "tool_argument_success_rate": 1.0,
+        "risk_success_rate": 0.7143,
+        "refund_success_rate": 0.5,
+        "database_success_rate": 1.0,
+        "mq_success_rate": 1.0,
+        "workflow_success_rate": 0.75,
+        "answer_success_rate": 0.5833
+      },
+      "first_failed_checks": {
+        "ANSWER_FAILURE": 2,
+        "ROUTING_FAILURE": 3
+      },
+      "dependency_affected_cases": [],
+      "model_contract_fallback_cases": [],
+      "trace_linked_cases": 12,
+      "trace_records": 12,
+      "mean_traced_request_ms": 5246.515,
+      "semantic_calls_recorded": 11,
+      "semantic_call_errors": {},
+      "traced_chat_calls": 14,
+      "traced_chat_failed_calls": 0,
+      "traced_provider_tokens": {
+        "prompt_tokens": 44637,
+        "completion_tokens": 835,
+        "total_tokens": 45472
+      },
+      "provider_usage_scope": "Traced calls only; direct routing/permission calls may lack usage. Not total billing.",
+      "dangerous_tool_misuse_count": null,
+      "report": "answer_e2e/e2e/reports/eval_e2e.json"
+    },
+    "rag_v1_dev20": {
+      "passed": 13,
+      "total": 20,
+      "metrics": {
+        "hit_at_1": 0.95,
+        "hit_at_3": 1.0,
+        "hit_at_5": 1.0,
+        "mrr": 0.9667,
+        "candidate_evidence_recall_at_20": 0.975,
+        "evidence_coverage_rate": 0.9
+      },
+      "mean_retrieval_ranking_ms": 4.164159996435046,
+      "kb_version": "kb_08b60d90794c5afd235bdb5c",
+      "report": "rag/v1_dev20.json"
+    },
+    "rag_v2_dev6": {
+      "passed": 2,
+      "total": 6,
+      "metrics": {
+        "hit_at_1": 0.6667,
+        "hit_at_3": 0.8333,
+        "hit_at_5": 0.8333,
+        "mrr": 0.75,
+        "candidate_evidence_recall_at_20": 0.9167,
+        "evidence_coverage_rate": 0.65
+      },
+      "mean_retrieval_ranking_ms": 5.634200060740113,
+      "kb_version": "kb_08b60d90794c5afd235bdb5c",
+      "report": "rag/v2_dev6.json",
+      "requirements": {
+        "hit": 11,
+        "total": 19
+      }
+    }
+  },
+  "failures": [
+    {
+      "layer": "routing",
+      "case_id": "routing_refund_002",
+      "first_failed_check": "semantic_route",
+      "reason": "semantic.topic expected='refund_apply', actual='return_apply'",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": null,
+      "trace_line": null,
+      "trace_file": null,
+      "case_records": "routing_tools/routing_v2/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_order_005",
+      "first_failed_check": "execution",
+      "reason": "expected tool execution did not succeed",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "4aece00a-dda2-4510-9281-5d813dccc469",
+      "trace_line": 9,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_policy_002",
+      "first_failed_check": "selection",
+      "reason": "tools expected=['policy_search'], actual=[]; tool arguments unavailable; execute the case to collect trace tool_call events; expected tool execution did not succeed",
+      "dependency_affected": false,
+      "model_contract_fallback": true,
+      "fallback_records": [
+        {
+          "case_id": "tool_policy_002",
+          "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_policy'",
+          "category": "model_output_contract"
+        },
+        {
+          "case_id": "tool-eval-tool_policy_002-99c02b25f4974b9bbdcdc872c09196b0",
+          "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_policy'",
+          "category": "model_output_contract"
+        }
+      ],
+      "failed_llm_calls": [],
+      "trace_id": "80517565-38c0-4994-8bf7-213b128e301a",
+      "trace_line": 13,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_contrast_refund_002",
+      "first_failed_check": "execution",
+      "reason": "expected tool execution did not succeed",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "25c118a0-2597-42ab-aee0-3e98a404a22d",
+      "trace_line": 19,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_contrast_quality_002",
+      "first_failed_check": "argument",
+      "reason": "policy_search.lexical_query expected_rule=['退款申请', '质量问题'], actual=订单10001这个耳机质量太差了，我确定要退款。 退款 退货退款 退款申请 已签收 2026-08-01 15:30 已签收 蓝牙降噪耳机 A1 电子产品 2026-08-01; expected tool execution did not succeed",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "6fb3f3db-6e1d-452a-821e-03119f72ee43",
+      "trace_line": 21,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_contrast_progress_002",
+      "first_failed_check": "selection",
+      "reason": "tools should contain ordered sequence ['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'refund_decision', 'policy_search']; missing argument trace for risk_check; missing argument trace for refund_apply",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "19945c6f-47e1-4df5-bf04-18f8c765cc4d",
+      "trace_line": 23,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_boundary_unpaid_refund",
+      "first_failed_check": "selection",
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'refund_decision', 'policy_search']; policy_search.lexical_query expected_rule=['退款政策', '待支付'], actual=订单10005还没付款，直接帮我退款。 退款 退货退款 退款申请 待支付 未发货 手机保护壳 C3 手机配件",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "0fc144be-7557-42a3-af87-f0e5dafa0015",
+      "trace_line": 24,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_boundary_duplicate_refund",
+      "first_failed_check": "selection",
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'refund_decision', 'policy_search']; policy_search.lexical_query expected_rule=['退款政策', '退货审核中'], actual=订单10006正在退货审核，我还要再申请一次退款。 退款 退货退款 退款申请 退货申请 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "1a107378-273f-4d81-9ecb-8c69bd22e1d0",
+      "trace_line": 25,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_boundary_payment_pending_refund",
+      "first_failed_check": "selection",
+      "reason": "tools expected=['order_lookup', 'policy_search'], actual=['order_lookup', 'refund_decision', 'policy_search']; policy_search.lexical_query expected_rule=['支付异常', '退款政策'], actual=订单10007扣款还在确认中，先直接给我退款。 退款 退货退款 退款申请 支付异常 未发货 机械键盘 K9 电子产品",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "a7a0acb9-86a8-45dc-bcf4-621301f17b42",
+      "trace_line": 26,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_boundary_not_found_refund",
+      "first_failed_check": "execution",
+      "reason": "expected tool execution did not succeed",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "b6b4aa8d-506b-4ad4-96bd-e9bf69f73e0a",
+      "trace_line": 27,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_boundary_complaint_only",
+      "first_failed_check": "selection",
+      "reason": "tools should contain ordered sequence ['order_lookup', 'risk_check', 'create_manual_review', 'create_ticket'], actual=['order_lookup']; missing argument trace for risk_check; missing argument trace for create_manual_review; missing argument trace for create_ticket",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "a7a34e5c-5817-45a8-b9a9-b9b7b6a57e9c",
+      "trace_line": 29,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_boundary_complaint_refund",
+      "first_failed_check": "selection",
+      "reason": "tools should contain ordered sequence ['order_lookup', 'policy_search', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=['order_lookup']; missing argument trace for policy_search; missing argument trace for risk_check; missing argument trace for create_manual_review; missing argument trace for transfer_to_human",
+      "dependency_affected": false,
+      "model_contract_fallback": true,
+      "fallback_records": [
+        {
+          "case_id": "tool_boundary_complaint_refund",
+          "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+          "category": "model_output_contract"
+        },
+        {
+          "case_id": "tool-eval-tool_boundary_complaint_refund-d7d2d86610574d428f8a1402c11a064a",
+          "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+          "category": "model_output_contract"
+        }
+      ],
+      "failed_llm_calls": [],
+      "trace_id": "94bd0379-d390-4493-9fb9-4a93ff6e1946",
+      "trace_line": 30,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_ticket_shipped_address",
+      "first_failed_check": "selection",
+      "reason": "tools expected=['order_lookup', 'risk_check', 'create_manual_review', 'transfer_to_human'], actual=[]; tool arguments unavailable; execute the case to collect trace tool_call events; expected tool execution did not succeed",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "28ee4dec-021d-42bf-b482-13634424dd1d",
+      "trace_line": 33,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "tool",
+      "case_id": "tool_ticket_pending_cancel",
+      "first_failed_check": "selection",
+      "reason": "tools expected=['order_lookup', 'risk_check', 'create_manual_review', 'transfer_to_human', 'create_ticket'], actual=['order_lookup', 'risk_check', 'create_manual_review', 'create_ticket', 'transfer_to_human']; create_manual_review.review_type expected_rule=risk_control, actual=cancel_order; create_ticket.priority expected_rule=normal, actual=high",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "76b67e30-952e-4393-8250-a85d088ac6d9",
+      "trace_line": 34,
+      "trace_file": "routing_tools/tools/trace.jsonl",
+      "case_records": "routing_tools/tools/reports/case_results.jsonl"
+    },
+    {
+      "layer": "answer",
+      "case_id": "answer_refund_001",
+      "first_failed_check": "answer_checks",
+      "reason": "missing_expected_keywords=['订单', '不能']",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "26cf5cf5-2f8b-472c-ad90-fcea0fdc86cd",
+      "trace_line": 1,
+      "trace_file": "answer_e2e/answer/trace.jsonl",
+      "case_records": "answer_e2e/answer/reports/case_results.jsonl"
+    },
+    {
+      "layer": "answer",
+      "case_id": "answer_refund_002",
+      "first_failed_check": "answer_checks",
+      "reason": "forbidden_keywords_present=['立即到账']",
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "92148ce1-39fe-479a-bcd8-90db70f773d2",
+      "trace_line": 2,
+      "trace_file": "answer_e2e/answer/trace.jsonl",
+      "case_records": "answer_e2e/answer/reports/case_results.jsonl"
+    },
+    {
+      "layer": "answer",
+      "case_id": "answer_refund_004",
+      "first_failed_check": "answer_checks",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']",
+      "dependency_affected": false,
+      "model_contract_fallback": true,
+      "fallback_records": [
+        {
+          "case_id": "answer-eval-answer_refund_004-fe96793cb70d4ad0a1505182c8d917bb",
+          "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+          "category": "model_output_contract"
+        }
+      ],
+      "failed_llm_calls": [],
+      "trace_id": "f9e0d11d-256a-49f9-8807-6ab658ba4213",
+      "trace_line": 4,
+      "trace_file": "answer_e2e/answer/trace.jsonl",
+      "case_records": "answer_e2e/answer/reports/case_results.jsonl"
+    },
+    {
+      "layer": "e2e",
+      "case_id": "e2e_refund_001",
+      "first_failed_check": "ANSWER_FAILURE",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: MQ"
+        ]
+      },
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "3de2bdbc-7637-436f-8143-68a7419e1b92",
+      "trace_line": 1,
+      "trace_file": "answer_e2e/e2e/trace.jsonl",
+      "case_records": "answer_e2e/e2e/reports/case_results.jsonl"
+    },
+    {
+      "layer": "e2e",
+      "case_id": "e2e_refund_003",
+      "first_failed_check": "ANSWER_FAILURE",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: 知识库"
+        ]
+      },
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "c21539dd-32f4-467e-b03f-26334f1c5a57",
+      "trace_line": 3,
+      "trace_file": "answer_e2e/e2e/trace.jsonl",
+      "case_records": "answer_e2e/e2e/reports/case_results.jsonl"
+    },
+    {
+      "layer": "e2e",
+      "case_id": "e2e_refund_007",
+      "first_failed_check": "ROUTING_FAILURE",
+      "reason": {
+        "route": [
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'refund_decision', 'policy_search']",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_apply_failed, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 暂未创建成功"
+        ]
+      },
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "0b5f0480-386f-4cf5-8548-6c37907cafe7",
+      "trace_line": 7,
+      "trace_file": "answer_e2e/e2e/trace.jsonl",
+      "case_records": "answer_e2e/e2e/reports/case_results.jsonl"
+    },
+    {
+      "layer": "e2e",
+      "case_id": "e2e_refund_008",
+      "first_failed_check": "ROUTING_FAILURE",
+      "reason": {
+        "route": [
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'refund_decision', 'policy_search']",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_apply_failed, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功"
+        ]
+      },
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "d367294a-d5e1-457b-b857-9e26a3e5c61f",
+      "trace_line": 8,
+      "trace_file": "answer_e2e/e2e/trace.jsonl",
+      "case_records": "answer_e2e/e2e/reports/case_results.jsonl"
+    },
+    {
+      "layer": "e2e",
+      "case_id": "e2e_refund_009",
+      "first_failed_check": "ROUTING_FAILURE",
+      "reason": {
+        "route": [
+          "route.need_policy expected=True, actual=False",
+          "route.need_refund_request expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['customer_agent'], actual=['after_sales_agent', 'risk_agent', 'after_sales_agent', 'after_sales_agent']"
+        ],
+        "rag": [
+          "policy_search missing"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review'], actual=['order_lookup', 'risk_check', 'create_manual_review', 'create_ticket']",
+          "missing tool result: policy_search",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功"
+        ]
+      },
+      "dependency_affected": false,
+      "model_contract_fallback": false,
+      "fallback_records": [],
+      "failed_llm_calls": [],
+      "trace_id": "2dde5f72-e32d-4224-aac9-8216c3936dac",
+      "trace_line": 9,
+      "trace_file": "answer_e2e/e2e/trace.jsonl",
+      "case_records": "answer_e2e/e2e/reports/case_results.jsonl"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_001",
+      "first_failed_check": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: order_change",
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "coverage": 0.5,
+      "candidate_coverage": 1.0,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_006",
+      "first_failed_check": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: shipping",
+      "expected_rank": 1,
+      "candidate_expected_rank": 3,
+      "coverage": 0.5,
+      "candidate_coverage": 1.0,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_009",
+      "first_failed_check": "retrieval_failure",
+      "reason": "required categories absent from Top20: order_change",
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "coverage": 0.5,
+      "candidate_coverage": 0.5,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_011",
+      "first_failed_check": "ranking_failure",
+      "reason": "expected terms did not reach final TopK: 最新状态",
+      "expected_rank": 3,
+      "candidate_expected_rank": 1,
+      "coverage": 1.0,
+      "candidate_coverage": 1.0,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_015",
+      "first_failed_check": "evidence_coverage_failure",
+      "reason": "required categories missing from final TopK: product_after_sales",
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "coverage": 0.5,
+      "candidate_coverage": 1.0,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_016",
+      "first_failed_check": "ranking_failure",
+      "reason": "expected terms did not reach final TopK: 运输, 损坏",
+      "expected_rank": 1,
+      "candidate_expected_rank": 3,
+      "coverage": 1.0,
+      "candidate_coverage": 1.0,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v1_dev20",
+      "case_id": "rag_refund_018",
+      "first_failed_check": "ranking_failure",
+      "reason": "expected terms did not reach final TopK: FAILED",
+      "expected_rank": 1,
+      "candidate_expected_rank": 3,
+      "coverage": 1.0,
+      "candidate_coverage": 1.0,
+      "report": "rag/v1_dev20.json"
+    },
+    {
+      "layer": "rag_v2_dev6",
+      "case_id": "rag_dev_candidate_b01_002",
+      "first_failed_check": "evidence_coverage_failure",
+      "reason": "required evidence missing from final TopK: product_quality, product_quality, refund_eligibility",
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "coverage": 0.4,
+      "candidate_coverage": 1.0,
+      "report": "rag/v2_dev6.json"
+    },
+    {
+      "layer": "rag_v2_dev6",
+      "case_id": "rag_dev_candidate_b01_003",
+      "first_failed_check": "retrieval_failure",
+      "reason": "required evidence absent from Top20: refund_eligibility",
+      "expected_rank": 1,
+      "candidate_expected_rank": 2,
+      "coverage": 0.5,
+      "candidate_coverage": 0.5,
+      "report": "rag/v2_dev6.json"
+    },
+    {
+      "layer": "rag_v2_dev6",
+      "case_id": "rag_dev_candidate_b01_004",
+      "first_failed_check": "ranking_failure",
+      "reason": "primary target did not reach final TopK",
+      "expected_rank": "N/A",
+      "candidate_expected_rank": 4,
+      "coverage": 0.5,
+      "candidate_coverage": 1.0,
+      "report": "rag/v2_dev6.json"
+    },
+    {
+      "layer": "rag_v2_dev6",
+      "case_id": "rag_dev_candidate_b01_005",
+      "first_failed_check": "evidence_coverage_failure",
+      "reason": "required evidence missing from final TopK: complaint_escalation, refund_eligibility",
+      "expected_rank": 1,
+      "candidate_expected_rank": 1,
+      "coverage": 0.5,
+      "candidate_coverage": 1.0,
+      "report": "rag/v2_dev6.json"
+    }
+  ],
+  "scope": "Dev only; existing scores unchanged",
+  "all_evaluations_passed": false,
+  "evaluation_completed": true
+}

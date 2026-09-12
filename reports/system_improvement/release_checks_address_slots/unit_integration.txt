@@ -1,0 +1,41 @@
+......................F....F.....s................................. [ 29%]
+.................................................................................ssssss.......s.........s........................... [ 86%]
+................................                                         [100%]
+================================== FAILURES ===================================
+_ ConversationTaskBoundaryTests.test_execute_after_policy_consultation_collects_address_but_inherits_known_order _
+tests\test_conversation_task_boundaries.py:234: in test_execute_after_policy_consultation_collects_address_but_inherits_known_order
+    workflow.memory.save_turn(cid, "订单10009可以修改地址吗？", "需先核实订单。")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConversationMemory' object has no attribute 'save_turn'
+_ ConversationTaskBoundaryTests.test_pending_address_question_reaches_router_without_becoming_an_address _
+tests\test_conversation_task_boundaries.py:212: in test_pending_address_question_reaches_router_without_becoming_an_address
+    self.assertNotIn("new_address", context["slots"])
+E   AssertionError: 'new_address' unexpectedly found in {'new_address': '否需要额外费用？'}
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-22p13vmo\main.py:179: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_execute_after_policy_consultation_collects_address_but_inherits_known_order
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_pending_address_question_reaches_router_without_becoming_an_address
+2 failed, 220 passed, 9 skipped, 3 warnings, 17 subtests passed in 5.69s

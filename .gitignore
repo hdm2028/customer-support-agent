@@ -1,11 +1,17 @@
 .env
 .venv/
+.venv-durable/
+data/durable_demo/
+reports/durable_graph_prototype/runtime/
+reports/**/*.zip
 __pycache__/
 *.pyc
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 data/cache/
+data/checkpoints/
+data/backups/
 data/eval_reports/
 data/feedback.jsonl
 data/customer_support.db

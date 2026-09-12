@@ -21,8 +21,15 @@ def ack_message(message_id: str, result: dict | None = None) -> dict | None:
     return update_mq_message_status_in_db(message_id, "done", result=result)
 
 
-def fail_message(message_id: str, result: dict | None = None) -> dict | None:
-    return update_mq_message_status_in_db(message_id, "failed", result=result)
+def fail_message(message_id: str, result: dict | None = None, *, attempts: int | None = None) -> dict | None:
+    from app.storage.transactions import lock_record, transaction
+    with transaction():
+        message = lock_record("mq_messages", "message_id", message_id)
+        if not message or message["status"] in {"done", "dead_letter"}:
+            return None
+        if attempts is not None and message["attempts"] != attempts:
+            return None
+        return update_mq_message_status_in_db(message_id, "failed", result=result)
 
 
 def list_messages(limit: int = 50) -> list[dict]:

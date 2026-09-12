@@ -1,0 +1,4 @@
+Starting routing_v2: private DB/cache/knowledge
+Finished routing_v2: {'total_cases': 24, 'passed_count': 23, 'failed_count': 1, 'exit_code': 1, 'duration_seconds': 116.23, 'actual_chat_usage': {'calls': 0, 'reported_calls': 0, 'failed_calls': 0, 'tokens': None}, 'reply_modes': {}}
+Starting tools: private DB/cache/knowledge
+Finished tools: {'total_cases': 55, 'passed_count': 44, 'failed_count': 11, 'exit_code': 1, 'duration_seconds': 226.28, 'actual_chat_usage': {'calls': 41, 'reported_calls': 41, 'failed_calls': 0, 'tokens': {'prompt_tokens': 136297, 'completion_tokens': 2961, 'total_tokens': 139258}}, 'reply_modes': {'fallback': 26, 'rule_fallback': 15}}

@@ -1,0 +1,99 @@
+..FF                                                                     [100%]
+================================== FAILURES ===================================
+_ RedisConsistencyTests.test_post_commit_redis_outage_does_not_report_refund_creation_failure _
+tests\test_redis_consistency.py:128: in test_post_commit_redis_outage_does_not_report_refund_creation_failure
+    self.assertTrue(result.success, result.result)
+E   AssertionError: False is not true : {'failure_origin': 'runtime_exception', 'error_type': 'ToolTransientError', 'error_message': 'Timeout connecting to server', 'reason': 'refund_apply 工具调用失败，已进入降级处理。', 'fallback_action': 'recover_refund_status_or_handoff', 'retryable': False, 'attempt': 1, 'max_attempts': 1, 'duration_ms': 4098.57, 'attempt_duration_ms': 4098.57, 'side_effect_class': 'SIDE_EFFECT', 'recovery_action': 'check_order_idempotency_state_before_any_replay'}
+
+During handling of the above exception, another exception occurred:
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1055: in connect_check_health
+    sock = self._connect()
+           ^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1617: in _connect
+    raise err
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1601: in _connect
+    sock.connect(socket_address)
+E   TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+tests\test_redis_consistency.py:134: in test_post_commit_redis_outage_does_not_report_refund_creation_failure
+    if cache.get_cache_backend().ping():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\storage\cache.py:90: in ping
+    return bool(self.client.ping())
+                ^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\commands\core.py:2037: in ping
+    return self.execute_command("PING", **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\client.py:867: in execute_command
+    return self._execute_command(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\client.py:873: in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\utils.py:258: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:3273: in get_connection
+    connection.connect()
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1028: in connect
+    self.retry.call_with_retry(
+..\..\Programs\Python\Python313\Lib\site-packages\redis\retry.py:132: in call_with_retry
+    raise error
+..\..\Programs\Python\Python313\Lib\site-packages\redis\retry.py:120: in call_with_retry
+    return do()
+           ^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1029: in <lambda>
+    lambda: self.connect_check_health(
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1066: in connect_check_health
+    raise e
+E   redis.exceptions.TimeoutError: Timeout connecting to server
+_________ RedisConsistencyTests.test_terminated_owner_recovers_by_ttl _________
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1055: in connect_check_health
+    sock = self._connect()
+           ^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1617: in _connect
+    raise err
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1601: in _connect
+    sock.connect(socket_address)
+E   TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+tests\test_redis_consistency.py:52: in setUp
+    backend = cache.RedisJsonCache(self.url)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\storage\cache.py:66: in __init__
+    self.client.ping()
+..\..\Programs\Python\Python313\Lib\site-packages\redis\commands\core.py:2037: in ping
+    return self.execute_command("PING", **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\client.py:867: in execute_command
+    return self._execute_command(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\client.py:873: in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\utils.py:258: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:3273: in get_connection
+    connection.connect()
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1028: in connect
+    self.retry.call_with_retry(
+..\..\Programs\Python\Python313\Lib\site-packages\redis\retry.py:132: in call_with_retry
+    raise error
+..\..\Programs\Python\Python313\Lib\site-packages\redis\retry.py:120: in call_with_retry
+    return do()
+           ^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1029: in <lambda>
+    lambda: self.connect_check_health(
+..\..\Programs\Python\Python313\Lib\site-packages\redis\connection.py:1066: in connect_check_health
+    raise e
+E   redis.exceptions.TimeoutError: Timeout connecting to server
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_expired_owner_cannot_delete_successors_lock
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_four_processes_create_one_refund_and_event_using_redis
+FAILED tests/test_redis_consistency.py::RedisConsistencyTests::test_post_commit_redis_outage_does_not_report_refund_creation_failure
+FAILED tests/test_redis_consistency.py::RedisConsistencyTests::test_terminated_owner_recovers_by_ttl
+2 failed, 2 passed in 23.38s

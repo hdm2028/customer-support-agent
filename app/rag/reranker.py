@@ -126,7 +126,9 @@ def state_match_score(query: str, candidate_text: str) -> tuple[float, list[str]
     return bonus, reasons
 
 
-def business_rule_score(query: str, candidate: dict) -> tuple[float, list[str]]:
+def business_rule_score(
+    query: str, candidate: dict, *, metadata_priors: bool = True,
+) -> tuple[float, list[str]]:
     """根据售后业务意图、文档来源、章节标题和正文短语对候选结果重新加分。"""
 
     source = candidate.get("source", "")
@@ -140,11 +142,11 @@ def business_rule_score(query: str, candidate: dict) -> tuple[float, list[str]]:
         if not contains_any(query, rule["triggers"]):
             continue
 
-        if contains_any(source, rule["sources"]):
+        if metadata_priors and contains_any(source, rule["sources"]):
             bonus += 0.12
             reasons.append(f"source_match: {rule['name']}")
 
-        if contains_any(section, rule["sections"]):
+        if metadata_priors and contains_any(section, rule["sections"]):
             bonus += 0.18
             reasons.append(f"section_match: {section}")
 
@@ -167,14 +169,21 @@ def business_rule_score(query: str, candidate: dict) -> tuple[float, list[str]]:
     return bonus, reasons
 
 
-def rerank_documents(query: str, candidates: list[dict]) -> list[dict]:
+def rerank_documents(
+    query: str, candidates: list[dict], *, metadata_priors: bool = True,
+) -> list[dict]:
     """对初召回候选 chunk 做业务 rerank，并保留可解释的重排序原因。"""
 
     reranked = []
 
     for candidate in candidates:
         retrieval_score = float(candidate.get("score", 0))
-        rerank_bonus, reasons = business_rule_score(query, candidate)
+        # Opt-in ablation: suppress source/first-heading priors only. Fixed
+        # chunks can span several sections; their first heading is not a
+        # reliable proxy for the relevance of all rules in their body.
+        rerank_bonus, reasons = business_rule_score(
+            query, candidate, metadata_priors=metadata_priors,
+        )
         rerank_score = retrieval_score + rerank_bonus
         item = {
             **candidate,

@@ -1,0 +1,478 @@
+{
+  "failed_cases": [
+    {
+      "case_id": "e2e_refund_001",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "final_action": "refund_queued"
+      },
+      "actual": {
+        "order_id": "10009",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent",
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10009"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10009我要退款。\n订单状态：待发货\n物流状态：仓库正在拣货\n商品名称：儿童安全座椅 B6\n商品类目：母婴用品",
+              "lexical_query": "订单10009我要退款。 退款 退货退款 退款申请 待发货 仓库正在拣货 儿童安全座椅 B6 母婴用品"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。"
+            }
+          },
+          {
+            "tool_name": "refund_apply",
+            "arguments": {
+              "order_id": "10009",
+              "user_request": "订单10009我要退款。",
+              "risk_assessment": {
+                "risk_level": "low",
+                "risk_score": 15,
+                "risk_flags": [
+                  "中额退款"
+                ],
+                "review_required": false,
+                "review_reason": "中额退款",
+                "profile": {
+                  "user_id": "u009",
+                  "account_status": "normal",
+                  "refund_count_30d": 0,
+                  "complaint_count_30d": 0
+                }
+              }
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10009",
+              "issue_type": "退货退款",
+              "user_request": "订单10009我要退款。",
+              "priority": "high"
+            }
+          }
+        ],
+        "final_action": "refund_queued",
+        "reply": "退款申请 R-536fbc7c78da已受理，正在等待处理。申请受理不代表资金已经退回。关联订单：10009。关联工单：T-68306599cfb7，工单草稿，待人工审核。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 1,
+            "active_refund_count": 1,
+            "mq_message_count": 1
+          }
+        }
+      },
+      "trace_id": "3de2bdbc-7637-436f-8143-68a7419e1b92",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: MQ"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_003",
+      "failure_stage": "ANSWER_FAILURE",
+      "expected": {
+        "order_id": null,
+        "agents": [
+          "customer_agent"
+        ],
+        "tools": [
+          "policy_search"
+        ],
+        "final_action": "policy_answer"
+      },
+      "actual": {
+        "order_id": null,
+        "agents": [
+          "customer_agent"
+        ],
+        "tools": [
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "退款政策是什么？",
+              "lexical_query": "退款政策是什么？ 退款 退货退款 退款政策 退货规则 七天无理由"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "本轮可核实的政策内容：\n\n《退款政策.md - 退款人工审核》（退款失败）：\n退款任务执行失败时，应记录失败状态和失败原因。\n\n如果无法确认退款是否已经成功，不得直接重复执行退款，应先查询实际退款状态或者进入人工处理。\n\n《退款政策.md - 退款人工审核》（退款到账）：\n退款处理成功后，资金通常按照原支付渠道退回。\n\n《商品售后规则.md - 七天无理由退货》（退款）：\n商品售后处理最终涉及退款时，应按照《退款政策》继续执行。\n\n退款申请创建、退款状态、人工审核以及退款到账等规则以《退款政策》为准。",
+        "side_effects": {
+          "before": {
+            "refund_count": "N/A",
+            "active_refund_count": "N/A",
+            "mq_message_count": "N/A"
+          },
+          "after": {
+            "refund_count": "N/A",
+            "active_refund_count": "N/A",
+            "mq_message_count": "N/A"
+          }
+        }
+      },
+      "trace_id": "c21539dd-32f4-467e-b03f-26334f1c5a57",
+      "reason": {
+        "route": [],
+        "agent": [],
+        "rag": [],
+        "tool": [],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: 知识库"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_007",
+      "failure_stage": "ROUTING_FAILURE",
+      "expected": {
+        "order_id": "10005",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "final_action": "refund_apply_failed"
+      },
+      "actual": {
+        "order_id": "10005",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "refund_decision",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10005"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10005我要退款。\n订单状态：待支付\n物流状态：未发货\n商品名称：手机保护壳 C3\n商品类目：手机配件",
+              "lexical_query": "订单10005我要退款。 退款 退货退款 退款申请 待支付 未发货 手机保护壳 C3 手机配件"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "订单 10005：订单尚未支付，不会产生退款；用户可自行取消待支付订单。本轮未创建退款申请或人工审核单。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "0b5f0480-386f-4cf5-8548-6c37907cafe7",
+      "reason": {
+        "route": [
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'refund_decision', 'policy_search']",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_apply_failed, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 暂未创建成功"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_008",
+      "failure_stage": "ROUTING_FAILURE",
+      "expected": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply"
+        ],
+        "final_action": "refund_apply_failed"
+      },
+      "actual": {
+        "order_id": "10006",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "refund_decision",
+          "policy_search"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10006"
+            }
+          },
+          {
+            "tool_name": "policy_search",
+            "arguments": {
+              "semantic_query": "订单10006我要退款。\n订单状态：退货审核中\n物流状态：2026-08-04 16:20 退货包裹已被仓库签收\n商品名称：女士运动鞋 R5\n商品类目：服饰鞋包\n签收日期：2026-07-31",
+              "lexical_query": "订单10006我要退款。 退款 退货退款 退款申请 退货审核中 2026-08-04 16:20 退货包裹已被仓库签收 女士运动鞋 R5 服饰鞋包 2026-07-31"
+            }
+          }
+        ],
+        "final_action": "policy_answer",
+        "reply": "订单 10006 当前状态为退货审核中。订单已有售后或退款流程在处理中，不能重复创建退款申请。本轮未查到有效退款申请记录，不能将订单售后状态当成已创建退款申请的凭证。本轮未新建申请；请查询现有售后进度，或联系人工核实关联记录。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "d367294a-d5e1-457b-b857-9e26a3e5c61f",
+      "reason": {
+        "route": [
+          "route.need_refund_request expected=True, actual=False",
+          "route.need_risk_check expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['risk_agent'], actual=['after_sales_agent', 'customer_agent']"
+        ],
+        "rag": [],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply'], actual=['order_lookup', 'refund_decision', 'policy_search']",
+          "missing tool result: risk_check",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [
+          "risk_check missing"
+        ],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [
+          "final_action expected=refund_apply_failed, actual=policy_answer"
+        ],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功"
+        ]
+      }
+    },
+    {
+      "case_id": "e2e_refund_009",
+      "failure_stage": "ROUTING_FAILURE",
+      "expected": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "customer_agent",
+          "risk_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_manual_review"
+        ],
+        "final_action": "manual_review_created"
+      },
+      "actual": {
+        "order_id": "10003",
+        "agents": [
+          "after_sales_agent",
+          "risk_agent",
+          "after_sales_agent",
+          "after_sales_agent"
+        ],
+        "tools": [
+          "order_lookup",
+          "risk_check",
+          "create_manual_review",
+          "create_ticket"
+        ],
+        "tool_calls": [
+          {
+            "tool_name": "order_lookup",
+            "arguments": {
+              "order_id": "10003"
+            }
+          },
+          {
+            "tool_name": "risk_check",
+            "arguments": {
+              "order_id": "10003",
+              "user_request": "订单10003定制杯子不要了。"
+            }
+          },
+          {
+            "tool_name": "create_manual_review",
+            "arguments": {
+              "order_id": "10003",
+              "review_type": "cancel_order",
+              "risk_level": "low",
+              "risk_flags": [
+                "30天内高频退款"
+              ],
+              "user_request": "订单10003定制杯子不要了。",
+              "related_id": null
+            }
+          },
+          {
+            "tool_name": "create_ticket",
+            "arguments": {
+              "order_id": "10003",
+              "issue_type": "取消订单",
+              "user_request": "订单10003定制杯子不要了。",
+              "priority": "normal"
+            }
+          }
+        ],
+        "final_action": "manual_review_created",
+        "reply": "订单 10003，商品：定制刻字保温杯，当前订单状态：已签收。\n\n订单备注记录：定制商品通常不支持七天无理由退货，质量问题除外。\n\n工单 T-51fa9609d1ca：草稿，待人工审核。\n\n人工审核单 H-a5a12f482168：待人工审核。\n\n本轮尚未取得足以回答此问题的政策片段，不能据此确认完整的政策条件。请补充具体问题或由人工核实。",
+        "side_effects": {
+          "before": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          },
+          "after": {
+            "refund_count": 0,
+            "active_refund_count": 0,
+            "mq_message_count": 0
+          }
+        }
+      },
+      "trace_id": "2dde5f72-e32d-4224-aac9-8216c3936dac",
+      "reason": {
+        "route": [
+          "route.need_policy expected=True, actual=False",
+          "route.need_refund_request expected=True, actual=False"
+        ],
+        "agent": [
+          "missing_runtime_agents=['customer_agent'], actual=['after_sales_agent', 'risk_agent', 'after_sales_agent', 'after_sales_agent']"
+        ],
+        "rag": [
+          "policy_search missing"
+        ],
+        "tool": [
+          "tools expected=['order_lookup', 'policy_search', 'risk_check', 'refund_apply', 'create_manual_review'], actual=['order_lookup', 'risk_check', 'create_manual_review', 'create_ticket']",
+          "missing tool result: policy_search",
+          "missing tool result: refund_apply"
+        ],
+        "tool_argument": [],
+        "risk": [],
+        "refund": [
+          "refund_apply missing"
+        ],
+        "database_mq": [],
+        "action": [],
+        "answer": [
+          "reply missing phrase: 退款申请暂未创建成功"
+        ]
+      }
+    }
+  ]
+}

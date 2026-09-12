@@ -1,0 +1,3674 @@
+--- a/app/services/review_service.py
++++ b/app/services/review_service.py
+@@ -1,8 +1,10 @@
+ """Audited human decisions and continuation of an approved refund intent."""
+ import json
+ from datetime import datetime
++from copy import deepcopy
++import re
+ 
+-from app.core.security import current_principal
++from app.core.security import authorize_order, current_principal
+ from app.mq.queue import REFUND_CREATED_TOPIC, publish_message
+ from app.storage.database import (get_active_refund_request_by_order_id_from_db,
+                                   get_refund_request_from_db, save_refund_request_to_db,
+@@ -30,7 +32,47 @@
+         return decode_payload(row)
+ 
+ 
+-def resolve_review(review_id: str, decision: str, note: str, *, new_address: str | None = None) -> dict:
++def append_review_supplement(review_id: str, text: str, submission_id: str, *, context: dict | None = None) -> dict:
++    """Append material under the review lock without changing its decision.
++
++    HTTP callers cannot supply context; tool callers may attach observed context.
++    This must run after releasing any order lock held during review creation.
++    """
++    text = text.strip()
++    if not 1 <= len(text) <= 2000 or not re.fullmatch(r"[A-Za-z0-9_-]{8,100}", submission_id):
++        raise ValueError("请提供 1–2000 字补充说明及有效提交编号")
++    with transaction():
++        row = lock_record("manual_reviews", "review_id", review_id)
++        if row is None:
++            raise LookupError("审核单不存在")
++        review = decode_payload(row)
++        authorize_order({"user_id": review.get("user_id")})
++        actor = current_principal.get()
++        actor_id = actor.user_id if actor else review.get("user_id")
++        supplements = list(review.get("supplements") or [])
++        previous = next((item for item in supplements if item["submission_id"] == submission_id
++                         and item["submitted_by"] == actor_id), None)
++        if previous:
++            if previous["text"] != text:
++                raise ValueError("提交编号已用于其他补充内容")
++            return {"success": True, "idempotent_replay": True, "review_id": review_id,
++                    "supplement_version": review.get("supplement_version", 0),
++                    "review_status": review["status"], "submission": previous}
++        version = int(review.get("supplement_version", 0)) + 1
++        now = datetime.now().isoformat(timespec="seconds")
++        submission = {"submission_id": submission_id, "submitted_by": actor_id,
++                      "submitted_at": now, "text": text, "version": version,
++                      "review_status_at_submission": review["status"], "context": deepcopy(context)}
++        supplements.append(submission)
++        review.update(supplements=supplements, supplement_version=version, updated_at=now)
++        execute("UPDATE manual_reviews SET payload = ?, updated_at = ? WHERE review_id = ?",
++                (json.dumps(review, ensure_ascii=False), now, review_id))
++        return {"success": True, "idempotent_replay": False, "review_id": review_id,
++                "supplement_version": version, "review_status": review["status"], "submission": submission}
++
++
++def resolve_review(review_id: str, decision: str, note: str, *, new_address: str | None = None,
++                   supplement_version: int | None = None) -> dict:
+     operator = require_operator()
+     if decision not in {"approve", "reject"} or not note.strip():
+         raise ValueError("审核决定和审核说明不能为空")
+@@ -45,6 +87,10 @@
+             if review["status"] == status:
+                 return {"success": True, "idempotent_replay": True, "review": review}
+             raise ValueError("审核单已处理，不能覆盖已有决定")
++
++        current_version = int(review.get("supplement_version", 0))
++        if (supplement_version is not None and supplement_version != current_version) or (current_version and supplement_version is None):
++            raise ValueError("审核材料已有更新，请重新查看补充内容后提交决定")
+ 
+         refund = None
+         continuation = None
+@@ -103,7 +149,8 @@
+             review["continuation"] = continuation
+ 
+         review.update(status=status, updated_at=now,
+-                      resolution={"decision": decision, "note": note, "operator_id": operator.user_id, "at": now},
++                      resolution={"decision": decision, "note": note, "operator_id": operator.user_id, "at": now,
++                                  "supplement_version": current_version},
+                       next_step=("审核已通过，退款申请等待处理。" if refund and decision == "approve" else
+                                  "审核已拒绝。" if decision == "reject" else "审核已通过，等待人工完成对应业务操作。"))
+         if continuation:
+--- a/app/tools/human_review.py
++++ b/app/tools/human_review.py
+@@ -9,6 +9,7 @@
+ import hashlib
+ import json
+ import sqlite3
++from uuid import uuid4
+ 
+ 
+ _review_context = ContextVar("review_context", default=None)
+@@ -89,6 +90,21 @@
+     else:
+         review = save_manual_review_to_db(payload)
+ 
++    if review.get("idempotent_replay") and review.get("review_id"):
++        # Never append under the order lock: supplementary material locks only
++        # the review row and may arrive while an operator is resolving it.
++        from app.services.review_service import append_review_supplement
++        trace_id = (payload.get("context") or {}).get("trace_id")
++        submission_id = "chat_" + hashlib.sha256(str(trace_id).encode()).hexdigest() if trace_id else uuid4().hex
++        recorded = append_review_supplement(review["review_id"], user_request, submission_id, context=payload.get("context"))
++        review.update(status=recorded["review_status"], supplement_version=recorded["supplement_version"],
++                      supplement_recorded=True)
++        if review["status"] != "pending_review":
++            refund = get_active_refund_request_by_order_id_from_db(order_id)
++            if refund:
++                review = {"status": "not_required", "idempotent_replay": True, "supplement_recorded": True,
++                          "existing_refund": {key: refund.get(key) for key in ("refund_id", "order_id", "status")}}
++
+     return ToolResult(
+         tool_name="create_manual_review",
+         success=True,
+--- a/app/agent/orchestrator.py
++++ b/app/agent/orchestrator.py
+@@ -261,9 +261,11 @@
+                 review = tool_result.result
+                 if review.get("existing_refund"):
+                     self.record_refund_precondition(state, {"kind": "existing_refund", "origin": "review_creation_check",
++                        "supplement_recorded": review.get("supplement_recorded", False),
+                         "existing_refund": review["existing_refund"], "reason": "已有退款申请，无需再创建审核。"})
+                 elif review.get("review_type") == "refund":
+                     self.record_refund_precondition(state, {"kind": "existing_refund_review", "origin": "review_creation_check",
++                        "supplement_recorded": review.get("supplement_recorded", False),
+                         "existing_review": {key: review.get(key) for key in ("review_id", "status")},
+                         "reason": "已有待处理退款审核，本轮不重复创建。"})
+ 
+--- a/app/agent/response/fallback.py
++++ b/app/agent/response/fallback.py
+@@ -1,78 +1,78 @@
+-from app.agent.tools.tool_results import (
+-    get_tool_result,
+-    is_low_confidence_evidence,
+-    is_system_tool_failure,
+-)
+-from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
+-
+-
+-def _build_policy_answer(policy_result) -> str:
+-    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
+-    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
+-
+-
+-def refund_status_message(refund: dict) -> str:
+-    """Describe the observed state, including replay, without claiming settlement."""
+-    prefix = f"退款申请 {refund.get('refund_id')}"
+-    messages = {
+-        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
+-        "pending_manual_review": "当前状态为待人工审核。",
+-        "refund_processing": "正在处理中，尚未确认处理完成。",
+-        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
+-        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
+-        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
+-        "failed": "处理失败，请查看失败原因或联系人工客服。",
+-        "rejected": "审核未通过，请查看审核说明。",
+-        "cancelled": "已取消。",
+-        "canceled": "已取消。",
+-    }
+-    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
+-
+-
+-def refund_outcome_reply(tool_results: list) -> str | None:
+-    """Execution outcomes come from tool state, never from retrieved policy prose."""
+-    result = get_tool_result(tool_results, "refund_apply")
+-    if result is None:
+-        return None
+-    if result.success and isinstance(result.result, dict):
+-        parts = [refund_status_message(result.result)]
+-    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
+-        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
+-    else:
+-        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
+-        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
+-    order = get_tool_result(tool_results, "order_lookup")
+-    if order and order.success and isinstance(order.result, dict):
+-        parts.append(f"关联订单：{order.result.get('order_id')}。")
+-    review = get_tool_result(tool_results, "create_manual_review")
+-    if review and review.success and isinstance(review.result, dict):
+-        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
+-    ticket = get_tool_result(tool_results, "create_ticket")
+-    if ticket and ticket.success and isinstance(ticket.result, dict):
+-        status = ticket.result.get("status")
+-        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
+-                 "pending_human_review": "工单草稿，待人工审核",
+-                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
+-                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
+-        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
+-    return "".join(parts)
+-
+-
+-def build_fallback_answer(route, tool_results: list) -> str:
+-    if route.topic == WITHDRAWAL_TOPIC:
+-        return WITHDRAWAL_GUIDANCE
+-
+-    if route.need_clarification:
+-        reply = (
+-            route.clarification_question
+-            or "请您补充订单号后，我再帮您继续处理。"
+-        )
+-
+-        if route.handoff_required and route.handoff_reason:
+-            reply += route.handoff_reason
+-
+-        return reply
+-
++from app.agent.tools.tool_results import (
++    get_tool_result,
++    is_low_confidence_evidence,
++    is_system_tool_failure,
++)
++from app.agent.routing.refund_withdrawal import WITHDRAWAL_GUIDANCE, WITHDRAWAL_TOPIC
++
++
++def _build_policy_answer(policy_result) -> str:
++    from app.agent.response.grounded import policy_excerpts, render_grounded_reply
++    return render_grounded_reply([policy_result], policy_excerpts([policy_result]))
++
++
++def refund_status_message(refund: dict) -> str:
++    """Describe the observed state, including replay, without claiming settlement."""
++    prefix = f"退款申请 {refund.get('refund_id')}"
++    messages = {
++        "queued": "已受理，正在等待处理。申请受理不代表资金已经退回。",
++        "pending_manual_review": "当前状态为待人工审核。",
++        "refund_processing": "正在处理中，尚未确认处理完成。",
++        "payment_submitting": "已提交支付渠道处理，尚未确认结果。",
++        "refund_unknown": "支付处理结果待核实，需先查询实际状态。",
++        "refund_succeeded": "已由支付渠道确认处理成功，请以原支付渠道到账记录为准。",
++        "failed": "处理失败，请查看失败原因或联系人工客服。",
++        "rejected": "审核未通过，请查看审核说明。",
++        "cancelled": "已取消。",
++        "canceled": "已取消。",
++    }
++    return prefix + messages.get(refund.get("status"), "当前处理结果需要进一步核实，请查询详情或联系人工客服。")
++
++
++def refund_outcome_reply(tool_results: list) -> str | None:
++    """Execution outcomes come from tool state, never from retrieved policy prose."""
++    result = get_tool_result(tool_results, "refund_apply")
++    if result is None:
++        return None
++    if result.success and isinstance(result.result, dict):
++        parts = [refund_status_message(result.result)]
++    elif is_system_tool_failure(result) and result.result.get("failure_origin") != "tool_result":
++        parts = ["本轮未能确认退款申请处理结果，请查询已有申请或联系人工核实，避免重复提交。"]
++    else:
++        reason = result.result.get("reason") if isinstance(result.result, dict) else str(result.result)
++        parts = [f"退款申请暂未创建成功：{reason or '当前结果需要进一步核实。'}"]
++    order = get_tool_result(tool_results, "order_lookup")
++    if order and order.success and isinstance(order.result, dict):
++        parts.append(f"关联订单：{order.result.get('order_id')}。")
++    review = get_tool_result(tool_results, "create_manual_review")
++    if review and review.success and isinstance(review.result, dict):
++        parts.append(f"关联人工审核单：{review.result.get('review_id')}，请以审核单的实际处理状态为准。")
++    ticket = get_tool_result(tool_results, "create_ticket")
++    if ticket and ticket.success and isinstance(ticket.result, dict):
++        status = ticket.result.get("status")
++        label = {"pending_manual_review": "待人工审核", "pending_review": "待人工审核",
++                 "pending_human_review": "工单草稿，待人工审核",
++                 "draft": "草稿", "draft_ready": "草稿", "resolved": "已记录处理结果",
++                 "cancelled": "已取消"}.get(status, "请查看详情核实处理进度")
++        parts.append(f"关联工单：{ticket.result.get('ticket_id')}，{label}。")
++    return "".join(parts)
++
++
++def build_fallback_answer(route, tool_results: list) -> str:
++    if route.topic == WITHDRAWAL_TOPIC:
++        return WITHDRAWAL_GUIDANCE
++
++    if route.need_clarification:
++        reply = (
++            route.clarification_question
++            or "请您补充订单号后，我再帮您继续处理。"
++        )
++
++        if route.handoff_required and route.handoff_reason:
++            reply += route.handoff_reason
++
++        return reply
++
+     if route.handoff_required and not route.order_id:
+         handoff = get_tool_result(tool_results, "transfer_to_human")
+         if handoff and handoff.success:
+@@ -81,27 +81,27 @@
+         if handoff and not handoff.success:
+             return "本轮未能确认人工工单已创建，请查询已有工单或稍后重试。"
+         return (
+-            route.handoff_reason
+-            or "该问题需要人工客服进一步处理。"
+-        )
+-
+-    if route.blocked_by_guardrail:
+-        return (
+-            route.guardrail_reason
+-            or "当前请求存在安全风险，已拒绝执行。"
+-        )
+-
+-    order_result = get_tool_result(
+-        tool_results,
+-        "order_lookup",
+-    )
+-
+-    if order_result and not order_result.success:
+-        return (
+-            f"{order_result.result} 请您核对订单号后重新提供，"
+-            "我再继续查询售后政策并判断是否需要创建工单。"
+-        )
+-
++            route.handoff_reason
++            or "该问题需要人工客服进一步处理。"
++        )
++
++    if route.blocked_by_guardrail:
++        return (
++            route.guardrail_reason
++            or "当前请求存在安全风险，已拒绝执行。"
++        )
++
++    order_result = get_tool_result(
++        tool_results,
++        "order_lookup",
++    )
++
++    if order_result and not order_result.success:
++        return (
++            f"{order_result.result} 请您核对订单号后重新提供，"
++            "我再继续查询售后政策并判断是否需要创建工单。"
++        )
++
+     refund_reply = refund_outcome_reply(tool_results)
+     if refund_reply is not None:
+         return refund_reply
+@@ -114,206 +114,211 @@
+             reply = refund_status_message(decision["existing_refund"]) + "本轮未重复创建退款申请、审核单或工单，可在退款申请详情查看处理进度。"
+         elif decision.get("existing_review"):
+             review = decision["existing_review"]
+-            reply = (f"退款审核单 {review['review_id']} 已存在，当前待人工审核。"
+-                     "本轮未重复创建审核单或人工工单，审核通过前不会自动执行退款。")
++            label = {"pending_review": "待人工审核", "approved": "已通过", "rejected": "已拒绝", "cancelled": "已取消"}.get(review["status"], "请查看详情核实")
++            reply = (f"退款审核单 {review['review_id']} 已存在，当前状态：{label}。"
++                     "本轮未重复创建审核单或人工工单。")
++            if review["status"] == "pending_review":
++                reply += "审核通过前不会自动执行退款。"
+         elif decision.get("kind") == "order_after_sales":
+             reply = (f"订单 {decision['order_id']} 当前状态为{decision['order_status']}。{decision['reason']}"
+                      "本轮未查到有效退款申请记录，不能将订单售后状态当成已创建退款申请的凭证。"
+                      "本轮未新建申请；请查询现有售后进度，或联系人工核实关联记录。")
+         else:
+             reply = f"订单 {decision['order_id']}：{decision['reason']}本轮未创建退款申请或人工审核单。"
++        if decision.get("supplement_recorded"):
++            reply += "本轮补充说明已保存；补充材料不会自动改变已有审核决定。"
+         policy = get_tool_result(tool_results, "policy_search")
+         if policy and not policy.success:
+             reply += "本轮政策证据未能取得，以上状态判断依据查询到的业务记录。"
+         return reply
+-
+-    policy_result = get_tool_result(
+-        tool_results,
+-        "policy_search",
+-    )
+-
+-    ticket_decision_result = get_tool_result(
+-        tool_results,
+-        "ticket_decision",
+-    )
+-
+-    ticket_result = get_tool_result(
+-        tool_results,
+-        "create_ticket",
+-    )
+-
+-    risk_result = get_tool_result(
+-        tool_results,
+-        "risk_check",
+-    )
+-
+-    manual_review_result = get_tool_result(
+-        tool_results,
+-        "create_manual_review",
+-    )
+-
+-    handoff_result = get_tool_result(
+-        tool_results,
+-        "transfer_to_human",
+-    )
+-
+-    plan_validation_result = get_tool_result(
+-        tool_results,
+-        "tool_plan_validation",
+-    )
+-
+-    chain_validation_result = get_tool_result(
+-        tool_results,
+-        "tool_chain_validation",
+-    )
+-
+-    parts = []
+-
+-    if (
+-        plan_validation_result
+-        and not plan_validation_result.success
+-    ):
+-        return (
+-            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
+-            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
+-        )
+-
+-    if order_result and order_result.success:
+-        order = order_result.result
+-
+-        if isinstance(order, dict):
+-            parts.append(
+-                f"已查询到订单 {order.get('order_id')}，"
+-                f"商品是 {order.get('product_name')}，"
+-                f"当前订单状态为{order.get('order_status')}。"
+-            )
+-
+-    if policy_result and not policy_result.success:
+-        if is_low_confidence_evidence(policy_result):
+-            parts.append(
+-                "但本轮没有检索到足够匹配的售后政策证据，"
+-                "我不能强行判断或创建工单。"
+-                "建议补充问题细节，或转人工客服核对政策后继续处理。"
+-            )
+-
+-        elif is_system_tool_failure(policy_result):
+-            parts.append(
+-                "但本轮售后政策检索工具调用失败，"
+-                "我不能在缺少政策依据时直接判断或创建工单。"
+-                "建议转人工客服核对政策后继续处理。"
+-            )
+-
+-        else:
+-            parts.append(
+-                "但本轮没有检索到足够匹配的售后政策，"
+-                "我不能编造不存在的政策结论。"
+-                "建议补充问题细节或转人工客服确认。"
+-            )
+-
+-    if policy_result and policy_result.success:
+-        parts.append(
+-            _build_policy_answer(policy_result)
+-        )
+-
+-    if risk_result and risk_result.success:
+-        risk = risk_result.result
+-
+-        if isinstance(risk, dict):
+-            if risk.get("risk_level") in {
+-                "medium",
+-                "high",
+-            }:
+-                flags = (
+-                    "、".join(
+-                        risk.get(
+-                            "risk_flags",
+-                            [],
+-                        )
+-                    )
+-                    or "售后风险"
+-                )
+-
+-                parts.append(
+-                    f"风控 Agent 判定风险等级为"
+-                    f"{risk.get('risk_level')}，"
+-                    f"命中原因：{flags}。"
+-                )
+-
+-    if (
+-        manual_review_result
+-        and manual_review_result.success
+-    ):
+-        review = manual_review_result.result
+-
+-        if isinstance(review, dict):
+-            parts.append(
+-                f"已创建人工审核单 "
+-                f"{review.get('review_id')}，"
+-                "后续由人工客服复核后再执行高风险操作。"
+-            )
+-
+-    if ticket_result and not ticket_result.success:
+-        if is_system_tool_failure(ticket_result):
+-            parts.append(
+-                "工单创建工具本轮调用失败，暂时没有生成工单。"
+-                "建议稍后重试，或由人工客服继续接入处理。"
+-            )
+-
+-        else:
+-            parts.append(
+-                f"工单暂未创建成功："
+-                f"{ticket_result.result}"
+-            )
+-
+-    if ticket_result and ticket_result.success:
+-        ticket = ticket_result.result
+-
+-        if isinstance(ticket, dict):
+-            parts.append(
+-                f"我已生成{ticket.get('issue_type')}工单草稿，"
+-                "后续需要人工客服核对订单和凭证后处理。"
+-            )
+-
++
++    policy_result = get_tool_result(
++        tool_results,
++        "policy_search",
++    )
++
++    ticket_decision_result = get_tool_result(
++        tool_results,
++        "ticket_decision",
++    )
++
++    ticket_result = get_tool_result(
++        tool_results,
++        "create_ticket",
++    )
++
++    risk_result = get_tool_result(
++        tool_results,
++        "risk_check",
++    )
++
++    manual_review_result = get_tool_result(
++        tool_results,
++        "create_manual_review",
++    )
++
++    handoff_result = get_tool_result(
++        tool_results,
++        "transfer_to_human",
++    )
++
++    plan_validation_result = get_tool_result(
++        tool_results,
++        "tool_plan_validation",
++    )
++
++    chain_validation_result = get_tool_result(
++        tool_results,
++        "tool_chain_validation",
++    )
++
++    parts = []
++
++    if (
++        plan_validation_result
++        and not plan_validation_result.success
++    ):
++        return (
++            "本轮工具调用计划没有通过校验，我不会继续执行可能错误的自动操作。"
++            "请您补充订单号和具体售后诉求，或由人工客服继续处理。"
++        )
++
++    if order_result and order_result.success:
++        order = order_result.result
++
++        if isinstance(order, dict):
++            parts.append(
++                f"已查询到订单 {order.get('order_id')}，"
++                f"商品是 {order.get('product_name')}，"
++                f"当前订单状态为{order.get('order_status')}。"
++            )
++
++    if policy_result and not policy_result.success:
++        if is_low_confidence_evidence(policy_result):
++            parts.append(
++                "但本轮没有检索到足够匹配的售后政策证据，"
++                "我不能强行判断或创建工单。"
++                "建议补充问题细节，或转人工客服核对政策后继续处理。"
++            )
++
++        elif is_system_tool_failure(policy_result):
++            parts.append(
++                "但本轮售后政策检索工具调用失败，"
++                "我不能在缺少政策依据时直接判断或创建工单。"
++                "建议转人工客服核对政策后继续处理。"
++            )
++
++        else:
++            parts.append(
++                "但本轮没有检索到足够匹配的售后政策，"
++                "我不能编造不存在的政策结论。"
++                "建议补充问题细节或转人工客服确认。"
++            )
++
++    if policy_result and policy_result.success:
++        parts.append(
++            _build_policy_answer(policy_result)
++        )
++
++    if risk_result and risk_result.success:
++        risk = risk_result.result
++
++        if isinstance(risk, dict):
++            if risk.get("risk_level") in {
++                "medium",
++                "high",
++            }:
++                flags = (
++                    "、".join(
++                        risk.get(
++                            "risk_flags",
++                            [],
++                        )
++                    )
++                    or "售后风险"
++                )
++
++                parts.append(
++                    f"风控 Agent 判定风险等级为"
++                    f"{risk.get('risk_level')}，"
++                    f"命中原因：{flags}。"
++                )
++
++    if (
++        manual_review_result
++        and manual_review_result.success
++    ):
++        review = manual_review_result.result
++
++        if isinstance(review, dict):
++            parts.append(
++                f"已创建人工审核单 "
++                f"{review.get('review_id')}，"
++                "后续由人工客服复核后再执行高风险操作。"
++            )
++
++    if ticket_result and not ticket_result.success:
++        if is_system_tool_failure(ticket_result):
++            parts.append(
++                "工单创建工具本轮调用失败，暂时没有生成工单。"
++                "建议稍后重试，或由人工客服继续接入处理。"
++            )
++
++        else:
++            parts.append(
++                f"工单暂未创建成功："
++                f"{ticket_result.result}"
++            )
++
++    if ticket_result and ticket_result.success:
++        ticket = ticket_result.result
++
++        if isinstance(ticket, dict):
++            parts.append(
++                f"我已生成{ticket.get('issue_type')}工单草稿，"
++                "后续需要人工客服核对订单和凭证后处理。"
++            )
++
+     if handoff_result and handoff_result.success:
+-        handoff = handoff_result.result
+-
++        handoff = handoff_result.result
++
+         if isinstance(handoff, dict):
+             from app.agent.response.grounded import handoff_receipt
+             parts.append(handoff_receipt(handoff))
+-
+-    if (
+-        chain_validation_result
+-        and not chain_validation_result.success
+-    ):
+-        parts.append(
+-            "另外，本轮工具执行链路没有通过一致性校验，"
+-            "我不会继续扩大自动处理范围。"
+-            "建议转人工客服复核。"
+-        )
+-
+-    if (
+-        ticket_decision_result
+-        and not ticket_decision_result.success
+-    ):
+-        result = ticket_decision_result.result
+-
+-        reason = (
+-            result.get(
+-                "reason",
+-                "当前订单状态暂不满足创建工单条件。",
+-            )
+-            if isinstance(result, dict)
+-            else str(result)
+-        )
+-
+-        parts.append(
+-            f"根据订单状态，当前暂不创建工单：{reason}"
+-        )
+-
+-    if not parts:
+-        return (
+-            "您好，我暂时没有找到足够信息。"
+-            "请补充订单号和具体售后问题，我再帮您判断。"
+-        )
+-
+-    return "".join(parts)
++
++    if (
++        chain_validation_result
++        and not chain_validation_result.success
++    ):
++        parts.append(
++            "另外，本轮工具执行链路没有通过一致性校验，"
++            "我不会继续扩大自动处理范围。"
++            "建议转人工客服复核。"
++        )
++
++    if (
++        ticket_decision_result
++        and not ticket_decision_result.success
++    ):
++        result = ticket_decision_result.result
++
++        reason = (
++            result.get(
++                "reason",
++                "当前订单状态暂不满足创建工单条件。",
++            )
++            if isinstance(result, dict)
++            else str(result)
++        )
++
++        parts.append(
++            f"根据订单状态，当前暂不创建工单：{reason}"
++        )
++
++    if not parts:
++        return (
++            "您好，我暂时没有找到足够信息。"
++            "请补充订单号和具体售后问题，我再帮您判断。"
++        )
++
++    return "".join(parts)
+--- a/main.py
++++ b/main.py
+@@ -38,7 +38,7 @@
+ from app.storage.store import get_order_by_id
+ from app.tools.policy import policy_search
+ from app.core.security import IdentityMiddleware, conversation_access, list_visible_records, current_principal
+-from app.services.review_service import resolve_review, review_details
++from app.services.review_service import resolve_review, review_details, append_review_supplement
+ from pydantic import BaseModel, Field
+ from typing import Literal
+ from app.services.payments import (PaymentNotConfigured, visible_refund,
+@@ -65,6 +65,13 @@
+     decision: Literal["approve", "reject"]
+     note: str = Field(min_length=1, max_length=2000)
+     new_address: str | None = Field(default=None, min_length=6, max_length=500)
++    supplement_version: int | None = Field(default=None, ge=0)
++
++
++class ReviewSupplementRequest(BaseModel):
++    review_id: str = Field(min_length=1, max_length=64)
++    text: str = Field(min_length=1, max_length=2000)
++    submission_id: str = Field(min_length=8, max_length=100, pattern=r"^[A-Za-z0-9_-]+$")
+ 
+ 
+ class RefundCancellationRequest(BaseModel):
+@@ -130,7 +137,8 @@
+ @app.post("/manual-reviews/{review_id}/resolve")
+ def resolve_manual_review(review_id: str, req: ReviewDecisionRequest):
+     try:
+-        return resolve_review(review_id, req.decision, req.note, new_address=req.new_address)
++        return resolve_review(review_id, req.decision, req.note, new_address=req.new_address,
++                              supplement_version=req.supplement_version)
+     except LookupError as error:
+         return JSONResponse({"detail": str(error)}, status_code=404)
+     except ValueError as error:
+@@ -143,6 +151,12 @@
+         return {"success": True, "data": review_details(review_id)}
+     except LookupError as error:
+         return JSONResponse({"detail": str(error)}, status_code=404)
++
++
++@app.post("/review-supplements")
++def submit_review_supplement(req: ReviewSupplementRequest):
++    # Customer identity is accepted here; the service checks review ownership.
++    return ticket_operation(append_review_supplement, req.review_id, req.text, req.submission_id)
+ 
+ 
+ def payment_operation(callback, refund_id):
+--- a/web/index.html
++++ b/web/index.html
+@@ -1,713 +1,713 @@
+-<!doctype html>
+-<html lang="zh-CN">
+-  <head>
+-    <meta charset="utf-8" />
+-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+-    <title>智能售后 Agent 控制台</title>
+-    <style>
+-      :root {
+-        color-scheme: light;
+-        --bg: #f5f7fa;
+-        --panel: #ffffff;
+-        --panel-soft: #f8fafc;
+-        --line: #d8e1ea;
+-        --line-strong: #b7c6d6;
+-        --text: #0f172a;
+-        --muted: #64748b;
+-        --teal: #257366;
+-        --teal-soft: #e3f3ef;
+-        --amber: #b7791f;
+-        --amber-soft: #fff7e6;
+-        --red: #b42318;
+-        --red-soft: #fff1f0;
+-        --blue: #2563a9;
+-        --blue-soft: #eaf2ff;
+-        --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+-        font-family:
+-          "Microsoft YaHei",
+-          "PingFang SC",
+-          "Hiragino Sans GB",
+-          Arial,
+-          sans-serif;
+-      }
+-
+-      * {
+-        box-sizing: border-box;
+-      }
+-
+-      body {
+-        margin: 0;
+-        min-height: 100vh;
+-        background: var(--bg);
+-        color: var(--text);
+-      }
+-
+-      button,
+-      input,
+-      textarea {
+-        font: inherit;
+-      }
+-
+-      button {
+-        cursor: pointer;
+-      }
+-
+-      .app {
+-        display: grid;
+-        grid-template-rows: auto 1fr auto;
+-        height: 100vh;
+-        min-height: 720px;
+-      }
+-
+-      .topbar {
+-        display: grid;
+-        grid-template-columns: minmax(260px, 1fr) auto;
+-        gap: 16px;
+-        align-items: center;
+-        padding: 14px 18px;
+-        background: var(--panel);
+-        border-bottom: 1px solid var(--line);
+-      }
+-
+-      .title-wrap h1 {
+-        margin: 0 0 4px;
+-        font-size: 20px;
+-        line-height: 1.2;
+-        letter-spacing: 0;
+-      }
+-
+-      .title-wrap p {
+-        margin: 0;
+-        color: var(--muted);
+-        font-size: 13px;
+-      }
+-
+-      .top-actions {
+-        display: flex;
+-        align-items: center;
+-        gap: 8px;
+-        flex-wrap: wrap;
+-        justify-content: flex-end;
+-      }
+-
+-      .toggle {
+-        display: inline-flex;
+-        align-items: center;
+-        gap: 6px;
+-        min-height: 34px;
+-        padding: 0 10px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: var(--panel-soft);
+-        color: var(--text);
+-        font-size: 13px;
+-        white-space: nowrap;
+-      }
+-
+-      .toggle input {
+-        width: 14px;
+-        height: 14px;
+-        accent-color: var(--teal);
+-      }
+-
+-      .btn {
+-        min-height: 36px;
+-        padding: 0 14px;
+-        border: 1px solid var(--line-strong);
+-        border-radius: 8px;
+-        background: #fff;
+-        color: var(--text);
+-      }
+-
+-      .btn.primary {
+-        border-color: var(--teal);
+-        background: var(--teal);
+-        color: #fff;
+-        font-weight: 700;
+-      }
+-
+-      .btn:disabled {
+-        cursor: not-allowed;
+-        opacity: 0.58;
+-      }
+-
+-      .layout {
+-        display: grid;
+-        grid-template-columns: 280px minmax(420px, 1fr) 330px;
+-        min-height: 0;
+-      }
+-
+-      .sidebar,
+-      .inspector {
+-        min-height: 0;
+-        overflow: auto;
+-        background: #f9fbfd;
+-        border-right: 1px solid var(--line);
+-        padding: 14px;
+-      }
+-
+-      .inspector {
+-        border-right: 0;
+-        border-left: 1px solid var(--line);
+-      }
+-
+-      .panel {
+-        background: var(--panel);
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+-        margin-bottom: 12px;
+-        overflow: hidden;
+-      }
+-
+-      .panel-title {
+-        display: flex;
+-        align-items: center;
+-        justify-content: space-between;
+-        gap: 8px;
+-        padding: 10px 12px;
+-        border-bottom: 1px solid var(--line);
+-        font-size: 14px;
+-        font-weight: 800;
+-      }
+-
+-      .panel-body {
+-        padding: 12px;
+-      }
+-
+-      .status-grid {
+-        display: grid;
+-        grid-template-columns: 1fr;
+-        gap: 8px;
+-      }
+-
+-      .status-item,
+-      .metric-row,
+-      .data-row {
+-        display: flex;
+-        align-items: center;
+-        justify-content: space-between;
+-        gap: 10px;
+-        min-height: 30px;
+-        color: var(--muted);
+-        font-size: 12px;
+-      }
+-
+-      .status-item strong,
+-      .metric-row strong,
+-      .data-row strong {
+-        color: var(--text);
+-        font-weight: 800;
+-        text-align: right;
+-        max-width: 150px;
+-        overflow-wrap: anywhere;
+-      }
+-
+-      .pill {
+-        display: inline-flex;
+-        align-items: center;
+-        justify-content: center;
+-        min-height: 24px;
+-        padding: 0 8px;
+-        border-radius: 8px;
+-        font-size: 12px;
+-        font-weight: 700;
+-        border: 1px solid var(--line);
+-        background: #fff;
+-        color: var(--muted);
+-        white-space: nowrap;
+-      }
+-
+-      .pill.ok {
+-        border-color: #b7dfd2;
+-        background: var(--teal-soft);
+-        color: var(--teal);
+-      }
+-
+-      .pill.warn {
+-        border-color: #f2d49b;
+-        background: var(--amber-soft);
+-        color: var(--amber);
+-      }
+-
+-      .pill.danger {
+-        border-color: #f4b4ae;
+-        background: var(--red-soft);
+-        color: var(--red);
+-      }
+-
+-      .architecture {
+-        display: grid;
+-        gap: 8px;
+-      }
+-
+-      .arch-node {
+-        display: grid;
+-        grid-template-columns: 8px 1fr;
+-        gap: 8px;
+-        align-items: center;
+-        min-height: 32px;
+-        padding: 8px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: var(--panel-soft);
+-      }
+-
+-      .arch-dot {
+-        width: 8px;
+-        height: 8px;
+-        border-radius: 999px;
+-        background: var(--line-strong);
+-      }
+-
+-      .arch-node.active .arch-dot {
+-        background: var(--teal);
+-      }
+-
+-      .arch-name {
+-        font-size: 13px;
+-        font-weight: 800;
+-      }
+-
+-      .arch-sub {
+-        margin-top: 2px;
+-        color: var(--muted);
+-        font-size: 12px;
+-      }
+-
+-      .preset-list {
+-        display: grid;
+-        gap: 8px;
+-      }
+-
+-      .preset {
+-        width: 100%;
+-        min-height: 40px;
+-        padding: 8px 10px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: #fff;
+-        color: var(--text);
+-        text-align: left;
+-        line-height: 1.35;
+-      }
+-
+-      .preset:hover {
+-        border-color: var(--teal);
+-        background: var(--teal-soft);
+-      }
+-
+-      .workspace {
+-        display: grid;
+-        grid-template-rows: auto 1fr;
+-        min-width: 0;
+-        min-height: 0;
+-      }
+-
+-      .agent-strip {
+-        display: grid;
+-        grid-template-columns: repeat(4, minmax(0, 1fr));
+-        gap: 10px;
+-        padding: 14px;
+-        border-bottom: 1px solid var(--line);
+-        background: var(--panel);
+-      }
+-
+-      .agent-card {
+-        min-height: 70px;
+-        padding: 10px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: #fff;
+-      }
+-
+-      .agent-card.active {
+-        border-color: var(--teal);
+-        background: var(--teal-soft);
+-      }
+-
+-      .agent-role {
+-        color: var(--muted);
+-        font-size: 12px;
+-      }
+-
+-      .agent-name {
+-        margin-top: 4px;
+-        font-size: 15px;
+-        font-weight: 900;
+-      }
+-
+-      .agent-tools {
+-        margin-top: 6px;
+-        color: var(--muted);
+-        font-size: 12px;
+-        overflow: hidden;
+-        text-overflow: ellipsis;
+-        white-space: nowrap;
+-      }
+-
+-      .chat-panel {
+-        display: grid;
+-        grid-template-rows: 1fr;
+-        min-height: 0;
+-        background: var(--bg);
+-      }
+-
+-      .messages {
+-        min-height: 0;
+-        overflow: auto;
+-        padding: 18px 24px 24px;
+-      }
+-
+-      .empty-state {
+-        max-width: 680px;
+-        margin: 90px auto 0;
+-        padding: 24px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: var(--panel);
+-        box-shadow: var(--shadow);
+-      }
+-
+-      .empty-state h2 {
+-        margin: 0 0 10px;
+-        font-size: 20px;
+-      }
+-
+-      .empty-state p {
+-        margin: 0;
+-        color: var(--muted);
+-        line-height: 1.7;
+-      }
+-
+-      .message {
+-        display: grid;
+-        gap: 6px;
+-        margin-bottom: 16px;
+-      }
+-
+-      .message.user {
+-        justify-items: end;
+-      }
+-
+-      .message.agent {
+-        justify-items: start;
+-      }
+-
+-      .speaker {
+-        color: var(--muted);
+-        font-size: 12px;
+-        font-weight: 700;
+-      }
+-
+-      .bubble {
+-        max-width: min(780px, 92%);
+-        padding: 14px 16px;
+-        border-radius: 8px;
+-        line-height: 1.8;
+-        white-space: pre-wrap;
+-        overflow-wrap: anywhere;
+-        border: 1px solid var(--line);
+-      }
+-
+-      .user .bubble {
+-        border-color: var(--teal);
+-        background: var(--teal);
+-        color: #fff;
+-        font-weight: 700;
+-      }
+-
+-      .agent .bubble {
+-        background: #fff;
+-      }
+-
+-      .rating {
+-        display: flex;
+-        gap: 6px;
+-        align-items: center;
+-        margin-top: 4px;
+-        color: var(--muted);
+-        font-size: 12px;
+-      }
+-
+-      .rating button {
+-        width: 30px;
+-        height: 28px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: #fff;
+-        color: var(--teal);
+-        font-weight: 800;
+-      }
+-
+-      .rating button:hover {
+-        background: var(--teal-soft);
+-      }
+-
+-      .tool-list,
+-      .timing-list,
+-      .object-list {
+-        display: grid;
+-        gap: 8px;
+-      }
+-
+-      .tool-item {
+-        padding: 10px;
+-        border: 1px solid var(--line);
+-        border-radius: 8px;
+-        background: var(--panel-soft);
+-      }
+-
+-      .tool-head {
+-        display: flex;
+-        align-items: center;
+-        justify-content: space-between;
+-        gap: 8px;
+-        margin-bottom: 6px;
+-      }
+-
+-      .tool-name {
+-        font-weight: 900;
+-        font-size: 13px;
+-      }
+-
+-      .tool-summary {
+-        color: var(--muted);
+-        font-size: 12px;
+-        line-height: 1.55;
+-        overflow-wrap: anywhere;
+-      }
+-
+-      .trace {
+-        display: grid;
+-        gap: 6px;
+-      }
+-
+-      .trace-item {
+-        display: grid;
+-        grid-template-columns: 86px 1fr;
+-        gap: 8px;
+-        align-items: center;
+-        min-height: 28px;
+-        font-size: 12px;
+-      }
+-
+-      .trace-step {
+-        color: var(--muted);
+-      }
+-
+-      .trace-value {
+-        height: 8px;
+-        border-radius: 999px;
+-        background: var(--blue-soft);
+-        overflow: hidden;
+-      }
+-
+-      .trace-bar {
+-        height: 100%;
+-        min-width: 3px;
+-        background: var(--blue);
+-      }
+-
+-      .input-bar {
+-        display: grid;
+-        grid-template-columns: 1fr 84px;
+-        gap: 10px;
+-        align-items: end;
+-        padding: 12px 18px;
+-        background: var(--panel);
+-        border-top: 1px solid var(--line);
+-      }
+-
+-      textarea {
+-        width: 100%;
+-        min-height: 54px;
+-        max-height: 160px;
+-        resize: vertical;
+-        border: 1px solid var(--line-strong);
+-        border-radius: 8px;
+-        padding: 13px 14px;
+-        background: #fff;
+-        color: var(--text);
+-        outline: none;
+-      }
+-
+-      textarea:focus {
+-        border-color: var(--teal);
+-        box-shadow: 0 0 0 3px rgba(37, 115, 102, 0.12);
+-      }
+-
+-      .send-btn {
+-        height: 54px;
+-      }
+-
+-      .soft-note {
+-        color: var(--muted);
+-        font-size: 12px;
+-        line-height: 1.6;
+-      }
+-
+-      .mono {
+-        font-family: Consolas, "Courier New", monospace;
+-      }
+-
+-      .hidden {
+-        display: none;
+-      }
+-
+-      @media (max-width: 1180px) {
+-        .layout {
+-          grid-template-columns: 250px minmax(360px, 1fr);
+-        }
+-
+-        .inspector {
+-          display: none;
+-        }
+-      }
+-
+-      @media (max-width: 820px) {
+-        .app {
+-          min-height: 100vh;
+-        }
+-
+-        .topbar,
+-        .layout,
+-        .agent-strip,
+-        .input-bar {
+-          grid-template-columns: 1fr;
+-        }
+-
+-        .sidebar {
+-          display: none;
+-        }
+-
+-        .messages {
+-          padding: 14px;
+-        }
+-
+-        .bubble {
+-          max-width: 100%;
+-        }
+-
+-        .send-btn {
+-          width: 100%;
+-        }
+-      }
+-    </style>
+-  </head>
+-  <body>
+-    <div class="app">
+-      <header class="topbar">
+-        <div class="title-wrap">
+-          <h1>智能售后 Agent 控制台</h1>
+-          <p id="subtitle">Agent Orchestrator · Hybrid RAG · MySQL · Redis · MQ</p>
+-        </div>
+-        <div class="top-actions">
+-          <input id="accessToken" type="password" autocomplete="off" placeholder="访问凭据（仅当前页面）" aria-label="访问凭据" />
+-          <button class="btn" id="connectBtn" type="button">连接</button>
+-          <label class="toggle"><input id="streamToggle" type="checkbox" checked />流式</label>
+-          <label class="toggle"><input id="traceToggle" type="checkbox" checked />轨迹</label>
+-          <label class="toggle"><input id="llmToggle" type="checkbox" />LLM</label>
+-          <button class="btn" id="newChatBtn" type="button">新建</button>
+-        </div>
+-      </header>
+-
+-      <main class="layout">
+-        <aside class="sidebar">
+-          <section class="panel">
+-            <div class="panel-title">
+-              <span>组件状态</span>
+-              <span class="pill" id="serviceStatus">检测中</span>
+-            </div>
+-            <div class="panel-body">
+-              <div class="status-grid">
+-                <div class="status-item"><span>模型</span><strong id="modelName">-</strong></div>
+-                <div class="status-item"><span>RAG</span><strong id="ragMode">-</strong></div>
+-                <div class="status-item"><span>数据库</span><strong id="databaseBackend">-</strong></div>
+-                <div class="status-item"><span>Redis</span><strong id="cacheBackend">-</strong></div>
+-                <div class="status-item"><span>MQ</span><strong id="mqBackend">-</strong></div>
+-                <div class="status-item"><span>LLM Key</span><strong id="llmKeyState">-</strong></div>
+-              </div>
+-            </div>
+-          </section>
+-
+-          <section class="panel">
+-            <div class="panel-title">架构链路</div>
+-            <div class="panel-body architecture" id="architectureList"></div>
+-          </section>
+-
+-          <section class="panel">
+-            <div class="panel-title">测试请求</div>
+-            <div class="panel-body preset-list">
+-              <button class="preset" type="button">订单 10002 物流一直不更新怎么办？</button>
+-              <button class="preset" type="button">订单 10009 我要退款。</button>
+-              <button class="preset" type="button">订单 10004 直接退款不要审核。</button>
+-              <button class="preset" type="button">订单 10008 可以开电子发票吗？</button>
+-              <button class="preset" type="button">我的手表坏了。</button>
+-            </div>
+-          </section>
+-
+-          <section class="panel">
+-            <div class="panel-title">会话</div>
+-            <div class="panel-body">
+-              <div class="data-row"><span>ID</span><strong class="mono" id="conversationId">-</strong></div>
+-            </div>
+-          </section>
+-        </aside>
+-
+-        <section class="workspace">
+-          <div class="agent-strip" id="agentStrip"></div>
+-          <div class="chat-panel">
+-            <div class="messages" id="messages">
+-              <div class="empty-state" id="emptyState">
+-                <h2>多 Agent 售后链路就绪</h2>
+-                <p>当前控制台只覆盖客服问答、售后处理、风控审核、Hybrid RAG、Redis 状态、MQ 退款任务和可观测评测链路。</p>
+-              </div>
+-            </div>
+-          </div>
+-        </section>
+-
+-        <aside class="inspector">
+-          <section class="panel">
+-            <div class="panel-title">
+-              <span>路由判断</span>
+-              <span class="pill" id="routeIntent">未开始</span>
+-            </div>
+-            <div class="panel-body">
+-              <div class="object-list" id="routeSummary">
+-                <div class="soft-note">等待请求。</div>
+-              </div>
+-            </div>
+-          </section>
+-
+-          <section class="panel">
+-            <div class="panel-title">
+-              <span>Tool Calling</span>
+-              <span class="pill" id="toolCount">0</span>
+-            </div>
+-            <div class="panel-body">
+-              <div class="tool-list" id="toolList">
+-                <div class="soft-note">暂无工具调用。</div>
+-              </div>
+-            </div>
+-          </section>
+-
+-          <section class="panel">
+-            <div class="panel-title">业务对象</div>
+-            <div class="panel-body">
+-              <div class="object-list" id="businessObjects">
+-                <div class="soft-note">暂无业务对象。</div>
+-              </div>
+-            </div>
+-          </section>
+-
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="utf-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1" />
++    <title>智能售后 Agent 控制台</title>
++    <style>
++      :root {
++        color-scheme: light;
++        --bg: #f5f7fa;
++        --panel: #ffffff;
++        --panel-soft: #f8fafc;
++        --line: #d8e1ea;
++        --line-strong: #b7c6d6;
++        --text: #0f172a;
++        --muted: #64748b;
++        --teal: #257366;
++        --teal-soft: #e3f3ef;
++        --amber: #b7791f;
++        --amber-soft: #fff7e6;
++        --red: #b42318;
++        --red-soft: #fff1f0;
++        --blue: #2563a9;
++        --blue-soft: #eaf2ff;
++        --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
++        font-family:
++          "Microsoft YaHei",
++          "PingFang SC",
++          "Hiragino Sans GB",
++          Arial,
++          sans-serif;
++      }
++
++      * {
++        box-sizing: border-box;
++      }
++
++      body {
++        margin: 0;
++        min-height: 100vh;
++        background: var(--bg);
++        color: var(--text);
++      }
++
++      button,
++      input,
++      textarea {
++        font: inherit;
++      }
++
++      button {
++        cursor: pointer;
++      }
++
++      .app {
++        display: grid;
++        grid-template-rows: auto 1fr auto;
++        height: 100vh;
++        min-height: 720px;
++      }
++
++      .topbar {
++        display: grid;
++        grid-template-columns: minmax(260px, 1fr) auto;
++        gap: 16px;
++        align-items: center;
++        padding: 14px 18px;
++        background: var(--panel);
++        border-bottom: 1px solid var(--line);
++      }
++
++      .title-wrap h1 {
++        margin: 0 0 4px;
++        font-size: 20px;
++        line-height: 1.2;
++        letter-spacing: 0;
++      }
++
++      .title-wrap p {
++        margin: 0;
++        color: var(--muted);
++        font-size: 13px;
++      }
++
++      .top-actions {
++        display: flex;
++        align-items: center;
++        gap: 8px;
++        flex-wrap: wrap;
++        justify-content: flex-end;
++      }
++
++      .toggle {
++        display: inline-flex;
++        align-items: center;
++        gap: 6px;
++        min-height: 34px;
++        padding: 0 10px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: var(--panel-soft);
++        color: var(--text);
++        font-size: 13px;
++        white-space: nowrap;
++      }
++
++      .toggle input {
++        width: 14px;
++        height: 14px;
++        accent-color: var(--teal);
++      }
++
++      .btn {
++        min-height: 36px;
++        padding: 0 14px;
++        border: 1px solid var(--line-strong);
++        border-radius: 8px;
++        background: #fff;
++        color: var(--text);
++      }
++
++      .btn.primary {
++        border-color: var(--teal);
++        background: var(--teal);
++        color: #fff;
++        font-weight: 700;
++      }
++
++      .btn:disabled {
++        cursor: not-allowed;
++        opacity: 0.58;
++      }
++
++      .layout {
++        display: grid;
++        grid-template-columns: 280px minmax(420px, 1fr) 330px;
++        min-height: 0;
++      }
++
++      .sidebar,
++      .inspector {
++        min-height: 0;
++        overflow: auto;
++        background: #f9fbfd;
++        border-right: 1px solid var(--line);
++        padding: 14px;
++      }
++
++      .inspector {
++        border-right: 0;
++        border-left: 1px solid var(--line);
++      }
++
++      .panel {
++        background: var(--panel);
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
++        margin-bottom: 12px;
++        overflow: hidden;
++      }
++
++      .panel-title {
++        display: flex;
++        align-items: center;
++        justify-content: space-between;
++        gap: 8px;
++        padding: 10px 12px;
++        border-bottom: 1px solid var(--line);
++        font-size: 14px;
++        font-weight: 800;
++      }
++
++      .panel-body {
++        padding: 12px;
++      }
++
++      .status-grid {
++        display: grid;
++        grid-template-columns: 1fr;
++        gap: 8px;
++      }
++
++      .status-item,
++      .metric-row,
++      .data-row {
++        display: flex;
++        align-items: center;
++        justify-content: space-between;
++        gap: 10px;
++        min-height: 30px;
++        color: var(--muted);
++        font-size: 12px;
++      }
++
++      .status-item strong,
++      .metric-row strong,
++      .data-row strong {
++        color: var(--text);
++        font-weight: 800;
++        text-align: right;
++        max-width: 150px;
++        overflow-wrap: anywhere;
++      }
++
++      .pill {
++        display: inline-flex;
++        align-items: center;
++        justify-content: center;
++        min-height: 24px;
++        padding: 0 8px;
++        border-radius: 8px;
++        font-size: 12px;
++        font-weight: 700;
++        border: 1px solid var(--line);
++        background: #fff;
++        color: var(--muted);
++        white-space: nowrap;
++      }
++
++      .pill.ok {
++        border-color: #b7dfd2;
++        background: var(--teal-soft);
++        color: var(--teal);
++      }
++
++      .pill.warn {
++        border-color: #f2d49b;
++        background: var(--amber-soft);
++        color: var(--amber);
++      }
++
++      .pill.danger {
++        border-color: #f4b4ae;
++        background: var(--red-soft);
++        color: var(--red);
++      }
++
++      .architecture {
++        display: grid;
++        gap: 8px;
++      }
++
++      .arch-node {
++        display: grid;
++        grid-template-columns: 8px 1fr;
++        gap: 8px;
++        align-items: center;
++        min-height: 32px;
++        padding: 8px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: var(--panel-soft);
++      }
++
++      .arch-dot {
++        width: 8px;
++        height: 8px;
++        border-radius: 999px;
++        background: var(--line-strong);
++      }
++
++      .arch-node.active .arch-dot {
++        background: var(--teal);
++      }
++
++      .arch-name {
++        font-size: 13px;
++        font-weight: 800;
++      }
++
++      .arch-sub {
++        margin-top: 2px;
++        color: var(--muted);
++        font-size: 12px;
++      }
++
++      .preset-list {
++        display: grid;
++        gap: 8px;
++      }
++
++      .preset {
++        width: 100%;
++        min-height: 40px;
++        padding: 8px 10px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: #fff;
++        color: var(--text);
++        text-align: left;
++        line-height: 1.35;
++      }
++
++      .preset:hover {
++        border-color: var(--teal);
++        background: var(--teal-soft);
++      }
++
++      .workspace {
++        display: grid;
++        grid-template-rows: auto 1fr;
++        min-width: 0;
++        min-height: 0;
++      }
++
++      .agent-strip {
++        display: grid;
++        grid-template-columns: repeat(4, minmax(0, 1fr));
++        gap: 10px;
++        padding: 14px;
++        border-bottom: 1px solid var(--line);
++        background: var(--panel);
++      }
++
++      .agent-card {
++        min-height: 70px;
++        padding: 10px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: #fff;
++      }
++
++      .agent-card.active {
++        border-color: var(--teal);
++        background: var(--teal-soft);
++      }
++
++      .agent-role {
++        color: var(--muted);
++        font-size: 12px;
++      }
++
++      .agent-name {
++        margin-top: 4px;
++        font-size: 15px;
++        font-weight: 900;
++      }
++
++      .agent-tools {
++        margin-top: 6px;
++        color: var(--muted);
++        font-size: 12px;
++        overflow: hidden;
++        text-overflow: ellipsis;
++        white-space: nowrap;
++      }
++
++      .chat-panel {
++        display: grid;
++        grid-template-rows: 1fr;
++        min-height: 0;
++        background: var(--bg);
++      }
++
++      .messages {
++        min-height: 0;
++        overflow: auto;
++        padding: 18px 24px 24px;
++      }
++
++      .empty-state {
++        max-width: 680px;
++        margin: 90px auto 0;
++        padding: 24px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: var(--panel);
++        box-shadow: var(--shadow);
++      }
++
++      .empty-state h2 {
++        margin: 0 0 10px;
++        font-size: 20px;
++      }
++
++      .empty-state p {
++        margin: 0;
++        color: var(--muted);
++        line-height: 1.7;
++      }
++
++      .message {
++        display: grid;
++        gap: 6px;
++        margin-bottom: 16px;
++      }
++
++      .message.user {
++        justify-items: end;
++      }
++
++      .message.agent {
++        justify-items: start;
++      }
++
++      .speaker {
++        color: var(--muted);
++        font-size: 12px;
++        font-weight: 700;
++      }
++
++      .bubble {
++        max-width: min(780px, 92%);
++        padding: 14px 16px;
++        border-radius: 8px;
++        line-height: 1.8;
++        white-space: pre-wrap;
++        overflow-wrap: anywhere;
++        border: 1px solid var(--line);
++      }
++
++      .user .bubble {
++        border-color: var(--teal);
++        background: var(--teal);
++        color: #fff;
++        font-weight: 700;
++      }
++
++      .agent .bubble {
++        background: #fff;
++      }
++
++      .rating {
++        display: flex;
++        gap: 6px;
++        align-items: center;
++        margin-top: 4px;
++        color: var(--muted);
++        font-size: 12px;
++      }
++
++      .rating button {
++        width: 30px;
++        height: 28px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: #fff;
++        color: var(--teal);
++        font-weight: 800;
++      }
++
++      .rating button:hover {
++        background: var(--teal-soft);
++      }
++
++      .tool-list,
++      .timing-list,
++      .object-list {
++        display: grid;
++        gap: 8px;
++      }
++
++      .tool-item {
++        padding: 10px;
++        border: 1px solid var(--line);
++        border-radius: 8px;
++        background: var(--panel-soft);
++      }
++
++      .tool-head {
++        display: flex;
++        align-items: center;
++        justify-content: space-between;
++        gap: 8px;
++        margin-bottom: 6px;
++      }
++
++      .tool-name {
++        font-weight: 900;
++        font-size: 13px;
++      }
++
++      .tool-summary {
++        color: var(--muted);
++        font-size: 12px;
++        line-height: 1.55;
++        overflow-wrap: anywhere;
++      }
++
++      .trace {
++        display: grid;
++        gap: 6px;
++      }
++
++      .trace-item {
++        display: grid;
++        grid-template-columns: 86px 1fr;
++        gap: 8px;
++        align-items: center;
++        min-height: 28px;
++        font-size: 12px;
++      }
++
++      .trace-step {
++        color: var(--muted);
++      }
++
++      .trace-value {
++        height: 8px;
++        border-radius: 999px;
++        background: var(--blue-soft);
++        overflow: hidden;
++      }
++
++      .trace-bar {
++        height: 100%;
++        min-width: 3px;
++        background: var(--blue);
++      }
++
++      .input-bar {
++        display: grid;
++        grid-template-columns: 1fr 84px;
++        gap: 10px;
++        align-items: end;
++        padding: 12px 18px;
++        background: var(--panel);
++        border-top: 1px solid var(--line);
++      }
++
++      textarea {
++        width: 100%;
++        min-height: 54px;
++        max-height: 160px;
++        resize: vertical;
++        border: 1px solid var(--line-strong);
++        border-radius: 8px;
++        padding: 13px 14px;
++        background: #fff;
++        color: var(--text);
++        outline: none;
++      }
++
++      textarea:focus {
++        border-color: var(--teal);
++        box-shadow: 0 0 0 3px rgba(37, 115, 102, 0.12);
++      }
++
++      .send-btn {
++        height: 54px;
++      }
++
++      .soft-note {
++        color: var(--muted);
++        font-size: 12px;
++        line-height: 1.6;
++      }
++
++      .mono {
++        font-family: Consolas, "Courier New", monospace;
++      }
++
++      .hidden {
++        display: none;
++      }
++
++      @media (max-width: 1180px) {
++        .layout {
++          grid-template-columns: 250px minmax(360px, 1fr);
++        }
++
++        .inspector {
++          display: none;
++        }
++      }
++
++      @media (max-width: 820px) {
++        .app {
++          min-height: 100vh;
++        }
++
++        .topbar,
++        .layout,
++        .agent-strip,
++        .input-bar {
++          grid-template-columns: 1fr;
++        }
++
++        .sidebar {
++          display: none;
++        }
++
++        .messages {
++          padding: 14px;
++        }
++
++        .bubble {
++          max-width: 100%;
++        }
++
++        .send-btn {
++          width: 100%;
++        }
++      }
++    </style>
++  </head>
++  <body>
++    <div class="app">
++      <header class="topbar">
++        <div class="title-wrap">
++          <h1>智能售后 Agent 控制台</h1>
++          <p id="subtitle">Agent Orchestrator · Hybrid RAG · MySQL · Redis · MQ</p>
++        </div>
++        <div class="top-actions">
++          <input id="accessToken" type="password" autocomplete="off" placeholder="访问凭据（仅当前页面）" aria-label="访问凭据" />
++          <button class="btn" id="connectBtn" type="button">连接</button>
++          <label class="toggle"><input id="streamToggle" type="checkbox" checked />流式</label>
++          <label class="toggle"><input id="traceToggle" type="checkbox" checked />轨迹</label>
++          <label class="toggle"><input id="llmToggle" type="checkbox" />LLM</label>
++          <button class="btn" id="newChatBtn" type="button">新建</button>
++        </div>
++      </header>
++
++      <main class="layout">
++        <aside class="sidebar">
++          <section class="panel">
++            <div class="panel-title">
++              <span>组件状态</span>
++              <span class="pill" id="serviceStatus">检测中</span>
++            </div>
++            <div class="panel-body">
++              <div class="status-grid">
++                <div class="status-item"><span>模型</span><strong id="modelName">-</strong></div>
++                <div class="status-item"><span>RAG</span><strong id="ragMode">-</strong></div>
++                <div class="status-item"><span>数据库</span><strong id="databaseBackend">-</strong></div>
++                <div class="status-item"><span>Redis</span><strong id="cacheBackend">-</strong></div>
++                <div class="status-item"><span>MQ</span><strong id="mqBackend">-</strong></div>
++                <div class="status-item"><span>LLM Key</span><strong id="llmKeyState">-</strong></div>
++              </div>
++            </div>
++          </section>
++
++          <section class="panel">
++            <div class="panel-title">架构链路</div>
++            <div class="panel-body architecture" id="architectureList"></div>
++          </section>
++
++          <section class="panel">
++            <div class="panel-title">测试请求</div>
++            <div class="panel-body preset-list">
++              <button class="preset" type="button">订单 10002 物流一直不更新怎么办？</button>
++              <button class="preset" type="button">订单 10009 我要退款。</button>
++              <button class="preset" type="button">订单 10004 直接退款不要审核。</button>
++              <button class="preset" type="button">订单 10008 可以开电子发票吗？</button>
++              <button class="preset" type="button">我的手表坏了。</button>
++            </div>
++          </section>
++
++          <section class="panel">
++            <div class="panel-title">会话</div>
++            <div class="panel-body">
++              <div class="data-row"><span>ID</span><strong class="mono" id="conversationId">-</strong></div>
++            </div>
++          </section>
++        </aside>
++
++        <section class="workspace">
++          <div class="agent-strip" id="agentStrip"></div>
++          <div class="chat-panel">
++            <div class="messages" id="messages">
++              <div class="empty-state" id="emptyState">
++                <h2>多 Agent 售后链路就绪</h2>
++                <p>当前控制台只覆盖客服问答、售后处理、风控审核、Hybrid RAG、Redis 状态、MQ 退款任务和可观测评测链路。</p>
++              </div>
++            </div>
++          </div>
++        </section>
++
++        <aside class="inspector">
++          <section class="panel">
++            <div class="panel-title">
++              <span>路由判断</span>
++              <span class="pill" id="routeIntent">未开始</span>
++            </div>
++            <div class="panel-body">
++              <div class="object-list" id="routeSummary">
++                <div class="soft-note">等待请求。</div>
++              </div>
++            </div>
++          </section>
++
++          <section class="panel">
++            <div class="panel-title">
++              <span>Tool Calling</span>
++              <span class="pill" id="toolCount">0</span>
++            </div>
++            <div class="panel-body">
++              <div class="tool-list" id="toolList">
++                <div class="soft-note">暂无工具调用。</div>
++              </div>
++            </div>
++          </section>
++
++          <section class="panel">
++            <div class="panel-title">业务对象</div>
++            <div class="panel-body">
++              <div class="object-list" id="businessObjects">
++                <div class="soft-note">暂无业务对象。</div>
++              </div>
++            </div>
++          </section>
++
+           <section class="panel" id="tracePanel">
+-            <div class="panel-title">响应耗时</div>
+-            <div class="panel-body">
+-              <div class="trace" id="timingList">
+-                <div class="soft-note">暂无耗时数据。</div>
+-              </div>
+-            </div>
++            <div class="panel-title">响应耗时</div>
++            <div class="panel-body">
++              <div class="trace" id="timingList">
++                <div class="soft-note">暂无耗时数据。</div>
++              </div>
++            </div>
+           </section>
+ 
+           <section class="panel" id="ticketWorkbench">
+@@ -742,6 +742,19 @@
+             </div>
+           </section>
+ 
++          <section class="panel" id="reviewSupplementPanel">
++            <div class="panel-title">补充审核材料</div>
++            <div class="panel-body">
++              <label for="supplementReviewId">审核单号</label>
++              <input id="supplementReviewId" maxlength="64" placeholder="填写聊天回复中的审核单号" style="width:100%" />
++              <label for="supplementText">补充说明</label>
++              <textarea id="supplementText" maxlength="2000" style="width:100%" placeholder="补充需人工核实的情况或凭证说明"></textarea>
++              <button class="btn" id="submitSupplement" type="button">保存补充说明</button>
++              <p class="soft-note">补充内容会保留在审核单中，不会自动改变已经作出的决定。</p>
++              <p id="supplementStatus" role="status"></p>
++            </div>
++          </section>
++
+           <section class="panel hidden" id="reviewWorkbench">
+             <div class="panel-title">人工审核工作台</div>
+             <div class="panel-body">
+@@ -776,498 +789,498 @@
+               <p id="refundActionStatus" role="status"></p>
+             </div>
+           </section>
+-
+-          <section class="panel">
+-            <div class="panel-title">Token 与数据</div>
+-            <div class="panel-body">
+-              <div class="object-list" id="metricsList">
+-                <div class="soft-note">暂无指标。</div>
+-              </div>
+-            </div>
+-          </section>
+-        </aside>
+-      </main>
+-
+-      <form class="input-bar" id="chatForm">
+-        <textarea id="messageInput" placeholder="输入用户售后问题，例如：订单 10002 物流一直不更新怎么办？"></textarea>
+-        <button class="btn primary send-btn" id="sendBtn" type="submit">发送</button>
+-      </form>
+-    </div>
+-
+-    <script>
+-      const state = {
+-        conversationId: localStorage.getItem("agent_conversation_id") || "",
+-        route: null,
+-        tools: [],
+-        timings: {},
+-        tokenUsage: null,
+-        dashboard: {
+-          refunds: [],
+-          tickets: [],
+-          reviews: [],
+-          mq: [],
+-          metrics: [],
+-        },
+-      };
+-
+-      const els = {
+-        serviceStatus: document.querySelector("#serviceStatus"),
+-        modelName: document.querySelector("#modelName"),
+-        ragMode: document.querySelector("#ragMode"),
+-        databaseBackend: document.querySelector("#databaseBackend"),
+-        cacheBackend: document.querySelector("#cacheBackend"),
+-        mqBackend: document.querySelector("#mqBackend"),
+-        llmKeyState: document.querySelector("#llmKeyState"),
+-        architectureList: document.querySelector("#architectureList"),
+-        agentStrip: document.querySelector("#agentStrip"),
+-        messages: document.querySelector("#messages"),
+-        emptyState: document.querySelector("#emptyState"),
+-        conversationId: document.querySelector("#conversationId"),
+-        routeIntent: document.querySelector("#routeIntent"),
+-        routeSummary: document.querySelector("#routeSummary"),
+-        toolCount: document.querySelector("#toolCount"),
+-        toolList: document.querySelector("#toolList"),
+-        businessObjects: document.querySelector("#businessObjects"),
+-        timingList: document.querySelector("#timingList"),
+-        metricsList: document.querySelector("#metricsList"),
+-        tracePanel: document.querySelector("#tracePanel"),
+-        chatForm: document.querySelector("#chatForm"),
+-        messageInput: document.querySelector("#messageInput"),
+-        sendBtn: document.querySelector("#sendBtn"),
+-        streamToggle: document.querySelector("#streamToggle"),
+-        traceToggle: document.querySelector("#traceToggle"),
+-        llmToggle: document.querySelector("#llmToggle"),
+-        newChatBtn: document.querySelector("#newChatBtn"),
+-      };
+-
+-      const AGENTS = [
+-        { name: "Orchestrator", role: "路由", tools: "状态管理 / 汇总" },
+-        { name: "客服 Agent", role: "问答", tools: "Hybrid RAG" },
+-        { name: "售后 Agent", role: "业务", tools: "订单 / 退款 / 工单" },
+-        { name: "风控 Agent", role: "审核", tools: "风险规则 / 人工审核" },
+-      ];
+-
+-      const ARCHITECTURE = [
+-        ["FastAPI", "统一 API 与 SSE 流式响应"],
+-        ["Agent Orchestrator", "请求路由、状态管理、结果汇总"],
+-        ["客服 Agent", "意图识别、知识库检索、回复生成"],
+-        ["售后 Agent", "订单查询、退款申请、工单创建"],
+-        ["风控 Agent", "高频退款、异常账号、投诉升级"],
+-        ["Hybrid RAG", "向量召回 + BM25/关键词召回 + 业务重排"],
+-        ["MySQL / SQLite", "订单、退款、工单、会话、执行记录"],
+-        ["Redis", "会话、Embedding、Agent 状态、退款幂等"],
+-        ["MQ", "退款任务异步处理"],
+-      ];
+-
+-      const TOOL_LABELS = {
+-        order_lookup: "订单查询",
+-        policy_search: "知识检索",
+-        risk_check: "风控检测",
+-        refund_apply: "退款申请",
+-        create_manual_review: "人工审核",
+-        create_ticket: "工单创建",
+-        transfer_to_human: "转人工",
+-        ticket_decision: "工单判断",
+-        tool_plan_validation: "计划校验",
+-        tool_chain_validation: "链路校验",
+-      };
+-
+-      function escapeHtml(value) {
+-        return String(value ?? "")
+-          .replaceAll("&", "&amp;")
+-          .replaceAll("<", "&lt;")
+-          .replaceAll(">", "&gt;")
+-          .replaceAll('"', "&quot;")
+-          .replaceAll("'", "&#039;");
+-      }
+-
+-      function formatBool(value) {
+-        return value ? "是" : "否";
+-      }
+-
+-      function setPill(el, text, type = "") {
+-        el.textContent = text;
+-        el.className = `pill ${type}`.trim();
+-      }
+-
+-      function updateConversationId(id) {
+-        if (!id) return;
+-        state.conversationId = id;
+-        localStorage.setItem("agent_conversation_id", id);
+-        els.conversationId.textContent = id;
+-      }
+-
+-      function renderArchitecture(activeAgents = []) {
+-        const active = new Set(["FastAPI", "Agent Orchestrator", ...activeAgents]);
+-        els.architectureList.innerHTML = ARCHITECTURE.map(([name, sub]) => `
+-          <div class="arch-node ${active.has(name) ? "active" : ""}">
+-            <span class="arch-dot"></span>
+-            <div>
+-              <div class="arch-name">${escapeHtml(name)}</div>
+-              <div class="arch-sub">${escapeHtml(sub)}</div>
+-            </div>
+-          </div>
+-        `).join("");
+-      }
+-
+-      function renderAgents(activeAgents = [], route = null) {
+-        const active = new Set(["Orchestrator", ...activeAgents]);
+-        const toolPlan = route?.tool_plan || [];
+-        els.agentStrip.innerHTML = AGENTS.map((agent) => {
+-          const tools = agent.name === "Orchestrator" ? toolPlan.join(" / ") || agent.tools : agent.tools;
+-          return `
+-            <div class="agent-card ${active.has(agent.name) ? "active" : ""}">
+-              <div class="agent-role">${escapeHtml(agent.role)}</div>
+-              <div class="agent-name">${escapeHtml(agent.name)}</div>
+-              <div class="agent-tools">${escapeHtml(tools)}</div>
+-            </div>
+-          `;
+-        }).join("");
+-      }
+-
+-      function resetCurrentRun() {
+-        state.route = null;
+-        state.tools = [];
+-        state.timings = {};
+-        state.tokenUsage = null;
+-        setPill(els.routeIntent, "路由中", "warn");
+-        setPill(els.toolCount, "0");
+-        els.routeSummary.innerHTML = `<div class="soft-note">等待路由结果。</div>`;
+-        els.toolList.innerHTML = `<div class="soft-note">暂无工具调用。</div>`;
+-        els.businessObjects.innerHTML = `<div class="soft-note">暂无业务对象。</div>`;
+-        els.timingList.innerHTML = `<div class="soft-note">暂无耗时数据。</div>`;
+-        els.metricsList.innerHTML = `<div class="soft-note">暂无指标。</div>`;
+-        renderAgents();
+-        renderArchitecture();
+-      }
+-
+-      function addMessage(role, content = "") {
+-        els.emptyState?.classList.add("hidden");
+-        const wrapper = document.createElement("div");
+-        wrapper.className = `message ${role}`;
+-        wrapper.innerHTML = `
+-          <div class="speaker">${role === "user" ? "用户" : "Agent"}</div>
+-          <div class="bubble"></div>
+-        `;
+-        const bubble = wrapper.querySelector(".bubble");
+-        bubble.textContent = content;
+-        els.messages.appendChild(wrapper);
+-        els.messages.scrollTop = els.messages.scrollHeight;
+-        return { wrapper, bubble };
+-      }
+-
+-      function addRating(wrapper) {
+-        const rating = document.createElement("div");
+-        rating.className = "rating";
+-        rating.innerHTML = `
+-          <span>本轮评分</span>
+-          ${[1, 2, 3, 4, 5].map((score) => `<button type="button" data-score="${score}">${score}</button>`).join("")}
+-        `;
+-        rating.addEventListener("click", async (event) => {
+-          const button = event.target.closest("button[data-score]");
+-          if (!button || !state.conversationId) return;
+-          await apiFetch("/feedback", {
+-            method: "POST",
+-            headers: { "Content-Type": "application/json" },
+-            body: JSON.stringify({
+-              conversation_id: state.conversationId,
+-              score: Number(button.dataset.score),
+-            }),
+-          });
+-          rating.innerHTML = `<span>已评分 ${button.dataset.score}</span>`;
+-        });
+-        wrapper.appendChild(rating);
+-      }
+-
+-      function renderRoute(route) {
+-        if (!route) return;
+-        const riskType = route.risk_level === "high" ? "danger" : route.risk_level === "medium" ? "warn" : "ok";
+-        setPill(els.routeIntent, route.intent || "general_support", riskType);
+-        const rows = [
+-          ["订单号", route.order_id || "-"],
+-          ["置信度", route.confidence ?? "-"],
+-          ["需订单", formatBool(route.need_order)],
+-          ["需 RAG", formatBool(route.need_policy)],
+-          ["需退款", formatBool(route.need_refund_request)],
+-          ["需风控", formatBool(route.need_risk_check)],
+-          ["需工单", formatBool(route.need_ticket)],
+-          ["人工审核", formatBool(route.manual_review_required || route.handoff_required)],
+-          ["风险等级", route.risk_level || "low"],
+-        ];
+-        els.routeSummary.innerHTML = rows.map(([label, value]) => `
+-          <div class="data-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+-        `).join("");
+-        renderAgents(route.agent_plan || [], route);
+-        renderArchitecture(route.agent_plan || []);
+-      }
+-
+-      function summarizeTool(tool) {
+-        const result = tool.result;
+-        if (tool.tool_name === "order_lookup" && tool.success && result) {
+-          return `订单 ${result.order_id}，状态：${result.order_status}，物流：${result.shipping_status || "-"}`;
+-        }
+-        if (tool.tool_name === "policy_search" && tool.success && Array.isArray(result)) {
+-          return result.slice(0, 2).map((item) => item.citation || item.source).join("；");
+-        }
+-        if (tool.tool_name === "risk_check" && tool.success && result) {
+-          return `风险等级：${result.risk_level}，原因：${(result.risk_flags || []).join("、") || result.review_reason}`;
+-        }
+-        if (tool.tool_name === "refund_apply" && result) {
+-          return tool.success
+-            ? `退款单 ${result.refund_id}，状态：${result.status}，MQ：${result.mq_message_id || "-"}`
+-            : result.reason || JSON.stringify(result);
+-        }
+-        if (tool.tool_name === "create_ticket" && tool.success && result) {
+-          return `工单 ${result.ticket_id}，类型：${result.issue_type}，状态：${result.status}`;
+-        }
+-        if (tool.tool_name === "create_manual_review" && tool.success && result) {
+-          return `审核单 ${result.review_id}，风险：${result.risk_level}，状态：${result.status}`;
+-        }
+-        if (tool.tool_name === "transfer_to_human" && tool.success && result) {
+-          return result.handoff_summary || result.reason;
+-        }
+-        if (tool.tool_name === "ticket_decision" && result) {
+-          return result.reason || JSON.stringify(result);
+-        }
+-        return typeof result === "string" ? result : JSON.stringify(result);
+-      }
+-
+-      function renderTools() {
+-        setPill(els.toolCount, String(state.tools.length), state.tools.some((item) => !item.success) ? "warn" : "ok");
+-        if (!state.tools.length) {
+-          els.toolList.innerHTML = `<div class="soft-note">暂无工具调用。</div>`;
+-          return;
+-        }
+-        els.toolList.innerHTML = state.tools.map((tool) => `
+-          <div class="tool-item">
+-            <div class="tool-head">
+-              <span class="tool-name">${escapeHtml(TOOL_LABELS[tool.tool_name] || tool.tool_name)}</span>
+-              <span class="pill ${tool.success ? "ok" : "danger"}">${tool.success ? "成功" : "失败"}</span>
+-            </div>
+-            <div class="tool-summary">${escapeHtml(summarizeTool(tool))}</div>
+-          </div>
+-        `).join("");
+-      }
+-
+-      function latestTool(name) {
+-        return [...state.tools].reverse().find((item) => item.tool_name === name && item.success);
+-      }
+-
+-      function renderBusinessObjects() {
+-        const rows = [];
+-        const order = latestTool("order_lookup")?.result;
+-        const refund = latestTool("refund_apply")?.result;
+-        const ticket = latestTool("create_ticket")?.result;
+-        const review = latestTool("create_manual_review")?.result;
+-
+-        if (order) {
+-          rows.push(["订单", `${order.order_id} · ${order.order_status}`]);
+-        }
+-        if (refund) {
+-          rows.push(["退款", `${refund.refund_id} · ${refund.status}`]);
+-          rows.push(["MQ", refund.mq_message_id || "-"]);
+-        }
+-        if (ticket) {
+-          rows.push(["工单", `${ticket.ticket_id} · ${ticket.issue_type}`]);
+-        }
+-        if (review) {
+-          rows.push(["审核", `${review.review_id} · ${review.risk_level}`]);
+-        }
+-
+-        if (!rows.length) {
+-          els.businessObjects.innerHTML = `<div class="soft-note">暂无业务对象。</div>`;
+-          return;
+-        }
+-
+-        els.businessObjects.innerHTML = rows.map(([label, value]) => `
+-          <div class="data-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+-        `).join("");
+-      }
+-
+-      function renderTimings() {
+-        const items = Object.values(state.timings);
+-        if (!items.length) {
+-          els.timingList.innerHTML = `<div class="soft-note">暂无耗时数据。</div>`;
+-          return;
+-        }
+-        const max = Math.max(...items.map((item) => Number(item.duration_ms || 0)), 1);
+-        els.timingList.innerHTML = items.map((item) => {
+-          const width = Math.max(4, Math.min(100, Number(item.duration_ms || 0) / max * 100));
+-          const label = String(item.step || "").replace("node.", "").replace("tool.", "");
+-          return `
+-            <div class="trace-item">
+-              <span class="trace-step">${escapeHtml(label)}</span>
+-              <div title="${escapeHtml(item.duration_ms)} ms">
+-                <div class="trace-value"><div class="trace-bar" style="width:${width}%"></div></div>
+-              </div>
+-            </div>
+-          `;
+-        }).join("");
+-      }
+-
+-      function renderMetrics(doneContent = null) {
+-        if (doneContent?.token_usage) {
+-          state.tokenUsage = doneContent.token_usage;
+-        }
+-        const token = state.tokenUsage || {};
+-        const latestMetric = state.dashboard.metrics[0] || {};
+-        const rows = [
++
++          <section class="panel">
++            <div class="panel-title">Token 与数据</div>
++            <div class="panel-body">
++              <div class="object-list" id="metricsList">
++                <div class="soft-note">暂无指标。</div>
++              </div>
++            </div>
++          </section>
++        </aside>
++      </main>
++
++      <form class="input-bar" id="chatForm">
++        <textarea id="messageInput" placeholder="输入用户售后问题，例如：订单 10002 物流一直不更新怎么办？"></textarea>
++        <button class="btn primary send-btn" id="sendBtn" type="submit">发送</button>
++      </form>
++    </div>
++
++    <script>
++      const state = {
++        conversationId: localStorage.getItem("agent_conversation_id") || "",
++        route: null,
++        tools: [],
++        timings: {},
++        tokenUsage: null,
++        dashboard: {
++          refunds: [],
++          tickets: [],
++          reviews: [],
++          mq: [],
++          metrics: [],
++        },
++      };
++
++      const els = {
++        serviceStatus: document.querySelector("#serviceStatus"),
++        modelName: document.querySelector("#modelName"),
++        ragMode: document.querySelector("#ragMode"),
++        databaseBackend: document.querySelector("#databaseBackend"),
++        cacheBackend: document.querySelector("#cacheBackend"),
++        mqBackend: document.querySelector("#mqBackend"),
++        llmKeyState: document.querySelector("#llmKeyState"),
++        architectureList: document.querySelector("#architectureList"),
++        agentStrip: document.querySelector("#agentStrip"),
++        messages: document.querySelector("#messages"),
++        emptyState: document.querySelector("#emptyState"),
++        conversationId: document.querySelector("#conversationId"),
++        routeIntent: document.querySelector("#routeIntent"),
++        routeSummary: document.querySelector("#routeSummary"),
++        toolCount: document.querySelector("#toolCount"),
++        toolList: document.querySelector("#toolList"),
++        businessObjects: document.querySelector("#businessObjects"),
++        timingList: document.querySelector("#timingList"),
++        metricsList: document.querySelector("#metricsList"),
++        tracePanel: document.querySelector("#tracePanel"),
++        chatForm: document.querySelector("#chatForm"),
++        messageInput: document.querySelector("#messageInput"),
++        sendBtn: document.querySelector("#sendBtn"),
++        streamToggle: document.querySelector("#streamToggle"),
++        traceToggle: document.querySelector("#traceToggle"),
++        llmToggle: document.querySelector("#llmToggle"),
++        newChatBtn: document.querySelector("#newChatBtn"),
++      };
++
++      const AGENTS = [
++        { name: "Orchestrator", role: "路由", tools: "状态管理 / 汇总" },
++        { name: "客服 Agent", role: "问答", tools: "Hybrid RAG" },
++        { name: "售后 Agent", role: "业务", tools: "订单 / 退款 / 工单" },
++        { name: "风控 Agent", role: "审核", tools: "风险规则 / 人工审核" },
++      ];
++
++      const ARCHITECTURE = [
++        ["FastAPI", "统一 API 与 SSE 流式响应"],
++        ["Agent Orchestrator", "请求路由、状态管理、结果汇总"],
++        ["客服 Agent", "意图识别、知识库检索、回复生成"],
++        ["售后 Agent", "订单查询、退款申请、工单创建"],
++        ["风控 Agent", "高频退款、异常账号、投诉升级"],
++        ["Hybrid RAG", "向量召回 + BM25/关键词召回 + 业务重排"],
++        ["MySQL / SQLite", "订单、退款、工单、会话、执行记录"],
++        ["Redis", "会话、Embedding、Agent 状态、退款幂等"],
++        ["MQ", "退款任务异步处理"],
++      ];
++
++      const TOOL_LABELS = {
++        order_lookup: "订单查询",
++        policy_search: "知识检索",
++        risk_check: "风控检测",
++        refund_apply: "退款申请",
++        create_manual_review: "人工审核",
++        create_ticket: "工单创建",
++        transfer_to_human: "转人工",
++        ticket_decision: "工单判断",
++        tool_plan_validation: "计划校验",
++        tool_chain_validation: "链路校验",
++      };
++
++      function escapeHtml(value) {
++        return String(value ?? "")
++          .replaceAll("&", "&amp;")
++          .replaceAll("<", "&lt;")
++          .replaceAll(">", "&gt;")
++          .replaceAll('"', "&quot;")
++          .replaceAll("'", "&#039;");
++      }
++
++      function formatBool(value) {
++        return value ? "是" : "否";
++      }
++
++      function setPill(el, text, type = "") {
++        el.textContent = text;
++        el.className = `pill ${type}`.trim();
++      }
++
++      function updateConversationId(id) {
++        if (!id) return;
++        state.conversationId = id;
++        localStorage.setItem("agent_conversation_id", id);
++        els.conversationId.textContent = id;
++      }
++
++      function renderArchitecture(activeAgents = []) {
++        const active = new Set(["FastAPI", "Agent Orchestrator", ...activeAgents]);
++        els.architectureList.innerHTML = ARCHITECTURE.map(([name, sub]) => `
++          <div class="arch-node ${active.has(name) ? "active" : ""}">
++            <span class="arch-dot"></span>
++            <div>
++              <div class="arch-name">${escapeHtml(name)}</div>
++              <div class="arch-sub">${escapeHtml(sub)}</div>
++            </div>
++          </div>
++        `).join("");
++      }
++
++      function renderAgents(activeAgents = [], route = null) {
++        const active = new Set(["Orchestrator", ...activeAgents]);
++        const toolPlan = route?.tool_plan || [];
++        els.agentStrip.innerHTML = AGENTS.map((agent) => {
++          const tools = agent.name === "Orchestrator" ? toolPlan.join(" / ") || agent.tools : agent.tools;
++          return `
++            <div class="agent-card ${active.has(agent.name) ? "active" : ""}">
++              <div class="agent-role">${escapeHtml(agent.role)}</div>
++              <div class="agent-name">${escapeHtml(agent.name)}</div>
++              <div class="agent-tools">${escapeHtml(tools)}</div>
++            </div>
++          `;
++        }).join("");
++      }
++
++      function resetCurrentRun() {
++        state.route = null;
++        state.tools = [];
++        state.timings = {};
++        state.tokenUsage = null;
++        setPill(els.routeIntent, "路由中", "warn");
++        setPill(els.toolCount, "0");
++        els.routeSummary.innerHTML = `<div class="soft-note">等待路由结果。</div>`;
++        els.toolList.innerHTML = `<div class="soft-note">暂无工具调用。</div>`;
++        els.businessObjects.innerHTML = `<div class="soft-note">暂无业务对象。</div>`;
++        els.timingList.innerHTML = `<div class="soft-note">暂无耗时数据。</div>`;
++        els.metricsList.innerHTML = `<div class="soft-note">暂无指标。</div>`;
++        renderAgents();
++        renderArchitecture();
++      }
++
++      function addMessage(role, content = "") {
++        els.emptyState?.classList.add("hidden");
++        const wrapper = document.createElement("div");
++        wrapper.className = `message ${role}`;
++        wrapper.innerHTML = `
++          <div class="speaker">${role === "user" ? "用户" : "Agent"}</div>
++          <div class="bubble"></div>
++        `;
++        const bubble = wrapper.querySelector(".bubble");
++        bubble.textContent = content;
++        els.messages.appendChild(wrapper);
++        els.messages.scrollTop = els.messages.scrollHeight;
++        return { wrapper, bubble };
++      }
++
++      function addRating(wrapper) {
++        const rating = document.createElement("div");
++        rating.className = "rating";
++        rating.innerHTML = `
++          <span>本轮评分</span>
++          ${[1, 2, 3, 4, 5].map((score) => `<button type="button" data-score="${score}">${score}</button>`).join("")}
++        `;
++        rating.addEventListener("click", async (event) => {
++          const button = event.target.closest("button[data-score]");
++          if (!button || !state.conversationId) return;
++          await apiFetch("/feedback", {
++            method: "POST",
++            headers: { "Content-Type": "application/json" },
++            body: JSON.stringify({
++              conversation_id: state.conversationId,
++              score: Number(button.dataset.score),
++            }),
++          });
++          rating.innerHTML = `<span>已评分 ${button.dataset.score}</span>`;
++        });
++        wrapper.appendChild(rating);
++      }
++
++      function renderRoute(route) {
++        if (!route) return;
++        const riskType = route.risk_level === "high" ? "danger" : route.risk_level === "medium" ? "warn" : "ok";
++        setPill(els.routeIntent, route.intent || "general_support", riskType);
++        const rows = [
++          ["订单号", route.order_id || "-"],
++          ["置信度", route.confidence ?? "-"],
++          ["需订单", formatBool(route.need_order)],
++          ["需 RAG", formatBool(route.need_policy)],
++          ["需退款", formatBool(route.need_refund_request)],
++          ["需风控", formatBool(route.need_risk_check)],
++          ["需工单", formatBool(route.need_ticket)],
++          ["人工审核", formatBool(route.manual_review_required || route.handoff_required)],
++          ["风险等级", route.risk_level || "low"],
++        ];
++        els.routeSummary.innerHTML = rows.map(([label, value]) => `
++          <div class="data-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
++        `).join("");
++        renderAgents(route.agent_plan || [], route);
++        renderArchitecture(route.agent_plan || []);
++      }
++
++      function summarizeTool(tool) {
++        const result = tool.result;
++        if (tool.tool_name === "order_lookup" && tool.success && result) {
++          return `订单 ${result.order_id}，状态：${result.order_status}，物流：${result.shipping_status || "-"}`;
++        }
++        if (tool.tool_name === "policy_search" && tool.success && Array.isArray(result)) {
++          return result.slice(0, 2).map((item) => item.citation || item.source).join("；");
++        }
++        if (tool.tool_name === "risk_check" && tool.success && result) {
++          return `风险等级：${result.risk_level}，原因：${(result.risk_flags || []).join("、") || result.review_reason}`;
++        }
++        if (tool.tool_name === "refund_apply" && result) {
++          return tool.success
++            ? `退款单 ${result.refund_id}，状态：${result.status}，MQ：${result.mq_message_id || "-"}`
++            : result.reason || JSON.stringify(result);
++        }
++        if (tool.tool_name === "create_ticket" && tool.success && result) {
++          return `工单 ${result.ticket_id}，类型：${result.issue_type}，状态：${result.status}`;
++        }
++        if (tool.tool_name === "create_manual_review" && tool.success && result) {
++          return `审核单 ${result.review_id}，风险：${result.risk_level}，状态：${result.status}`;
++        }
++        if (tool.tool_name === "transfer_to_human" && tool.success && result) {
++          return result.handoff_summary || result.reason;
++        }
++        if (tool.tool_name === "ticket_decision" && result) {
++          return result.reason || JSON.stringify(result);
++        }
++        return typeof result === "string" ? result : JSON.stringify(result);
++      }
++
++      function renderTools() {
++        setPill(els.toolCount, String(state.tools.length), state.tools.some((item) => !item.success) ? "warn" : "ok");
++        if (!state.tools.length) {
++          els.toolList.innerHTML = `<div class="soft-note">暂无工具调用。</div>`;
++          return;
++        }
++        els.toolList.innerHTML = state.tools.map((tool) => `
++          <div class="tool-item">
++            <div class="tool-head">
++              <span class="tool-name">${escapeHtml(TOOL_LABELS[tool.tool_name] || tool.tool_name)}</span>
++              <span class="pill ${tool.success ? "ok" : "danger"}">${tool.success ? "成功" : "失败"}</span>
++            </div>
++            <div class="tool-summary">${escapeHtml(summarizeTool(tool))}</div>
++          </div>
++        `).join("");
++      }
++
++      function latestTool(name) {
++        return [...state.tools].reverse().find((item) => item.tool_name === name && item.success);
++      }
++
++      function renderBusinessObjects() {
++        const rows = [];
++        const order = latestTool("order_lookup")?.result;
++        const refund = latestTool("refund_apply")?.result;
++        const ticket = latestTool("create_ticket")?.result;
++        const review = latestTool("create_manual_review")?.result;
++
++        if (order) {
++          rows.push(["订单", `${order.order_id} · ${order.order_status}`]);
++        }
++        if (refund) {
++          rows.push(["退款", `${refund.refund_id} · ${refund.status}`]);
++          rows.push(["MQ", refund.mq_message_id || "-"]);
++        }
++        if (ticket) {
++          rows.push(["工单", `${ticket.ticket_id} · ${ticket.issue_type}`]);
++        }
++        if (review) {
++          rows.push(["审核", `${review.review_id} · ${review.risk_level}`]);
++        }
++
++        if (!rows.length) {
++          els.businessObjects.innerHTML = `<div class="soft-note">暂无业务对象。</div>`;
++          return;
++        }
++
++        els.businessObjects.innerHTML = rows.map(([label, value]) => `
++          <div class="data-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
++        `).join("");
++      }
++
++      function renderTimings() {
++        const items = Object.values(state.timings);
++        if (!items.length) {
++          els.timingList.innerHTML = `<div class="soft-note">暂无耗时数据。</div>`;
++          return;
++        }
++        const max = Math.max(...items.map((item) => Number(item.duration_ms || 0)), 1);
++        els.timingList.innerHTML = items.map((item) => {
++          const width = Math.max(4, Math.min(100, Number(item.duration_ms || 0) / max * 100));
++          const label = String(item.step || "").replace("node.", "").replace("tool.", "");
++          return `
++            <div class="trace-item">
++              <span class="trace-step">${escapeHtml(label)}</span>
++              <div title="${escapeHtml(item.duration_ms)} ms">
++                <div class="trace-value"><div class="trace-bar" style="width:${width}%"></div></div>
++              </div>
++            </div>
++          `;
++        }).join("");
++      }
++
++      function renderMetrics(doneContent = null) {
++        if (doneContent?.token_usage) {
++          state.tokenUsage = doneContent.token_usage;
++        }
++        const token = state.tokenUsage || {};
++        const latestMetric = state.dashboard.metrics[0] || {};
++        const rows = [
+           ["上下文 token（估算）", token.prompt_tokens_estimated ?? "-"],
+           ["回复 token（估算）", token.completion_tokens_estimated ?? "-"],
+           ["总 token（估算）", token.total_tokens_estimated ?? "-"],
+           ["模型返回 token", token.provider_reported?.tokens?.total_tokens ?? "未返回"],
+           ["用量报告完整性", token.provider_reported ? `${token.provider_reported.reported_calls}/${token.provider_reported.call_count} 次调用` : "未知"],
+-          ["本轮耗时", doneContent?.duration_ms ? `${doneContent.duration_ms}ms` : latestMetric.duration_ms ? `${latestMetric.duration_ms}ms` : "-"],
+-          ["退款记录", state.dashboard.refunds.length],
+-          ["MQ 消息", state.dashboard.mq.length],
+-          ["人工审核", state.dashboard.reviews.length],
+-        ];
+-        els.metricsList.innerHTML = rows.map(([label, value]) => `
+-          <div class="metric-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+-        `).join("");
+-      }
+-
+-      function handleEvent(event, assistantBubble) {
+-        if (!event || event.type === "status") return;
+-        if (event.conversation_id) updateConversationId(event.conversation_id);
+-
+-        if (event.type === "route") {
+-          state.route = event.content;
+-          renderRoute(state.route);
+-          return;
+-        }
+-
+-        if (event.type === "tool_result") {
+-          state.tools.push(event.content);
+-          renderTools();
+-          renderBusinessObjects();
+-          return;
+-        }
+-
+-        if (event.type === "timing") {
+-          state.timings[event.content.step] = event.content;
+-          renderTimings();
+-          return;
+-        }
+-
+-        if (event.type === "token") {
+-          assistantBubble.textContent += event.content;
+-          els.messages.scrollTop = els.messages.scrollHeight;
+-          return;
+-        }
+-
+-        if (event.type === "message") {
+-          assistantBubble.textContent = event.content;
+-          els.messages.scrollTop = els.messages.scrollHeight;
+-          return;
+-        }
+-
+-        if (event.type === "done") {
+-          if (event.content?.reply) {
+-            assistantBubble.textContent = event.content.reply;
+-          }
+-          if (event.content?.route) {
+-            state.route = event.content.route;
+-            renderRoute(state.route);
+-          }
+-          if (Array.isArray(event.content?.tool_results)) {
+-            state.tools = event.content.tool_results;
+-            renderTools();
+-            renderBusinessObjects();
+-          }
+-          if (event.content?.timings) {
+-            state.timings = event.content.timings;
+-            renderTimings();
+-          }
+-          renderMetrics(event.content);
+-          refreshDashboard();
+-        }
+-
+-        if (event.type === "error") {
+-          assistantBubble.textContent = `请求失败：${event.content}`;
+-          setPill(els.routeIntent, "错误", "danger");
+-        }
+-      }
+-
+-      async function sendByStream(message, assistantBubble) {
+-        const response = await apiFetch("/agent/stream", {
+-          method: "POST",
+-          headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify({
+-            message,
+-            conversation_id: state.conversationId || null,
+-            use_llm: els.llmToggle.checked,
+-            stream_tokens: true,
+-          }),
+-        });
+-
+-        if (!response.ok || !response.body) {
+-          throw new Error(`HTTP ${response.status}`);
+-        }
+-
+-        const reader = response.body.getReader();
+-        const decoder = new TextDecoder("utf-8");
+-        let buffer = "";
+-
+-        while (true) {
+-          const { value, done } = await reader.read();
+-          if (done) break;
+-          buffer += decoder.decode(value, { stream: true });
+-          const chunks = buffer.split("\n\n");
+-          buffer = chunks.pop() || "";
+-
+-          for (const chunk of chunks) {
+-            const line = chunk.split("\n").find((item) => item.startsWith("data: "));
+-            if (!line) continue;
+-            const raw = line.slice(6);
+-            if (raw === "[DONE]") continue;
+-            handleEvent(JSON.parse(raw), assistantBubble);
+-          }
+-        }
+-      }
+-
+-      async function sendByJson(message, assistantBubble) {
+-        const response = await apiFetch("/agent/chat", {
+-          method: "POST",
+-          headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify({
+-            message,
+-            conversation_id: state.conversationId || null,
+-            use_llm: els.llmToggle.checked,
+-          }),
+-        });
+-        const result = await response.json();
+-        if (!response.ok) {
+-          throw new Error(result.detail || `HTTP ${response.status}`);
+-        }
+-        handleEvent({ type: "done", content: result, conversation_id: result.conversation_id }, assistantBubble);
+-      }
+-
+-      async function submitMessage(message) {
+-        const text = message.trim();
+-        if (!text) return;
+-        resetCurrentRun();
+-        addMessage("user", text);
+-        const assistant = addMessage("agent", "正在处理...");
+-        els.messageInput.value = "";
+-        els.sendBtn.disabled = true;
+-
+-        try {
+-          if (els.streamToggle.checked) {
+-            await sendByStream(text, assistant.bubble);
+-          } else {
+-            await sendByJson(text, assistant.bubble);
+-          }
+-          addRating(assistant.wrapper);
+-        } catch (error) {
+-          assistant.bubble.textContent = `请求失败：${error.message}`;
+-          setPill(els.routeIntent, "错误", "danger");
+-        } finally {
+-          els.sendBtn.disabled = false;
+-          els.messageInput.focus();
+-        }
+-      }
+-
++          ["本轮耗时", doneContent?.duration_ms ? `${doneContent.duration_ms}ms` : latestMetric.duration_ms ? `${latestMetric.duration_ms}ms` : "-"],
++          ["退款记录", state.dashboard.refunds.length],
++          ["MQ 消息", state.dashboard.mq.length],
++          ["人工审核", state.dashboard.reviews.length],
++        ];
++        els.metricsList.innerHTML = rows.map(([label, value]) => `
++          <div class="metric-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
++        `).join("");
++      }
++
++      function handleEvent(event, assistantBubble) {
++        if (!event || event.type === "status") return;
++        if (event.conversation_id) updateConversationId(event.conversation_id);
++
++        if (event.type === "route") {
++          state.route = event.content;
++          renderRoute(state.route);
++          return;
++        }
++
++        if (event.type === "tool_result") {
++          state.tools.push(event.content);
++          renderTools();
++          renderBusinessObjects();
++          return;
++        }
++
++        if (event.type === "timing") {
++          state.timings[event.content.step] = event.content;
++          renderTimings();
++          return;
++        }
++
++        if (event.type === "token") {
++          assistantBubble.textContent += event.content;
++          els.messages.scrollTop = els.messages.scrollHeight;
++          return;
++        }
++
++        if (event.type === "message") {
++          assistantBubble.textContent = event.content;
++          els.messages.scrollTop = els.messages.scrollHeight;
++          return;
++        }
++
++        if (event.type === "done") {
++          if (event.content?.reply) {
++            assistantBubble.textContent = event.content.reply;
++          }
++          if (event.content?.route) {
++            state.route = event.content.route;
++            renderRoute(state.route);
++          }
++          if (Array.isArray(event.content?.tool_results)) {
++            state.tools = event.content.tool_results;
++            renderTools();
++            renderBusinessObjects();
++          }
++          if (event.content?.timings) {
++            state.timings = event.content.timings;
++            renderTimings();
++          }
++          renderMetrics(event.content);
++          refreshDashboard();
++        }
++
++        if (event.type === "error") {
++          assistantBubble.textContent = `请求失败：${event.content}`;
++          setPill(els.routeIntent, "错误", "danger");
++        }
++      }
++
++      async function sendByStream(message, assistantBubble) {
++        const response = await apiFetch("/agent/stream", {
++          method: "POST",
++          headers: { "Content-Type": "application/json" },
++          body: JSON.stringify({
++            message,
++            conversation_id: state.conversationId || null,
++            use_llm: els.llmToggle.checked,
++            stream_tokens: true,
++          }),
++        });
++
++        if (!response.ok || !response.body) {
++          throw new Error(`HTTP ${response.status}`);
++        }
++
++        const reader = response.body.getReader();
++        const decoder = new TextDecoder("utf-8");
++        let buffer = "";
++
++        while (true) {
++          const { value, done } = await reader.read();
++          if (done) break;
++          buffer += decoder.decode(value, { stream: true });
++          const chunks = buffer.split("\n\n");
++          buffer = chunks.pop() || "";
++
++          for (const chunk of chunks) {
++            const line = chunk.split("\n").find((item) => item.startsWith("data: "));
++            if (!line) continue;
++            const raw = line.slice(6);
++            if (raw === "[DONE]") continue;
++            handleEvent(JSON.parse(raw), assistantBubble);
++          }
++        }
++      }
++
++      async function sendByJson(message, assistantBubble) {
++        const response = await apiFetch("/agent/chat", {
++          method: "POST",
++          headers: { "Content-Type": "application/json" },
++          body: JSON.stringify({
++            message,
++            conversation_id: state.conversationId || null,
++            use_llm: els.llmToggle.checked,
++          }),
++        });
++        const result = await response.json();
++        if (!response.ok) {
++          throw new Error(result.detail || `HTTP ${response.status}`);
++        }
++        handleEvent({ type: "done", content: result, conversation_id: result.conversation_id }, assistantBubble);
++      }
++
++      async function submitMessage(message) {
++        const text = message.trim();
++        if (!text) return;
++        resetCurrentRun();
++        addMessage("user", text);
++        const assistant = addMessage("agent", "正在处理...");
++        els.messageInput.value = "";
++        els.sendBtn.disabled = true;
++
++        try {
++          if (els.streamToggle.checked) {
++            await sendByStream(text, assistant.bubble);
++          } else {
++            await sendByJson(text, assistant.bubble);
++          }
++          addRating(assistant.wrapper);
++        } catch (error) {
++          assistant.bubble.textContent = `请求失败：${error.message}`;
++          setPill(els.routeIntent, "错误", "danger");
++        } finally {
++          els.sendBtn.disabled = false;
++          els.messageInput.focus();
++        }
++      }
++
+       let currentRole = "customer";
+       let currentUserId = "";
+       let selectedTicket = null;
+@@ -1278,6 +1291,36 @@
+       let availableOperators = [];
+       let identityEpoch = 0;
+       let selectedReview = null;
++      let pendingSupplement = null;
++
++      document.querySelector("#submitSupplement").addEventListener("click", async () => {
++        const epoch = identityEpoch;
++        const reviewId = document.querySelector("#supplementReviewId").value.trim();
++        const text = document.querySelector("#supplementText").value.trim();
++        const status = document.querySelector("#supplementStatus");
++        if (!reviewId || !text) { status.textContent = "请填写审核单号和补充说明。"; return; }
++        if (!pendingSupplement || pendingSupplement.review_id !== reviewId || pendingSupplement.text !== text) {
++          pendingSupplement = {review_id: reviewId, text, submission_id: crypto.randomUUID()};
++        }
++        const body = {...pendingSupplement};
++        document.querySelector("#submitSupplement").disabled = true;
++        try {
++          const result = await apiFetch("/review-supplements", {
++            method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
++          }).then(r => r.json());
++          if (epoch !== identityEpoch || document.querySelector("#supplementReviewId").value.trim() !== reviewId ||
++              document.querySelector("#supplementText").value.trim() !== text) return;
++          status.textContent = result.review_status === "pending_review" ? "补充说明已保存，等待人工查看。" :
++            "补充说明已保存为审核后的记录，原决定未改变；如需继续处理，请联系人工客服。";
++          pendingSupplement = null;
++          document.querySelector("#supplementText").value = "";
++          if (selectedReview?.review_id === reviewId) await loadSelectedReview();
++        } catch (error) {
++          if (epoch === identityEpoch) status.textContent = error.message;
++        } finally {
++          if (epoch === identityEpoch) document.querySelector("#submitSupplement").disabled = false;
++        }
++      });
+ 
+       function reviewSummary(review) {
+         const context = review.context || {};
+@@ -1293,6 +1336,13 @@
+           ...(context.history || []).map(m => `${m.role === "user" ? "用户" : "客服"}：${m.content}`),
+           "\n政策依据：",
+           ...(evidence.length ? evidence.map(e => `${e.citation || e.source || "来源未标记"}\n${e.text || e.content || "正文未保存"}`) : ["未保存政策证据，请补充核实后再决定。"]),
++          "\n后续补充：",
++          ...((review.supplements || []).length ? review.supplements.flatMap(s => [
++            `${s.submitted_at} · ${s.submitted_by || "申请人"} · ${s.review_status_at_submission === "pending_review" ? "审核中补充" : "决定作出后补充，不属于原决定依据"}`,
++            s.text,
++            ...(s.context?.history || []).map(m => `${m.role === "user" ? "用户" : "客服"}：${m.content}`),
++            ...(s.context?.policy_evidence || []).flat().map(e => `${e.citation || e.source || "来源未标记"}\n${e.text || e.content || "正文未保存"}`)
++          ]) : ["暂无补充材料。"]),
+           review.resolution ? `\n处理记录：${review.resolution.operator_id} · ${review.resolution.at}\n${review.resolution.note}` : "",
+           `\n下一步：${review.next_step || "等待审核"}`,
+         ].filter(Boolean).join("\n");
+@@ -1517,7 +1567,7 @@
+           if (!note) { document.querySelector("#reviewActionStatus").textContent = "请先填写审核说明。"; return; }
+           document.querySelector(`#${button}`).disabled = true;
+           try {
+-            const body = {decision, note};
++            const body = {decision, note, supplement_version: selectedReview.supplement_version || 0};
+             if (decision === "approve" && !document.querySelector("#reviewAddressFields").classList.contains("hidden")) {
+               body.new_address = document.querySelector("#reviewNewAddress").value.trim();
+             }
+@@ -1548,18 +1598,18 @@
+           } catch (error) { if (isCurrent()) document.querySelector("#reviewActionStatus").textContent = error.message; }
+         });
+       }
+-      async function apiFetch(url, options = {}) {
+-        const headers = new Headers(options.headers || {});
+-        const token = document.querySelector("#accessToken").value.trim();
+-        if (token) headers.set("Authorization", `Bearer ${token}`);
+-        const response = await fetch(url, { ...options, headers });
+-        if (!response.ok) {
+-          const body = await response.json().catch(() => ({}));
+-          throw new Error(body.detail || `请求失败 (${response.status})`);
+-        }
+-        return response;
+-      }
+-
++      async function apiFetch(url, options = {}) {
++        const headers = new Headers(options.headers || {});
++        const token = document.querySelector("#accessToken").value.trim();
++        if (token) headers.set("Authorization", `Bearer ${token}`);
++        const response = await fetch(url, { ...options, headers });
++        if (!response.ok) {
++          const body = await response.json().catch(() => ({}));
++          throw new Error(body.detail || `请求失败 (${response.status})`);
++        }
++        return response;
++      }
++
+       document.querySelector("#connectBtn").addEventListener("click", async () => {
+         identityEpoch += 1;
+         const epoch = identityEpoch;
+@@ -1580,6 +1630,11 @@
+         renderMetrics();
+         selectedReview = null;
+         document.querySelector("#reviewDetails").textContent = "请选择审核单。";
++        pendingSupplement = null;
++        document.querySelector("#supplementReviewId").value = "";
++        document.querySelector("#supplementText").value = "";
++        document.querySelector("#supplementStatus").textContent = "";
++        document.querySelector("#submitSupplement").disabled = false;
+         document.querySelector("#reviewNote").value = "";
+         document.querySelector("#reviewNewAddress").value = "";
+         document.querySelector("#reviewAddressFields").classList.add("hidden");
+@@ -1592,39 +1647,39 @@
+         document.querySelector("#reviewActionStatus").textContent = "";
+         renderReviewWorkbench();
+         renderTicketChoices();
+-        try {
++        try {
+           const identity = await apiFetch("/me").then(r => r.json());
+           if (epoch !== identityEpoch) return;
+           currentRole = identity.role;
+           currentUserId = identity.user_id;
+-          await loadServiceInfo();
+-          await refreshDashboard();
++          await loadServiceInfo();
++          await refreshDashboard();
+         } catch (error) {
+           if (epoch !== identityEpoch) return;
+           setPill(els.serviceStatus, error.message, "danger");
+-        }
+-      });
+-
+-      async function loadServiceInfo() {
+-        try {
+-          const [infoResponse, healthResponse] = await Promise.all([
+-            apiFetch("/info"),
++        }
++      });
++
++      async function loadServiceInfo() {
++        try {
++          const [infoResponse, healthResponse] = await Promise.all([
++            apiFetch("/info"),
+             fetch("/health"),
+-          ]);
+-          const info = await infoResponse.json();
+-          const health = await healthResponse.json();
+-          els.modelName.textContent = info.default_model || "-";
+-          els.ragMode.textContent = health.rag_retrieval_mode || info.rag_embedding_provider || "-";
+-          els.databaseBackend.textContent = health.database_backend || "-";
+-          els.cacheBackend.textContent = health.cache?.backend || (health.redis_enabled ? "redis" : "local");
+-          els.mqBackend.textContent = health.mq_backend || "-";
+-          els.llmKeyState.textContent = info.has_llm_key ? "已配置" : "本地回复";
++          ]);
++          const info = await infoResponse.json();
++          const health = await healthResponse.json();
++          els.modelName.textContent = info.default_model || "-";
++          els.ragMode.textContent = health.rag_retrieval_mode || info.rag_embedding_provider || "-";
++          els.databaseBackend.textContent = health.database_backend || "-";
++          els.cacheBackend.textContent = health.cache?.backend || (health.redis_enabled ? "redis" : "local");
++          els.mqBackend.textContent = health.mq_backend || "-";
++          els.llmKeyState.textContent = info.has_llm_key ? "已配置" : "本地回复";
+           setPill(els.serviceStatus, health.success ? "就绪" : "依赖未就绪", health.success ? "ok" : "danger");
+-        } catch (error) {
+-          setPill(els.serviceStatus, "离线", "danger");
+-        }
+-      }
+-
++        } catch (error) {
++          setPill(els.serviceStatus, "离线", "danger");
++        }
++      }
++
+       async function refreshDashboard() {
+         const epoch = identityEpoch;
+         const request = ++dashboardRequest;
+@@ -1634,23 +1689,23 @@
+         if (ticketCursor) params.set("cursor", ticketCursor);
+         try {
+           const [refunds, tickets, reviews, mq, metrics, operators] = await Promise.all([
+-            apiFetch("/refunds?limit=20").then((res) => res.json()),
++            apiFetch("/refunds?limit=20").then((res) => res.json()),
+             apiFetch(`/tickets?${params}`).then((res) => res.json()),
+-            currentRole === "admin" ? apiFetch("/manual-reviews?limit=20").then((res) => res.json()) : {},
+-            currentRole === "admin" ? apiFetch("/mq/messages?limit=20").then((res) => res.json()) : {},
++            currentRole === "admin" ? apiFetch("/manual-reviews?limit=20").then((res) => res.json()) : {},
++            currentRole === "admin" ? apiFetch("/mq/messages?limit=20").then((res) => res.json()) : {},
+             currentRole === "admin" ? apiFetch("/observability/metrics?limit=20").then((res) => res.json()) : {},
+             currentRole === "admin" ? apiFetch("/admin/operators").then((res) => res.json()) : {},
+-          ]);
++          ]);
+           if (epoch !== identityEpoch || request !== dashboardRequest) return;
+           nextTicketCursor = tickets.next_cursor;
+           availableOperators = operators.data || [];
+           state.dashboard = {
+-            refunds: refunds.data || [],
+-            tickets: tickets.data || [],
+-            reviews: reviews.data || [],
+-            mq: mq.data || [],
+-            metrics: metrics.data || [],
+-          };
++            refunds: refunds.data || [],
++            tickets: tickets.data || [],
++            reviews: reviews.data || [],
++            mq: mq.data || [],
++            metrics: metrics.data || [],
++          };
+           renderMetrics();
+           renderReviewWorkbench();
+           renderRefundChoices();
+@@ -1659,52 +1714,52 @@
+           if (epoch !== identityEpoch || request !== dashboardRequest) return;
+           document.querySelector("#ticketPageStatus").textContent = `工单列表读取失败：${error.message}。请刷新首页重试。`;
+           els.metricsList.innerHTML = `<div class="soft-note">指标读取失败。</div>`;
+-        }
+-      }
+-
+-      els.chatForm.addEventListener("submit", (event) => {
+-        event.preventDefault();
+-        submitMessage(els.messageInput.value);
+-      });
+-
+-      els.messageInput.addEventListener("keydown", (event) => {
+-        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+-          event.preventDefault();
+-          submitMessage(els.messageInput.value);
+-        }
+-      });
+-
+-      document.querySelectorAll(".preset").forEach((button) => {
+-        button.addEventListener("click", () => {
+-          els.messageInput.value = button.textContent.trim();
+-          submitMessage(els.messageInput.value);
+-        });
+-      });
+-
+-      els.traceToggle.addEventListener("change", () => {
+-        els.tracePanel.classList.toggle("hidden", !els.traceToggle.checked);
+-      });
+-
+-      els.newChatBtn.addEventListener("click", () => {
+-        state.conversationId = "";
+-        localStorage.removeItem("agent_conversation_id");
+-        els.conversationId.textContent = "-";
+-        els.messages.innerHTML = `
+-          <div class="empty-state" id="emptyState">
+-            <h2>多 Agent 售后链路就绪</h2>
+-            <p>当前控制台只覆盖客服问答、售后处理、风控审核、Hybrid RAG、Redis 状态、MQ 退款任务和可观测评测链路。</p>
+-          </div>
+-        `;
+-        els.emptyState = document.querySelector("#emptyState");
+-        resetCurrentRun();
+-      });
+-
+-      renderArchitecture();
+-      renderAgents();
+-      if (state.conversationId) {
+-        els.conversationId.textContent = state.conversationId;
+-      }
++        }
++      }
++
++      els.chatForm.addEventListener("submit", (event) => {
++        event.preventDefault();
++        submitMessage(els.messageInput.value);
++      });
++
++      els.messageInput.addEventListener("keydown", (event) => {
++        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
++          event.preventDefault();
++          submitMessage(els.messageInput.value);
++        }
++      });
++
++      document.querySelectorAll(".preset").forEach((button) => {
++        button.addEventListener("click", () => {
++          els.messageInput.value = button.textContent.trim();
++          submitMessage(els.messageInput.value);
++        });
++      });
++
++      els.traceToggle.addEventListener("change", () => {
++        els.tracePanel.classList.toggle("hidden", !els.traceToggle.checked);
++      });
++
++      els.newChatBtn.addEventListener("click", () => {
++        state.conversationId = "";
++        localStorage.removeItem("agent_conversation_id");
++        els.conversationId.textContent = "-";
++        els.messages.innerHTML = `
++          <div class="empty-state" id="emptyState">
++            <h2>多 Agent 售后链路就绪</h2>
++            <p>当前控制台只覆盖客服问答、售后处理、风控审核、Hybrid RAG、Redis 状态、MQ 退款任务和可观测评测链路。</p>
++          </div>
++        `;
++        els.emptyState = document.querySelector("#emptyState");
++        resetCurrentRun();
++      });
++
++      renderArchitecture();
++      renderAgents();
++      if (state.conversationId) {
++        els.conversationId.textContent = state.conversationId;
++      }
+       setPill(els.serviceStatus, "请先连接", "warn");
+-    </script>
+-  </body>
+-</html>
++    </script>
++  </body>
++</html>
+--- a/tests/test_review_resolution.py
++++ b/tests/test_review_resolution.py
+@@ -174,12 +174,20 @@
+         self.assertTrue(review["review_id"])
+         self.assertEqual(self.fixture.count("manual_reviews"), 1)
+ 
+-    def test_repeat_does_not_wait_for_review_lock_while_holding_order_lock(self):
++    def test_repeat_releases_order_lock_before_appending_material(self):
+         if not db.using_mysql_backend():
+             self.skipTest("MySQL row lock ordering; SQLite serializes writes")
+         review, _ = self.pending(with_refund=False)
+-        held, release = threading.Event(), threading.Event()
++        held, release, appending = threading.Event(), threading.Event(), threading.Event()
+         lock = review_service.lock_record
++        append = review_service.append_review_supplement
++        def mark_append(*args, **kwargs):
++            appending.set()
++            return append(*args, **kwargs)
++        def probe_order():
++            from app.storage.transactions import transaction
++            with transaction():
++                return lock("orders", "order_id", "10010")
+         def gated_lock(table, key, value):
+             row = lock(table, key, value)
+             if table == "manual_reviews":
+@@ -193,18 +201,82 @@
+                 return review_service.resolve_review(review["review_id"], "approve", "核实通过")
+             finally:
+                 current_principal.reset(token)
+-        with patch.object(review_service, "lock_record", side_effect=gated_lock), concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
++        with patch.object(review_service, "lock_record", side_effect=gated_lock), \
++                patch.object(review_service, "append_review_supplement", side_effect=mark_append), \
++                concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+             approval = pool.submit(approve)
+             try:
+                 self.assertTrue(held.wait(5))
+                 creation = pool.submit(create_manual_review, "10010", "refund", "high", [], "重复请求")
+-                repeated = creation.result(timeout=5)
+-                self.assertEqual(repeated.result["review_id"], review["review_id"])
++                self.assertTrue(appending.wait(5))
++                self.assertTrue(pool.submit(probe_order).result(timeout=5))
+             finally:
+                 release.set()
+             self.assertTrue(approval.result(timeout=5)["success"])
+-        self.assertEqual(self.fixture.count("manual_reviews"), 1)
+-        self.assertEqual(self.fixture.count("refund_requests"), 1)
++            repeated = creation.result(timeout=5)
++            self.assertTrue(repeated.result["supplement_recorded"])
++            self.assertEqual(repeated.result["status"], "not_required")
++        self.assertEqual(self.fixture.count("manual_reviews"), 1)
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++
++    def test_supplements_preserve_original_and_are_idempotent(self):
++        review, _ = self.pending(with_refund=False)
++        first = review_service.append_review_supplement(review["review_id"], "补充：包装已破损", "submission-1")
++        second = review_service.append_review_supplement(review["review_id"], "补充：包装已破损", "submission-1")
++        self.assertTrue(second["idempotent_replay"])
++        self.assertEqual(first["supplement_version"], 1)
++        saved = review_service.review_details(review["review_id"])
++        self.assertEqual(saved["user_request"], "我要退款")
++        self.assertEqual(len(saved["supplements"]), 1)
++        with self.assertRaisesRegex(ValueError, "提交编号"):
++            review_service.append_review_supplement(review["review_id"], "不同内容", "submission-1")
++
++    def test_new_material_prevents_decision_from_stale_page(self):
++        review, _ = self.pending(with_refund=False)
++        review_service.append_review_supplement(review["review_id"], "新的凭证说明", "submission-1")
++        for version in [None, 0]:
++            with self.subTest(version=version), self.assertRaisesRegex(ValueError, "材料已有更新"):
++                review_service.resolve_review(review["review_id"], "approve", "旧页面决定", supplement_version=version)
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        approved = review_service.resolve_review(review["review_id"], "approve", "已查看补充说明", supplement_version=1)
++        self.assertEqual(approved["review"]["resolution"]["supplement_version"], 1)
++
++    def test_post_decision_supplement_does_not_rewrite_resolution(self):
++        review, _ = self.pending(with_refund=False)
++        approved = review_service.resolve_review(review["review_id"], "approve", "已核实")
++        result = review_service.append_review_supplement(review["review_id"], "审核后补充说明", "submission-1")
++        self.assertEqual(result["submission"]["review_status_at_submission"], "approved")
++        saved = review_service.review_details(review["review_id"])
++        self.assertEqual(saved["resolution"], approved["review"]["resolution"])
++        self.assertEqual(saved["status"], "approved")
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++
++    def test_concurrent_supplements_do_not_lose_material(self):
++        review, _ = self.pending(with_refund=False)
++        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
++            results = list(pool.map(lambda i: review_service.append_review_supplement(
++                review["review_id"], f"补充说明 {i}", f"submission-{i}"), range(4)))
++        self.assertEqual({r["supplement_version"] for r in results}, {1, 2, 3, 4})
++        self.assertEqual(len(review_service.review_details(review["review_id"])["supplements"]), 4)
++
++    def test_concurrent_retries_of_same_supplement_are_idempotent(self):
++        review, _ = self.pending(with_refund=False)
++        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
++            results = list(pool.map(lambda _: review_service.append_review_supplement(
++                review["review_id"], "同一次补充提交", "submission-retry"), range(4)))
++        self.assertEqual(sum(not r["idempotent_replay"] for r in results), 1)
++        self.assertEqual({r["supplement_version"] for r in results}, {1})
++        self.assertEqual(len(review_service.review_details(review["review_id"])["supplements"]), 1)
++
++    def test_failed_supplement_write_can_retry_without_partial_version(self):
++        review, _ = self.pending(with_refund=False)
++        with patch.object(review_service, "execute", side_effect=RuntimeError("write failed")):
++            with self.assertRaisesRegex(RuntimeError, "write failed"):
++                review_service.append_review_supplement(review["review_id"], "补充说明", "submission-retry")
++        saved = review_service.review_details(review["review_id"])
++        self.assertEqual(saved.get("supplement_version", 0), 0)
++        result = review_service.append_review_supplement(review["review_id"], "补充说明", "submission-retry")
++        self.assertEqual(result["supplement_version"], 1)
+ 
+ 
+ if __name__ == "__main__":
+--- a/tests/test_api_authorization.py
++++ b/tests/test_api_authorization.py
+@@ -50,6 +50,28 @@
+         self.assertEqual(self.client.get("/orders/10009", headers=self.headers()).status_code, 200)
+         self.assertEqual(self.client.get("/orders/10001", headers=self.headers()).status_code, 403)
+         self.assertEqual(self.client.get("/orders/10001", headers=self.headers("c")).status_code, 200)
++
++    def test_review_supplement_owner_access_retry_and_material_version(self):
++        from app.tools.human_review import create_manual_review
++        review = create_manual_review("10009", "refund", "high", [], "申请人工核实").result
++        body = {"review_id": review["review_id"], "text": "补充包装破损说明", "submission_id": "submission-1"}
++        self.assertEqual(self.client.post("/review-supplements", json=body).status_code, 401)
++        self.assertEqual(self.client.post("/review-supplements", headers=self.headers("b"), json=body).status_code, 403)
++        first = self.client.post("/review-supplements", headers=self.headers(), json=body)
++        self.assertEqual(first.status_code, 200)
++        self.assertEqual(first.json()["supplement_version"], 1)
++        retry = self.client.post("/review-supplements", headers=self.headers(), json=body)
++        self.assertTrue(retry.json()["idempotent_replay"])
++        path = f"/manual-reviews/{review['review_id']}/resolve"
++        self.assertEqual(self.client.post(path, headers=self.headers(), json={"decision": "approve", "note": "test", "supplement_version": 1}).status_code, 403)
++        stale = self.client.post(path, headers=self.headers("c"), json={"decision": "approve", "note": "旧页面", "supplement_version": 0})
++        self.assertEqual(stale.status_code, 409)
++        details = self.client.get(f"/manual-reviews/{review['review_id']}", headers=self.headers("c")).json()["data"]
++        self.assertEqual(details["user_request"], "申请人工核实")
++        self.assertEqual(details["supplements"][0]["text"], body["text"])
++        decision = self.client.post(path, headers=self.headers("c"), json={"decision": "approve", "note": "已看补充", "supplement_version": details["supplement_version"]})
++        self.assertEqual(decision.status_code, 200)
++        self.assertEqual(decision.json()["review"]["resolution"]["supplement_version"], 1)
+ 
+     def test_ticket_details_and_management_are_scoped(self):
+         ticket = db.save_ticket_to_db({"order_id": "10009", "user_id": "u009", "issue_type": "物流",
+--- a/tests/test_refund_followup.py
++++ b/tests/test_refund_followup.py
+@@ -128,6 +128,10 @@
+             self.assertIn("已存在", result["reply"])
+             self.assertNotIn("transfer_to_human", [r["tool_name"] for r in result["tool_results"]])
+         self.assertEqual(self.counts(), before)
++        saved = db.list_manual_reviews_from_db()[0]
++        self.assertEqual(len(saved["supplements"]), 2)
++        self.assertTrue(all(item["context"]["trace_id"] for item in saved["supplements"]))
++        self.assertTrue(all(item["context"]["policy_evidence"] for item in saved["supplements"]))
+ 
+     def test_approval_after_order_snapshot_returns_refund_without_phantom_review(self):
+         from app.services import review_service

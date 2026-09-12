@@ -4,6 +4,7 @@ from time import perf_counter
 from uuid import uuid4
 
 from app.core.config import BASE_DIR
+from app.observability.usage import usage_scope, summarize_usage
 TRACE_PATH = BASE_DIR / "data" / "traces" / "agent_trace.jsonl"
 
 def now_iso() -> str:
@@ -100,7 +101,8 @@ def timed_step(trace: dict, step_name: str, callback, data: dict | None = None):
     start = perf_counter()
 
     try:
-        result = callback()
+        with usage_scope(trace):
+            result = callback()
     except Exception as error:
         add_trace_timing(
             trace,
@@ -150,6 +152,7 @@ def finish_trace(trace: dict, reply:str,success: bool) -> dict:
     trace["duration_ms"] = duration_ms
     trace["success"] = success
     trace["reply"] = reply
+    summarize_usage(trace)
 
     trace.pop("_start_perf",None)
     return trace

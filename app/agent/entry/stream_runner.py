@@ -13,6 +13,7 @@ from app.agent.entry.workflow import (
     should_force_fallback,
 )
 from app.llm.llm_client import call_zhipu_chat_stream
+from app.agent.response.grounded import needs_grounded_reply, policy_excerpts, checked_reply
 from app.observability.tracing import (
     add_trace_event,
     add_trace_timing,
@@ -56,6 +57,11 @@ async def stream_workflow(
             yield timing_event
 
         state.update(orchestrate_agents_node(state))
+        yield {
+            "type": "task_plan",
+            "content": state["orchestration"].get("harness", {}),
+            "conversation_id": real_conversation_id,
+        }
         for tool_result in state["tool_results"]:
             yield {
                 "type": "tool_result",
@@ -89,7 +95,8 @@ async def stream_workflow(
         if timing_event:
             yield timing_event
 
-        if use_llm and stream_tokens and not should_force_fallback(
+        has_grounded_input = not needs_grounded_reply(state["tool_results"]) or bool(policy_excerpts(state["tool_results"]))
+        if use_llm and stream_tokens and has_grounded_input and not state.get("cancelled_pending_request") and not should_force_fallback(
             state["route"],
             state["tool_results"],
         ):
@@ -144,6 +151,7 @@ async def stream_llm_reply(state: dict, conversation_id: str) -> AsyncGenerator[
     """调用 LLM 流式回复，并把结果写回 state。"""
 
     reply_parts = []
+    grounded = needs_grounded_reply(state["tool_results"])
     llm_start = perf_counter()
 
     yield {
@@ -152,26 +160,29 @@ async def stream_llm_reply(state: dict, conversation_id: str) -> AsyncGenerator[
         "conversation_id": conversation_id,
     }
 
-    for token in call_zhipu_chat_stream(state["model_messages"]):
+    for token in call_zhipu_chat_stream(state["model_messages"], usage_trace=state["trace"]):
         reply_parts.append(token)
-        yield {
-            "type": "token",
-            "content": token,
-            "conversation_id": conversation_id,
-        }
+        if not grounded:
+            yield {"type": "token", "content": token, "conversation_id": conversation_id}
 
     reply = "".join(reply_parts)
+    mode = "llm_stream"
+    if grounded:
+        reply, check = checked_reply(reply, state["tool_results"])
+        add_trace_event(state["trace"], event_type="reply_evidence_check", data=check)
+        mode = "grounded_llm_stream" if check["passed"] else "grounded_llm_partial" if check.get("partial") else "grounded_reply_rejected"
+        yield {"type": "message", "content": reply, "conversation_id": conversation_id}
     state.update(
         {
             "reply": reply,
-            "reply_mode": "llm_stream",
+            "reply_mode": mode,
         }
     )
     add_trace_event(
         state["trace"],
         event_type="reply",
         data={
-            "reply_mode": "llm_stream",
+            "reply_mode": mode,
             "reply_chars": len(reply),
         },
     )
@@ -182,7 +193,7 @@ async def stream_llm_reply(state: dict, conversation_id: str) -> AsyncGenerator[
         (perf_counter() - llm_start) * 1000,
         {
             "success": True,
-            "reply_mode": "llm_stream",
+            "reply_mode": mode,
             "reply_chars": len(reply),
         },
     )

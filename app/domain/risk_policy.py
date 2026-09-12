@@ -1,3 +1,5 @@
+from app.domain.request_signals import asserted_mentions
+
 HIGH_RISK_AMOUNT = 1000
 MEDIUM_RISK_AMOUNT = 500
 
@@ -41,17 +43,17 @@ def evaluate_refund_risk(
         score += 15
         flags.append("中额退款")
 
-    if any(keyword in user_request for keyword in COMPLAINT_KEYWORDS):
+    if asserted_mentions(user_request, COMPLAINT_KEYWORDS):
         score += 20
         flags.append("投诉升级话术")
 
-    if any(keyword in user_request for keyword in BYPASS_KEYWORDS):
+    if asserted_mentions(user_request, BYPASS_KEYWORDS):
         score += 35
         flags.append("要求绕过审核")
 
     shipping_status = order.get("shipping_status") or ""
     for user_keyword, order_keyword in FALSE_DESCRIPTION_PATTERNS:
-        if user_keyword in user_request and order_keyword in shipping_status:
+        if asserted_mentions(user_request, [user_keyword]) and order_keyword in shipping_status:
             score += 35
             flags.append("描述与物流状态冲突")
             break

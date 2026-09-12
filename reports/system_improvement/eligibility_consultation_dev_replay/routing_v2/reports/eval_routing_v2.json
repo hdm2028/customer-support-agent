@@ -1,0 +1,349 @@
+{
+  "router_version": "v2_llm_semantic",
+  "side_effects": [
+    "[READ ONLY]",
+    "[CALLS LLM]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-7me77mc8\\data\\eval\\routing_eval.jsonl",
+  "total_cases": 24,
+  "passed_count": 19,
+  "failed_count": 5,
+  "routing_accuracy": 0.7917,
+  "semantic_accuracy": 0.9583,
+  "intent_accuracy": 1.0,
+  "action_type_accuracy": 1.0,
+  "topic_accuracy": 0.9583,
+  "route_accuracy": 0.8333,
+  "clarification_accuracy": 0.8182,
+  "side_effect_false_positive_count": 0,
+  "side_effect_false_positive_cases": [],
+  "llm_fallback_count": 0,
+  "llm_fallback_cases": [],
+  "failed_cases": [
+    {
+      "case_id": "routing_refund_002",
+      "query": "这个东西我不要了",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "return_apply",
+          "related_topics": [],
+          "confidence": 0.95,
+          "reason": "用户明确表示不要商品，符合退货流程的意图。",
+          "source": "llm"
+        },
+        "route": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "return_apply",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户明确表示不要商品，符合退货流程的意图。",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": true,
+          "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": true,
+        "action_type_correct": true,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": true,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.topic expected='refund_apply', actual='return_apply'"
+    },
+    {
+      "case_id": "routing_refund_010",
+      "query": "买回来五天了，现在还能退吗？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "reason": "用户询问购买商品后是否还能退款，属于判断退款资格的范畴。",
+          "source": "llm"
+        },
+        "route": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户询问购买商品后是否还能退款，属于判断退款资格的范畴。",
+          "agent_plan": [],
+          "tool_plan": [
+            "policy_search"
+          ],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": true,
+        "action_type_correct": true,
+        "topic_correct": true,
+        "semantic_correct": true,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_011",
+      "query": "包装已经拆开了，我只是想问问这种情况还能不能退。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "reason": "用户询问包装已拆开的情况下是否还能退货，属于判断退款资格的范畴。",
+          "source": "llm"
+        },
+        "route": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户询问包装已拆开的情况下是否还能退货，属于判断退款资格的范畴。",
+          "agent_plan": [],
+          "tool_plan": [
+            "policy_search"
+          ],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": true,
+        "action_type_correct": true,
+        "topic_correct": true,
+        "semantic_correct": true,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_015",
+      "query": "商品没有质量问题，就是不喜欢了，这样可以退吗？",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "reason": "用户询问是否可以退款，核心是判断是否符合退款条件，属于 refund_eligibility。",
+          "source": "llm"
+        },
+        "route": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户询问是否可以退款，核心是判断是否符合退款条件，属于 refund_eligibility。",
+          "agent_plan": [],
+          "tool_plan": [
+            "policy_search"
+          ],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": true,
+        "action_type_correct": true,
+        "topic_correct": true,
+        "semantic_correct": true,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "route.need_clarification expected=True, actual=False"
+    },
+    {
+      "case_id": "routing_refund_021",
+      "query": "商品到手发现有划痕，我想退，不过你先别提交退款。",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "reason": "用户表达了商品有划痕的情况，询问是否可以退款，但没有要求执行退款操作。",
+          "source": "llm"
+        },
+        "route": {
+          "intent": "return_refund",
+          "action_type": "query",
+          "topic": "refund_eligibility",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户表达了商品有划痕的情况，询问是否可以退款，但没有要求执行退款操作。",
+          "agent_plan": [],
+          "tool_plan": [
+            "policy_search"
+          ],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": false,
+          "clarification_question": null,
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": true,
+        "action_type_correct": true,
+        "topic_correct": true,
+        "semantic_correct": true,
+        "route_correct": false,
+        "clarification_correct": false
+      },
+      "passed": false,
+      "reason": "route.need_clarification expected=True, actual=False"
+    }
+  ],
+  "report_name": "eval_routing_v2",
+  "created_at": "2026-09-08T22:46:31"
+}

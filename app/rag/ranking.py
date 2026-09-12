@@ -249,15 +249,22 @@ def _semantic_fusion_ranked(
     ]
 
 
-def _rule_ranked(query: RetrievalQuery, candidates: list[dict]) -> list[dict]:
-    reranked = rerank_documents(query.semantic_query, candidates)
+def _rule_ranked(
+    query: RetrievalQuery, candidates: list[dict], *, metadata_priors: bool = True,
+) -> list[dict]:
+    reranked = rerank_documents(
+        query.semantic_query, candidates, metadata_priors=metadata_priors,
+    )
     return [
         {
             **candidate,
             "rule_score": candidate.get("rerank_score"),
             "rule_boost": candidate.get("rerank_bonus"),
             "rule_reason": list(candidate.get("rerank_reasons", [])),
-            "rule_reranker_version": RULE_RERANKER_VERSION,
+            "rule_reranker_version": (
+                RULE_RERANKER_VERSION if metadata_priors
+                else f"{RULE_RERANKER_VERSION}-no-metadata-priors"
+            ),
         }
         for candidate in reranked
     ]
@@ -427,14 +434,34 @@ def rank_candidates(
     evidence_constraint: EvidenceConstraint | None = None,
     semantic_reranker: SemanticReranker | None = None,
     semantic_query_mode: str = RERANK_QUERY_MODE,
+    rule_metadata_priors: bool = True,
+    evidence_selection: str | None = None,
 ) -> list[dict]:
+    if evidence_selection is not None and (
+        mode != RULE_RERANK_MODE
+        or evidence_selection not in {"complete_primary", "complementary"}
+    ):
+        raise ValueError(f"Unsupported evidence selection {evidence_selection!r} for mode {mode!r}")
     retrieval = _retrieval_ranked(candidates)
 
     if mode == HYBRID_MODE:
         return _final_ranked(retrieval)
 
     if mode == RULE_RERANK_MODE:
-        return _final_ranked(_rule_ranked(query, retrieval))
+        ranked = _rule_ranked(
+            query, retrieval, metadata_priors=rule_metadata_priors,
+        )
+        if evidence_selection == "complete_primary":
+            from app.rag.evidence_selection import complete_primary_evidence
+            ranked = complete_primary_evidence(query, ranked, top_k=top_k)
+        elif evidence_selection == "complementary":
+            from app.rag.evidence_selection import select_complementary_evidence
+            ranked = select_complementary_evidence(query, ranked, top_k=top_k)
+        if evidence_selection is not None:
+            from app.rag.evidence_selection import EVIDENCE_SELECTION_VERSION
+            ranked = [{**c, "evidence_selection_version": EVIDENCE_SELECTION_VERSION,
+                       "evidence_selection": evidence_selection} for c in ranked]
+        return _final_ranked(ranked)
 
     if mode == SEMANTIC_FUSION_MODE:
         reranker = semantic_reranker or build_semantic_reranker()

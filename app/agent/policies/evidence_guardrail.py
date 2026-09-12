@@ -1,4 +1,4 @@
-from app.core.schemas import ToolResult
+from app.core.schemas import RouteDecision, ToolResult
 
 
 POLICY_PROFILES = [
@@ -63,8 +63,13 @@ def contains_any(text: str, keywords: list[str]) -> bool:
     return any(normalize_text(keyword) in normalized for keyword in keywords)
 
 
-def detect_policy_profile(query: str) -> dict | None:
-    """根据用户问题识别本轮期望的政策类型。"""
+def detect_policy_profile(query: str, *, route: RouteDecision | None = None) -> dict | None:
+    """沿用明确的业务主意图；缺少可用路由时兼容原关键词判断。"""
+
+    if route is not None and route.action_type in {"query", "execute", "handoff"}:
+        for profile in POLICY_PROFILES:
+            if profile["name"] == route.intent:
+                return profile
 
     for profile in POLICY_PROFILES:
         if profile["name"] == "return_refund" and contains_any(query, profile["triggers"]):
@@ -95,7 +100,9 @@ def simplify_evidence(results: list[dict], limit: int = 3) -> list[dict]:
     return simplified
 
 
-def validate_policy_evidence(query: str, policy_result: ToolResult) -> tuple[bool, dict]:
+def validate_policy_evidence(
+    query: str, policy_result: ToolResult, *, route: RouteDecision | None = None,
+) -> tuple[bool, dict]:
     if not policy_result.success:
         return False, {
             "reason": "policy_search_failed",
@@ -109,7 +116,7 @@ def validate_policy_evidence(query: str, policy_result: ToolResult) -> tuple[boo
             "detail": "RAG 没有返回任何政策证据。",
         }
 
-    profile = detect_policy_profile(query)
+    profile = detect_policy_profile(query, route=route)
     top_score = float(results[0].get("score", 0) or 0)
     combined_text = "\n".join(
         f"{item.get('source', '')}\n{item.get('section', '')}\n{item.get('text', '')}"
@@ -165,11 +172,13 @@ def validate_policy_evidence(query: str, policy_result: ToolResult) -> tuple[boo
     }
 
 
-def apply_policy_evidence_guardrail(query: str, policy_result: ToolResult) -> ToolResult:
+def apply_policy_evidence_guardrail(
+    query: str, policy_result: ToolResult, *, route: RouteDecision | None = None,
+) -> ToolResult:
     if not policy_result.success:
         return policy_result
 
-    passed, report = validate_policy_evidence(query, policy_result)
+    passed, report = validate_policy_evidence(query, policy_result, route=route)
 
     if passed:
         if isinstance(policy_result.result, list):

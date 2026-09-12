@@ -1,0 +1,128 @@
+...............................F.........s.......................... [ 27%]
+................................................. [ 47%]
+.............................................ssssss.......s...... [ 74%]
+...s...........................................................          [100%]
+================================== FAILURES ===================================
+_ ConversationTaskBoundaryTests.test_payment_block_is_explained_even_when_policy_service_fails _
+tests\test_conversation_task_boundaries.py:212: in test_payment_block_is_explained_even_when_policy_service_fails
+    self.assertIn("尚未支付", result["reply"])
+E   AssertionError: '尚未支付' not found in '已查询到订单 10005，商品是 手机保护壳 C3，当前订单状态为待支付。但本轮售后政策检索工具调用失败，我不能在缺少政策依据时直接判断或创建工单。建议转人工客服核对政策后继续处理。'
+_ ConversationTaskBoundaryTests.test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream (order_id='10005') _
+tests\test_conversation_task_boundaries.py:166: in test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream
+    sync = run_customer_support_agent(message, f"payment-stop-sync-{order_id}", use_llm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\agent\entry\agent_core.py:15: in run_customer_support_agent
+    return DEFAULT_ORCHESTRATOR.run(
+app\agent\orchestrator.py:372: in run
+    return run_workflow(
+app\agent\entry\workflow.py:535: in run_workflow
+    final_state = agent_workflow.invoke(initial_state)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
+    for chunk in self.stream(
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
+    for _ in runner.tick(
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
+    run_with_retry(
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\_internal\_runnable.py:684: in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\_internal\_runnable.py:426: in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\agent\entry\workflow.py:426: in generate_reply_node
+    return timed_step(state["trace"], "node.generate_reply", work)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\observability\tracing.py:105: in timed_step
+    result = callback()
+             ^^^^^^^^^^
+app\agent\entry\workflow.py:388: in work
+    raw = call_zhipu_chat(state["model_messages"])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1234: in _execute_mock_call
+    raise effect
+E   AssertionError: no generated business state
+E   During task with name 'generate_reply' and id '7d72dba7-7b97-db48-c3d7-1f9c732b573a'
+_ ConversationTaskBoundaryTests.test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream (order_id='10007') _
+tests\test_conversation_task_boundaries.py:166: in test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream
+    sync = run_customer_support_agent(message, f"payment-stop-sync-{order_id}", use_llm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\agent\entry\agent_core.py:15: in run_customer_support_agent
+    return DEFAULT_ORCHESTRATOR.run(
+app\agent\orchestrator.py:372: in run
+    return run_workflow(
+app\agent\entry\workflow.py:535: in run_workflow
+    final_state = agent_workflow.invoke(initial_state)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
+    for chunk in self.stream(
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
+    for _ in runner.tick(
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
+    run_with_retry(
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\_internal\_runnable.py:684: in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\site-packages\langgraph\_internal\_runnable.py:426: in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\agent\entry\workflow.py:426: in generate_reply_node
+    return timed_step(state["trace"], "node.generate_reply", work)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\observability\tracing.py:105: in timed_step
+    result = callback()
+             ^^^^^^^^^^
+app\agent\entry\workflow.py:388: in work
+    raw = call_zhipu_chat(state["model_messages"])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\Programs\Python\Python313\Lib\unittest\mock.py:1234: in _execute_mock_call
+    raise effect
+E   AssertionError: no generated business state
+E   During task with name 'generate_reply' and id '8b8b60a5-8c72-6bf0-fc68-be62309168fb'
+============================== warnings summary ===============================
+..\..\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Temp\support-release-check-x2k3qlj4\main.py:179: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_authorization.py::APIAuthorizationTests::test_admin_address_approval_persists_confirmed_address_through_api
+  C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_payment_block_is_explained_even_when_policy_service_fails
+SUBFAILED(order_id='10005') tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream
+SUBFAILED(order_id='10007') tests/test_conversation_task_boundaries.py::ConversationTaskBoundaryTests::test_unpaid_refund_request_stops_before_risk_and_review_in_sync_and_stream
+3 failed, 235 passed, 9 skipped, 3 warnings, 32 subtests passed in 6.56s

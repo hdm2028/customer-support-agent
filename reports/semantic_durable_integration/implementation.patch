@@ -1,0 +1,654 @@
+--- a/.env.example
++++ b/.env.example
+@@ -50,6 +50,10 @@
+ MQ_BACKEND=database
+ 
+ # RAG ranking
++# Formal HTTP runtime; legacy retains the previous entrypoint for rollback.
++AGENT_RUNTIME=durable
++# Optional absolute path on a persistent local volume.
++# AGENT_CHECKPOINT_PATH=/app/data/checkpoints/agent.sqlite
+ RAG_SEMANTIC_WEIGHT=0.62
+ RAG_BM25_WEIGHT=0.28
+ RAG_KEYWORD_WEIGHT=0.10
+--- a/app/agent/entry/durable_runtime.py
++++ b/app/agent/entry/durable_runtime.py
+@@ -1,4 +1,6 @@
+-"""Opt-in, single-process graph runner. Production entrypoints do not import it."""
++"""Durable graph runner shared by authenticated HTTP and SSE entrypoints."""
++from contextlib import contextmanager
++from filelock import FileLock
+ from copy import deepcopy
+ from datetime import datetime
+ from pathlib import Path
+@@ -35,12 +37,13 @@
+     """One graph.stream path for buffered responses, SSE and resume.
+ 
+     A run is one user turn; conversation_id remains the business history key.
+-    The lock serializes this prototype in one process, not across workers.
++    Thread and file locks serialize workers sharing a local checkpoint path.
+     Recovery is at graph-node boundaries, not inside the tool execution loop.
+     """
+     def __init__(self, checkpoint_path: Path):
+         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+         self._lock = Lock()
++        self._file_lock = FileLock(str(checkpoint_path.resolve()) + ".lock", timeout=30, thread_local=False)
+         self.connection = sqlite3.connect(str(checkpoint_path), check_same_thread=False)
+         self.connection.execute("PRAGMA synchronous=FULL")
+         self.saver = SqliteSaver(self.connection, serde=JsonPlusSerializer(
+@@ -49,18 +52,45 @@
+                 ("app.core.schemas", "ToolResult"),
+             ],
+         ))
+-        self.saver.setup()
++        with self._locked():
++            self.saver.setup()
++            self.connection.execute("CREATE TABLE IF NOT EXISTS run_owners (run_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, conversation_id TEXT NOT NULL)")
++            self.connection.commit()
+         self.graph = build_agent_workflow(checkpointer=self.saver, node_adapter=checkpoint_node)
++
++    @contextmanager
++    def _locked(self):
++        with self._lock, self._file_lock:
++            yield
++
++    def owner(self, run_id):
++        with self._locked():
++            row = self.connection.execute("SELECT owner_id, conversation_id FROM run_owners WHERE run_id = ?", (run_id,)).fetchone()
++        if row is None:
++            raise KeyError(run_id)
++        return row
+ 
+     @staticmethod
+     def config(run_id):
+         return {"configurable": {"thread_id": run_id}}
+ 
+-    def create(self, message, conversation_id=None, *, use_llm=False):
++    def create(self, message, conversation_id=None, *, use_llm=False, stream_tokens=False, owner_id=None):
+         run_id = str(uuid4())
+-        with self._lock:
++        initial = build_initial_state(message, conversation_id, use_llm)
++        initial.update(stream_tokens=stream_tokens, durable_turn=True)
++        with self._locked():
++            if owner_id is not None:
++                previous = self.connection.execute("SELECT run_id FROM run_owners WHERE conversation_id = ?",
++                                                   (initial["real_conversation_id"],)).fetchall()
++                for (previous_id,) in previous:
++                    saved = self.graph.get_state(self.config(previous_id))
++                    if saved.values and saved.next:
++                        raise ValueError(f"Conversation has an unfinished run: {previous_id}")
++                self.connection.execute("INSERT INTO run_owners VALUES (?, ?, ?)",
++                                        (run_id, owner_id, initial["real_conversation_id"]))
++                self.connection.commit()
+             self.graph.update_state(
+-                self.config(run_id), build_initial_state(message, conversation_id, use_llm),
++                self.config(run_id), initial,
+                 as_node=START,
+             )
+         return run_id
+@@ -90,21 +120,24 @@
+         }
+ 
+     def status(self, run_id):
+-        with self._lock:
++        with self._locked():
+             return self._view(run_id, self._snapshot(run_id))
+ 
+     def events(self, run_id, *, pause_after_tools=False):
+-        with self._lock:
++        with self._locked():
+             snapshot = self._snapshot(run_id)
+             if not snapshot.next and "result" in snapshot.values:
+                 yield {"type": "done", "content": self._view(run_id, snapshot)}
+                 return
+             yield {"type": "run", "content": self._view(run_id, snapshot)}
+             # None resumes saved work. Never re-submit the original input.
+-            for update in self.graph.stream(
+-                None, self.config(run_id), stream_mode="updates", durability="sync",
++            for mode, update in self.graph.stream(
++                None, self.config(run_id), stream_mode=["updates", "custom"], durability="sync",
+                 interrupt_after=["orchestrate_agents"] if pause_after_tools else [],
+             ):
++                if mode == "custom":
++                    yield {**update, "run_id": run_id}
++                    continue
+                 for name, state in update.items():
+                     if name == "__interrupt__":
+                         continue
+@@ -112,6 +145,7 @@
+                     if name == "route":
+                         yield {"type": "route", "content": dump_model(state["route"])}
+                     elif name == "orchestrate_agents":
++                        yield {"type": "task_plan", "content": state["orchestration"].get("harness", {})}
+                         for item in state["tool_results"]:
+                             yield {"type": "tool_result", "content": dump_model(item)}
+                     elif name == "generate_reply":
+--- a/app/agent/entry/persistent_api.py
++++ b/app/agent/entry/persistent_api.py
+@@ -0,0 +1,94 @@
++"""Authenticated run creation/recovery; shared graph for buffered and SSE output."""
++from functools import lru_cache
++import json
++import os
++from pathlib import Path
++
++from fastapi import HTTPException
++from fastapi.responses import JSONResponse, StreamingResponse
++
++from app.core.config import BASE_DIR
++from app.core.security import conversation_access, current_principal
++
++
++def enabled():
++    mode = os.getenv("AGENT_RUNTIME", "durable")
++    if mode not in {"durable", "legacy"}:
++        raise ValueError("AGENT_RUNTIME must be durable or legacy")
++    return mode == "durable"
++
++
++@lru_cache(maxsize=1)
++def runtime():
++    from app.agent.entry.durable_runtime import DurableGraphRuntime
++    return DurableGraphRuntime(Path(os.getenv("AGENT_CHECKPOINT_PATH", str(BASE_DIR / "data/checkpoints/agent.sqlite"))))
++
++
++def close():
++    if runtime.cache_info().currsize:
++        runtime().close()
++        runtime.cache_clear()
++
++
++def create(request, conversation_id, *, stream=False):
++    principal = current_principal.get()
++    if principal is None:
++        raise PermissionError("缺少请求身份")
++    conversation_access(conversation_id)
++    try:
++        return runtime().create(request.message, conversation_id, use_llm=request.use_llm,
++                                stream_tokens=stream and getattr(request, "stream_tokens", True),
++                                owner_id=principal.user_id)
++    except ValueError as error:
++        raise HTTPException(409, str(error)) from None
++
++
++def authorize(run_id, *, resume=False):
++    principal = current_principal.get()
++    if principal is None:
++        raise PermissionError("缺少请求身份")
++    try:
++        owner, conversation_id = runtime().owner(run_id)
++    except KeyError:
++        raise HTTPException(404, "运行不存在或不可访问") from None
++    if owner != principal.user_id and (resume or principal.role != "admin"):
++        raise HTTPException(404, "运行不存在或不可访问")
++    conversation_access(conversation_id)
++    return conversation_id
++
++
++def status(run_id):
++    authorize(run_id)
++    try:
++        return runtime().status(run_id)
++    except KeyError:
++        raise HTTPException(404, "运行状态尚未保存") from None
++
++
++def run(run_id):
++    authorize(run_id, resume=True)
++    try:
++        view = runtime().run(run_id)
++        if view["status"] != "completed":
++            return JSONResponse(status_code=409, content=view)
++        return {**view["result"], "run_id": run_id}
++    except Exception as error:
++        return JSONResponse(status_code=503, content={"run_id": run_id, "status": "interrupted",
++                            "error_type": type(error).__name__, "detail": "执行中断，可查询运行状态后恢复"})
++
++
++def stream(run_id):
++    conversation_id = authorize(run_id, resume=True)
++    def events():
++        try:
++            for event in runtime().events(run_id):
++                if event["type"] == "done":
++                    event = {"type": "done", "content": {**event["content"]["result"], "run_id": run_id}}
++                yield "data: " + json.dumps({**event, "conversation_id": conversation_id,
++                                              "run_id": run_id}, ensure_ascii=False) + "\n\n"
++        except Exception as error:
++            yield "data: " + json.dumps({"type": "error", "run_id": run_id,
++                        "error_type": type(error).__name__, "content": "执行中断，可查询运行状态后恢复"}, ensure_ascii=False) + "\n\n"
++        yield "data: [DONE]\n\n"
++    return StreamingResponse(events(), media_type="text/event-stream",
++                             headers={"X-Run-ID": run_id, "Cache-Control": "no-cache"})
+--- a/app/agent/entry/workflow.py
++++ b/app/agent/entry/workflow.py
+@@ -67,6 +67,8 @@
+     conversation_id: str | None
+     real_conversation_id: str
+     use_llm: bool
++    stream_tokens: bool
++    durable_turn: bool
+     trace: dict[str, Any]
+     history: list[dict]
+     pending_task: dict | None
+@@ -373,6 +375,20 @@
+     return timed_step(state["trace"], "node.build_model_context", work)
+ 
+ 
++def _reply_model(state: AgentWorkflowState) -> str:
++    if not state.get("stream_tokens"):
++        return call_zhipu_chat(state["model_messages"])
++    from langgraph.config import get_stream_writer
++    from app.llm.llm_client import call_zhipu_chat_stream
++    writer = get_stream_writer()
++    parts = []
++    for token in call_zhipu_chat_stream(state["model_messages"], usage_trace=state["trace"]):
++        parts.append(token)
++        if not needs_grounded_reply(state["tool_results"]):
++            writer({"type": "token", "content": token})
++    return "".join(parts)
++
++
+ def generate_reply_node(state: AgentWorkflowState) -> dict:
+     """根据配置选择真实大模型回复或本地确定性回复。"""
+ 
+@@ -387,7 +403,7 @@
+         elif state["use_llm"]:
+             if needs_grounded_reply(state["tool_results"]):
+                 if policy_excerpts(state["tool_results"]):
+-                    raw = call_zhipu_chat(state["model_messages"])
++                    raw = _reply_model(state)
+                     reply, check = checked_reply(raw, state["tool_results"])
+                     add_trace_event(state["trace"], event_type="reply_evidence_check", data=check)
+                     reply_mode = "grounded_llm" if check["passed"] else "grounded_llm_partial" if check.get("partial") else "grounded_reply_rejected"
+@@ -395,7 +411,7 @@
+                     reply = render_grounded_reply(state["tool_results"], [])
+                     reply_mode = "grounded_no_evidence"
+             else:
+-                reply = call_zhipu_chat(state["model_messages"])
++                reply = _reply_model(state)
+                 reply_mode = "llm"
+         else:
+             reply = build_fallback_answer(state["route"], state["tool_results"])
+@@ -437,7 +453,10 @@
+     reply = state["reply"]
+ 
+     try:
+-        memory.append_turn(real_conversation_id, state["user_message"], reply)
++        if state.get("durable_turn"):
++            memory.append_turn(real_conversation_id, state["user_message"], reply, turn_id=state["trace"]["trace_id"])
++        else:
++            memory.append_turn(real_conversation_id, state["user_message"], reply)
+     except Exception as error:
+         add_trace_timing(
+             state["trace"],
+--- a/app/agent/policies/fallback_policy.py
++++ b/app/agent/policies/fallback_policy.py
+@@ -1,3 +1,5 @@
++from app.domain.request_signals import asserted_mentions
++
+ ORDER_ID_REQUIRED_KEYWORDS = [
+     "我的订单",
+     "订单",
+@@ -89,15 +91,11 @@
+ 
+ def is_risky_operation(message: str) -> bool:
+     """判断用户是否请求高风险业务操作。"""
+-    if any(keyword in message for keyword in RISKY_OPERATION_KEYWORDS):
++    if asserted_mentions(message, RISKY_OPERATION_KEYWORDS):
+         return True
+ 
+-    has_risky_action = any(
+-        keyword in message for keyword in RISKY_ACTION_KEYWORDS
+-    )
+-    has_bypass_intent = any(
+-        keyword in message for keyword in RISKY_BYPASS_KEYWORDS
+-    )
++    has_risky_action = bool(asserted_mentions(message, RISKY_ACTION_KEYWORDS))
++    has_bypass_intent = bool(asserted_mentions(message, RISKY_BYPASS_KEYWORDS))
+ 
+     return has_risky_action and has_bypass_intent
+ 
+@@ -112,4 +110,4 @@
+             "该请求涉及退款、赔付、取消订单、修改地址等高风险操作，需要人工客服审核。",
+         )
+ 
+-    return False, None+    return False, None
+--- a/app/agent/policies/guardrails.py
++++ b/app/agent/policies/guardrails.py
+@@ -1,3 +1,5 @@
++from app.domain.request_signals import asserted_mentions
++
+ RISKY_ACTION_KEYWORDS = [
+     "直接退款",
+     "马上退款",
+@@ -27,4 +29,4 @@
+ 
+ 
+ def contains_risky_action(message: str) -> bool:
+-    return any(keyword in message for keyword in RISKY_ACTION_KEYWORDS)
++    return bool(asserted_mentions(message, RISKY_ACTION_KEYWORDS))
+--- a/app/agent/routing/decision.py
++++ b/app/agent/routing/decision.py
+@@ -1,4 +1,5 @@
+ from __future__ import annotations
++from app.domain.request_signals import asserted_mentions
+ 
+ from app.agent.policies.fallback_policy import (
+     should_handoff_to_human,
+@@ -77,11 +78,7 @@
+         .lower()
+     )
+ 
+-    return any(
+-        pattern in text
+-        for pattern
+-        in REVIEW_BYPASS_PATTERNS
+-    )
++    return bool(asserted_mentions(text, REVIEW_BYPASS_PATTERNS))
+ 
+ 
+ def requires_order_id(
+--- a/app/agent/routing/memory.py
++++ b/app/agent/routing/memory.py
+@@ -99,9 +99,23 @@
+             content=content,
+         )
+ 
+-    def append_turn(self, conversation_id: str, user_message: str, reply: str) -> None:
++    def append_turn(self, conversation_id: str, user_message: str, reply: str, *, turn_id: str | None = None) -> None:
+         """Both messages commit or neither does, on SQLite and MySQL."""
+-        with transaction():
++        with transaction() as tx:
++            if turn_id:
++                # Claim before writing. The unique key serializes concurrent
++                # retries, and the claim commits atomically with both messages.
++                sql = ("INSERT INTO agent_persisted_turns (turn_id, conversation_id, user_message, reply) "
++                       "VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE turn_id=turn_id") if tx.mysql else (
++                       "INSERT INTO agent_persisted_turns (turn_id, conversation_id, user_message, reply) "
++                       "VALUES (?, ?, ?, ?) ON CONFLICT(turn_id) DO NOTHING")
++                inserted = execute(sql, (turn_id, conversation_id, user_message, reply))
++                if inserted == 0:
++                    row = execute("SELECT conversation_id, user_message, reply FROM agent_persisted_turns WHERE turn_id = ?",
++                                  (turn_id,), fetch=True)[0]
++                    if (row["conversation_id"], row["user_message"], row["reply"]) != (conversation_id, user_message, reply):
++                        raise ValueError("Persisted turn conflicts with recovery input")
++                    return
+             append_message_to_db(conversation_id, 'user', user_message)
+             append_message_to_db(conversation_id, 'assistant', reply)
+ 
+--- a/app/core/schemas.py
++++ b/app/core/schemas.py
+@@ -62,6 +62,7 @@
+ 
+ 
+ class ChatResponse(BaseModel):
++    run_id: str | None = None
+     success: bool
+     conversation_id: str
+     orchestration: dict = Field(default_factory=dict)
+--- a/app/domain/refund_policy.py
++++ b/app/domain/refund_policy.py
+@@ -1,6 +1,7 @@
+ from datetime import datetime
+ 
+ from app.domain.risk_policy import evaluate_refund_risk
++from app.domain.request_signals import asserted_mentions
+ from app.storage.database import get_customer_profile_from_db
+ 
+ 
+@@ -40,23 +41,20 @@
+ 
+ 
+ def is_quality_or_fault_request(user_request: str) -> bool:
+-    return any(
+-        keyword in user_request
+-        for keyword in ["质量问题", "坏了", "故障", "不能用", "无法使用", "破损", "少件"]
+-    )
++    return bool(asserted_mentions(user_request, ["质量问题", "坏了", "故障", "不能用", "无法使用", "破损", "少件"]))
+ 
+ 
+ def infer_refund_reason(user_request: str) -> str:
+     if is_quality_or_fault_request(user_request):
+         return "quality_issue"
+ 
+-    if "未收到" in user_request or "没收到" in user_request:
++    if asserted_mentions(user_request, ["未收到", "没收到"]):
+         return "not_received"
+ 
+-    if "不想要" in user_request or "不要了" in user_request or "七天无理由" in user_request:
++    if asserted_mentions(user_request, ["不想要", "不要了", "七天无理由"]):
+         return "no_reason_return"
+ 
+-    if "重复扣款" in user_request or "支付异常" in user_request or "扣款" in user_request:
++    if asserted_mentions(user_request, ["重复扣款", "支付异常", "扣款"]):
+         return "payment_issue"
+ 
+     return "refund_request"
+--- a/app/domain/request_signals.py
++++ b/app/domain/request_signals.py
+@@ -0,0 +1,24 @@
++"""Conservative local handling of explicit denials in business text.
++
++This extracts asserted mentions, not verified product/payment facts. Only a
++short, explicit denial directly preceding the phrase suppresses a match.
++Ambiguous or double negation retains the existing conservative signal.
++"""
++import re
++
++_BOUNDARY = re.compile(r"[，,。；;！？!?\n]|但是|不过|然而")
++_DENIAL = re.compile(r"(?:并没有|没有|并非|不是|并不|尚未|不再|无需|不必|不|没)(?:任何|什么|存在|出现|发生|要求|需要|打算|准备|想要|想|会|要|去|进行|提出|有|的)*$")
++_NEGATIVE = re.compile(r"不|没|未|非|无")
++
++
++def asserted_mentions(text: str, phrases) -> list[str]:
++    matches = []
++    for phrase in phrases:
++        for found in re.finditer(re.escape(phrase), text):
++            prefix = _BOUNDARY.split(text[:found.start()])[-1]
++            denial = _DENIAL.search(prefix)
++            if denial and len(denial[0]) <= 12 and not _NEGATIVE.search(prefix[:denial.start()]):
++                continue
++            matches.append(phrase)
++            break
++    return matches
+--- a/app/domain/risk_policy.py
++++ b/app/domain/risk_policy.py
+@@ -1,3 +1,5 @@
++from app.domain.request_signals import asserted_mentions
++
+ HIGH_RISK_AMOUNT = 1000
+ MEDIUM_RISK_AMOUNT = 500
+ 
+@@ -41,17 +43,17 @@
+         score += 15
+         flags.append("中额退款")
+ 
+-    if any(keyword in user_request for keyword in COMPLAINT_KEYWORDS):
++    if asserted_mentions(user_request, COMPLAINT_KEYWORDS):
+         score += 20
+         flags.append("投诉升级话术")
+ 
+-    if any(keyword in user_request for keyword in BYPASS_KEYWORDS):
++    if asserted_mentions(user_request, BYPASS_KEYWORDS):
+         score += 35
+         flags.append("要求绕过审核")
+ 
+     shipping_status = order.get("shipping_status") or ""
+     for user_keyword, order_keyword in FALSE_DESCRIPTION_PATTERNS:
+-        if user_keyword in user_request and order_keyword in shipping_status:
++        if asserted_mentions(user_request, [user_keyword]) and order_keyword in shipping_status:
+             score += 35
+             flags.append("描述与物流状态冲突")
+             break
+--- a/app/rag/evidence_selection.py
++++ b/app/rag/evidence_selection.py
+@@ -13,6 +13,7 @@
+ 
+ def _guardrail_masks(query: RetrievalQuery, candidates: list[dict]) -> tuple[list[bool], list[bool]]:
+     from app.agent.policies.evidence_guardrail import contains_any, detect_policy_profile
++    from app.core.schemas import RouteDecision
+ 
+     # The online guardrail receives the user's query, not appended order facts.
+     raw_query = query.semantic_query
+@@ -21,7 +22,8 @@
+             r'\n(?:主要意图|业务主题|关联主题|订单状态|物流状态|商品名称|商品类目|签收日期|处理约束)：',
+             query.rerank_query.removeprefix('用户问题：'), maxsplit=1,
+         )[0]
+-    profile = detect_policy_profile(raw_query)
++    route = RouteDecision(intent=query.primary_intent, action_type=query.action_type or "unknown") if query.primary_intent else None
++    profile = detect_policy_profile(query.raw_query if query.raw_query is not None else raw_query, route=route)
+     sources = [bool(profile and c.get('source') in profile['expected_sources']) for c in candidates]
+     words = [bool(profile and contains_any(
+         '\n'.join(str(c.get(field, '')) for field in ('source', 'section', 'text')),
+--- a/app/rag/query_builder.py
++++ b/app/rag/query_builder.py
+@@ -297,6 +297,9 @@
+         semantic_query=_semantic_query(context),
+         lexical_query=_lexical_query(context),
+         rerank_query=_rerank_query(context),
++        raw_query=context.raw_query,
++        primary_intent=context.primary_intent,
++        action_type=context.action_type,
+     )
+ 
+ 
+--- a/app/rag/query_context.py
++++ b/app/rag/query_context.py
+@@ -22,6 +22,9 @@
+     semantic_query: str
+     lexical_query: str
+     rerank_query: str | None = None
++    raw_query: str | None = None
++    primary_intent: str | None = None
++    action_type: str | None = None
+ 
+     def __post_init__(self) -> None:
+         if not self.semantic_query.strip():
+--- a/app/storage/database.py
++++ b/app/storage/database.py
+@@ -211,6 +211,13 @@
+                 created_at TEXT NOT NULL
+             );
+ 
++            CREATE TABLE IF NOT EXISTS agent_persisted_turns (
++                turn_id TEXT PRIMARY KEY,
++                conversation_id TEXT NOT NULL,
++                user_message TEXT NOT NULL,
++                reply TEXT NOT NULL
++            );
++
+             CREATE INDEX IF NOT EXISTS idx_messages_conversation_id
+             ON conversation_messages(conversation_id, id);
+ 
+--- a/app/storage/mysql_database.py
++++ b/app/storage/mysql_database.py
+@@ -8,6 +8,10 @@
+ 
+ 
+ MYSQL_SCHEMA = [
++    """CREATE TABLE IF NOT EXISTS agent_persisted_turns (
++        turn_id VARCHAR(64) PRIMARY KEY, conversation_id VARCHAR(64) NOT NULL,
++        user_message LONGTEXT NOT NULL, reply LONGTEXT NOT NULL
++    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+     """
+     CREATE TABLE IF NOT EXISTS conversation_owners (
+         conversation_id VARCHAR(64) PRIMARY KEY,
+--- a/app/tools/policy.py
++++ b/app/tools/policy.py
+@@ -39,6 +39,9 @@
+         semantic_query=semantic_query,
+         lexical_query=lexical_query,
+         rerank_query=context.rerank_query if context else None,
++        raw_query=context.raw_query if context else None,
++        primary_intent=context.primary_intent if context else None,
++        action_type=context.action_type if context else None,
+     )
+     options = {"mode": "hybrid_rule", "candidate_k": 20, "evidence_selection": selection} if selection else {}
+     results = _RETRIEVER.retrieve(query=query, top_k=top_k, **options)
+--- a/main.py
++++ b/main.py
+@@ -9,6 +9,7 @@
+     run_customer_support_agent,
+     stream_customer_support_agent,
+ )
++from app.agent.entry import persistent_api
+ from app.tools.registry import get_function_tool_specs
+ from app.core.config import BASE_DIR, get_settings
+ from app.core.schemas import (
+@@ -195,6 +196,11 @@
+     get_rag_index_manager().refresh()
+ 
+ 
++@app.on_event("shutdown")
++def close_graph_runtime() -> None:
++    persistent_api.close()
++
++
+ @app.get("/")
+ def web_app() -> FileResponse:
+     return FileResponse(BASE_DIR / "web" / "index.html")
+@@ -251,6 +257,8 @@
+ @app.post("/agent/chat", response_model=ChatResponse)
+ def agent_chat(req: ChatRequest) -> dict:
+     conversation_id = conversation_access(req.conversation_id, create=True)
++    if persistent_api.enabled():
++        return persistent_api.run(persistent_api.create(req, conversation_id))
+     return run_customer_support_agent(
+         user_message=req.message,
+         conversation_id=conversation_id,
+@@ -259,8 +267,10 @@
+ 
+ 
+ @app.post("/agent/stream")
+-async def agent_stream(req: StreamChatRequest) -> StreamingResponse:
++def agent_stream(req: StreamChatRequest) -> StreamingResponse:
+     conversation_id = conversation_access(req.conversation_id, create=True)
++    if persistent_api.enabled():
++        return persistent_api.stream(persistent_api.create(req, conversation_id, stream=True))
+     async def event_generator():
+         async for event in stream_customer_support_agent(
+             user_message=req.message,
+@@ -275,6 +285,28 @@
+     return StreamingResponse(event_generator(), media_type="text/event-stream")
+ 
+ 
++@app.post("/agent/runs")
++def create_agent_run(req: StreamChatRequest):
++    conversation_id = conversation_access(req.conversation_id, create=True)
++    run_id = persistent_api.create(req, conversation_id, stream=req.stream_tokens)
++    return {"run_id": run_id, "conversation_id": conversation_id, "status": "suspended"}
++
++
++@app.get("/agent/runs/{run_id}")
++def agent_run_status(run_id: str):
++    return persistent_api.status(run_id)
++
++
++@app.post("/agent/runs/{run_id}/resume")
++def resume_agent_run(run_id: str):
++    return persistent_api.run(run_id)
++
++
++@app.post("/agent/runs/{run_id}/resume/stream")
++def resume_agent_run_stream(run_id: str):
++    return persistent_api.stream(run_id)
++
++
+ @app.post("/agent/history", response_model=ChatHistoryResponse)
+ def agent_history(req: ChatHistoryRequest) -> ChatHistoryResponse:
+     conversation_access(req.conversation_id)
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -2,7 +2,10 @@
+ uvicorn
+ pydantic
+ pymupdf
+-langgraph
++langgraph==1.2.10
++langgraph-checkpoint==4.2.0
++langgraph-checkpoint-sqlite==3.1.1
++filelock==3.32.5
+ redis
+ pymysql
+ sentence-transformers==6.0.1

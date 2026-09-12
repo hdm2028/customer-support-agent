@@ -1,0 +1,49 @@
+{
+  "tools": [
+    {
+      "trace_id": "579cf439-ceb3-4b40-abe6-6086cd77e4a4",
+      "success": true,
+      "ticket_id": "T-H-fc1c3ebe085bb9dc8cfc3449f655596712737810",
+      "status": "pending_human_takeover",
+      "receipt_in_reply": true
+    },
+    {
+      "trace_id": "d51006c7-15c1-4b3c-8e04-376e21e0376d",
+      "success": true,
+      "ticket_id": "T-H-ddd280342c9f0c2c8294730df3e8ab294d0df342",
+      "status": "pending_human_takeover",
+      "receipt_in_reply": true
+    },
+    {
+      "trace_id": "411dac7a-1704-4a85-903b-cf829974f9e2",
+      "success": true,
+      "ticket_id": "T-H-d64aa9b38078b8f588a60a6748558dd8352cd4a7",
+      "status": "pending_human_takeover",
+      "receipt_in_reply": true
+    },
+    {
+      "trace_id": "3d93c975-e4d8-4044-b2c9-d21fcca6328c",
+      "success": true,
+      "ticket_id": "T-H-16ec3c32e193ee5c0bb1fe235fbe5a166743d3e6",
+      "status": "pending_human_takeover",
+      "receipt_in_reply": true
+    },
+    {
+      "trace_id": "fabbcaea-7adc-4f1d-b688-1e885f1cdafa",
+      "success": true,
+      "ticket_id": "T-H-403fd7578b4bbcb081a8ded9b30cf3836787bb2c",
+      "status": "pending_human_takeover",
+      "receipt_in_reply": true
+    }
+  ],
+  "answer": [],
+  "e2e": [
+    {
+      "trace_id": "4c9434cc-8d4a-41c5-8ce5-805bea87d03e",
+      "success": true,
+      "ticket_id": "T-H-f9e77c38b2926d55cc379cdf4124d9f49395db43",
+      "status": "pending_human_takeover",
+      "receipt_in_reply": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "fallbacks": [
+    {
+      "case_id": "e2e_dev_b01_003",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'order_lookup'",
+      "category": "model_output_contract"
+    },
+    {
+      "case_id": "e2e-eval-e2e_dev_b01_003-9cb6bafa09be484085906efa9b23ec6a",
+      "reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'order_lookup'",
+      "category": "model_output_contract"
+    }
+  ],
+  "note": "Original scores are unchanged. A dependency-affected failure is not proof of a routing or business logic defect. Other failures require stage-level inspection."
+}

@@ -1,0 +1,37 @@
+test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan (test_refund_cancellation.RefundCancellationTests.test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan) ... ERROR
+
+======================================================================
+ERROR: test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan (test_refund_cancellation.RefundCancellationTests.test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\DELL\AppData\Local\Temp\support-lock-diagnosis-3qf5cnpe\tests\test_refund_cancellation.py", line 178, in test_mysql_approval_holding_review_does_not_deadlock_cancellation_scan
+    self.assertTrue(a.result(timeout=15)["success"])
+                    ~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py", line 460, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py", line 402, in __get_result
+    raise self._exception
+  File "C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\DELL\AppData\Local\Temp\support-lock-diagnosis-3qf5cnpe\tests\test_refund_cancellation.py", line 163, in approve
+    return review_service.resolve_review(review["review_id"], "approve", "核实通过")
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Temp\support-lock-diagnosis-3qf5cnpe\app\services\review_service.py", line 39, in resolve_review
+    row = lock_record("manual_reviews", "review_id", review_id)
+  File "C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\DELL\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1240, in _execute_mock_call
+    result = effect(*args, **kwargs)
+  File "C:\Users\DELL\AppData\Local\Temp\support-lock-diagnosis-3qf5cnpe\tests\test_refund_cancellation.py", line 153, in hold_review
+    raise TimeoutError("cancellation scan blocked on approval's review row")
+TimeoutError: cancellation scan blocked on approval's review row
+
+----------------------------------------------------------------------
+Ran 1 test in 5.697s
+
+FAILED (errors=1)

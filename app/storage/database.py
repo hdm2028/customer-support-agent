@@ -1,3 +1,5 @@
+"""Unified database facade with explicit SQLite implementations and MySQL dispatch."""
+
 import json
 import os
 import sqlite3
@@ -130,8 +132,12 @@ def now_text() -> str:
 def get_connection() -> sqlite3.Connection:
     """创建 SQLite 连接，并让查询结果可以按字段名读取。"""
 
+    from app.storage.transactions import borrowed_connection, ManagedSQLiteConnection
+    borrowed = borrowed_connection()
+    if borrowed is not None:
+        return borrowed
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(DB_PATH, timeout=30)
+    connection = sqlite3.connect(DB_PATH, timeout=30, factory=ManagedSQLiteConnection)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA busy_timeout = 5000")
     connection.execute("PRAGMA journal_mode = WAL")
@@ -144,6 +150,16 @@ def sqlite_column_exists(connection: sqlite3.Connection, table_name: str, column
 
 
 def apply_sqlite_migrations(connection: sqlite3.Connection) -> None:
+    if not sqlite_column_exists(connection, "tickets", "user_id"):
+        connection.execute("ALTER TABLE tickets ADD COLUMN user_id TEXT")
+        for row in connection.execute("SELECT ticket_id, payload FROM tickets").fetchall():
+            try:
+                payload = json.loads(row["payload"])
+            except (ValueError, TypeError):
+                continue
+            owner = payload.get("user_id") if isinstance(payload, dict) else None
+            if isinstance(owner, str) and owner.strip():
+                connection.execute("UPDATE tickets SET user_id = ? WHERE ticket_id = ?", (owner, row["ticket_id"]))
     if not sqlite_column_exists(connection, "refund_requests", "idempotency_key"):
         connection.execute(
             "ALTER TABLE refund_requests ADD COLUMN idempotency_key TEXT"
@@ -157,7 +173,8 @@ def apply_sqlite_migrations(connection: sqlite3.Connection) -> None:
     )
 
 
-def init_database() -> None:
+# SQLite implementations; callers use the public facade below.
+def _sqlite_init_database() -> None:
     """初始化数据库表，并把 orders.json 作为订单种子数据导入。"""
 
     global _INITIALIZED
@@ -177,6 +194,7 @@ def init_database() -> None:
             CREATE TABLE IF NOT EXISTS tickets (
                 ticket_id TEXT PRIMARY KEY,
                 order_id TEXT,
+                user_id TEXT,
                 issue_type TEXT NOT NULL,
                 priority TEXT NOT NULL,
                 status TEXT NOT NULL,
@@ -191,6 +209,13 @@ def init_database() -> None:
                 role TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_persisted_turns (
+                turn_id TEXT PRIMARY KEY,
+                conversation_id TEXT NOT NULL,
+                user_message TEXT NOT NULL,
+                reply TEXT NOT NULL
             );
 
             CREATE INDEX IF NOT EXISTS idx_messages_conversation_id
@@ -245,6 +270,11 @@ def init_database() -> None:
                 updated_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS conversation_owners (
+                conversation_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS mq_messages (
                 message_id TEXT PRIMARY KEY,
                 topic TEXT NOT NULL,
@@ -284,18 +314,14 @@ def init_database() -> None:
         )
         apply_sqlite_migrations(connection)
 
-    seed_orders_from_json()
-    seed_customer_profiles()
+    from app.core.config import get_settings
+    if get_settings().seed_demo_data:
+        seed_customer_profiles()
+        seed_orders_from_json()
     _INITIALIZED = True
 
 
-def ensure_database() -> None:
-    """确保任意数据读写前，数据库结构都已经存在。"""
-
-    init_database()
-
-
-def seed_orders_from_json(path: Path = ORDERS_SEED_PATH) -> None:
+def _sqlite_seed_orders_from_json(path: Path = ORDERS_SEED_PATH) -> None:
     """把 JSON 种子订单同步到 SQLite，方便后续统一从数据库读取订单。"""
 
     if not path.exists():
@@ -310,9 +336,7 @@ def seed_orders_from_json(path: Path = ORDERS_SEED_PATH) -> None:
                 """
                 INSERT INTO orders (order_id, payload, updated_at)
                 VALUES (?, ?, ?)
-                ON CONFLICT(order_id) DO UPDATE SET
-                    payload = excluded.payload,
-                    updated_at = excluded.updated_at
+                ON CONFLICT(order_id) DO NOTHING
                 """,
                 (
                     str(normalized_order["order_id"]),
@@ -340,7 +364,7 @@ def normalize_order(order: dict) -> dict:
     return normalized
 
 
-def seed_customer_profiles() -> None:
+def _sqlite_seed_customer_profiles() -> None:
     """写入客户画像种子数据，供风控 Agent 判断高频退款、异常账号等风险。"""
 
     with get_connection() as connection:
@@ -349,9 +373,7 @@ def seed_customer_profiles() -> None:
                 """
                 INSERT INTO customer_profiles (user_id, payload, updated_at)
                 VALUES (?, ?, ?)
-                ON CONFLICT(user_id) DO UPDATE SET
-                    payload = excluded.payload,
-                    updated_at = excluded.updated_at
+                ON CONFLICT(user_id) DO NOTHING
                 """,
                 (
                     profile["user_id"],
@@ -361,7 +383,7 @@ def seed_customer_profiles() -> None:
             )
 
 
-def load_orders_from_db() -> list[dict]:
+def _sqlite_load_orders_from_db() -> list[dict]:
     """读取全部订单。"""
 
     ensure_database()
@@ -377,7 +399,7 @@ def load_orders_from_db() -> list[dict]:
     ]
 
 
-def get_order_from_db(order_id: str) -> dict | None:
+def _sqlite_get_order_from_db(order_id: str) -> dict | None:
     """按订单号读取单个订单。"""
 
     ensure_database()
@@ -394,7 +416,7 @@ def get_order_from_db(order_id: str) -> dict | None:
     return json.loads(row["payload"])
 
 
-def update_order_in_db(order_id: str, updates: dict) -> dict | None:
+def _sqlite_update_order_in_db(order_id: str, updates: dict) -> dict | None:
     """更新订单 JSON payload，用于退款处理服务写回订单状态。"""
 
     ensure_database()
@@ -422,7 +444,7 @@ def update_order_in_db(order_id: str, updates: dict) -> dict | None:
     return order
 
 
-def get_customer_profile_from_db(user_id: str | None) -> dict | None:
+def _sqlite_get_customer_profile_from_db(user_id: str | None) -> dict | None:
     """读取客户画像。"""
 
     if not user_id:
@@ -442,7 +464,7 @@ def get_customer_profile_from_db(user_id: str | None) -> dict | None:
     return json.loads(row["payload"])
 
 
-def save_refund_request_to_db(refund_request: dict) -> dict:
+def _sqlite_save_refund_request_to_db(refund_request: dict) -> dict:
     """保存退款申请，返回带 refund_id、状态和时间戳的记录。"""
 
     ensure_database()
@@ -482,7 +504,7 @@ def save_refund_request_to_db(refund_request: dict) -> dict:
     return saved
 
 
-def get_refund_request_from_db(refund_id: str) -> dict | None:
+def _sqlite_get_refund_request_from_db(refund_id: str) -> dict | None:
     """按退款申请号读取退款申请。"""
 
     ensure_database()
@@ -499,7 +521,7 @@ def get_refund_request_from_db(refund_id: str) -> dict | None:
     return json.loads(row["payload"])
 
 
-def get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
+def _sqlite_get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
     """按订单号读取最近一条仍有效的退款申请，用作数据库幂等检查。"""
 
     ensure_database()
@@ -523,7 +545,7 @@ def get_active_refund_request_by_order_id_from_db(order_id: str) -> dict | None:
     return None
 
 
-def update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
+def _sqlite_update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
     """更新退款申请状态或处理结果。"""
 
     ensure_database()
@@ -554,7 +576,7 @@ def update_refund_request_in_db(refund_id: str, updates: dict) -> dict | None:
     return refund_request
 
 
-def list_refund_requests_from_db(limit: int = 50) -> list[dict]:
+def _sqlite_list_refund_requests_from_db(limit: int = 50) -> list[dict]:
     """按创建时间倒序读取退款申请。"""
 
     ensure_database()
@@ -572,7 +594,7 @@ def list_refund_requests_from_db(limit: int = 50) -> list[dict]:
     return [json.loads(row["payload"]) for row in rows]
 
 
-def save_manual_review_to_db(review: dict) -> dict:
+def _sqlite_save_manual_review_to_db(review: dict) -> dict:
     """保存人工审核单。"""
 
     ensure_database()
@@ -610,7 +632,7 @@ def save_manual_review_to_db(review: dict) -> dict:
     return saved
 
 
-def list_manual_reviews_from_db(limit: int = 50) -> list[dict]:
+def _sqlite_list_manual_reviews_from_db(limit: int = 50) -> list[dict]:
     """按创建时间倒序读取人工审核单。"""
 
     ensure_database()
@@ -628,7 +650,7 @@ def list_manual_reviews_from_db(limit: int = 50) -> list[dict]:
     return [json.loads(row["payload"]) for row in rows]
 
 
-def enqueue_mq_message_to_db(topic: str, payload: dict) -> dict:
+def _sqlite_enqueue_mq_message_to_db(topic: str, payload: dict) -> dict:
     """写入一条待消费 MQ 消息。本地用 SQLite 模拟队列，生产可替换成 RabbitMQ/Kafka。"""
 
     ensure_database()
@@ -668,62 +690,7 @@ def enqueue_mq_message_to_db(topic: str, payload: dict) -> dict:
     return message
 
 
-def claim_mq_messages_from_db(topic: str | None = None, limit: int = 10) -> list[dict]:
-    """领取待消费消息，并标记为 processing。"""
-
-    ensure_database()
-
-    if topic:
-        query = """
-            SELECT message_id, topic, status, attempts, payload, result, created_at, updated_at
-            FROM mq_messages
-            WHERE status = 'pending' AND topic = ?
-            ORDER BY created_at
-            LIMIT ?
-        """
-        params = (topic, limit)
-    else:
-        query = """
-            SELECT message_id, topic, status, attempts, payload, result, created_at, updated_at
-            FROM mq_messages
-            WHERE status = 'pending'
-            ORDER BY created_at
-            LIMIT ?
-        """
-        params = (limit,)
-
-    with get_connection() as connection:
-        rows = connection.execute(query, params).fetchall()
-        messages = []
-
-        for row in rows:
-            attempts = int(row["attempts"] or 0) + 1
-            updated_at = now_text()
-            connection.execute(
-                """
-                UPDATE mq_messages
-                SET status = 'processing', attempts = ?, updated_at = ?
-                WHERE message_id = ? AND status = 'pending'
-                """,
-                (attempts, updated_at, row["message_id"]),
-            )
-            messages.append(
-                {
-                    "message_id": row["message_id"],
-                    "topic": row["topic"],
-                    "status": "processing",
-                    "attempts": attempts,
-                    "payload": json.loads(row["payload"]),
-                    "result": json.loads(row["result"]) if row["result"] else None,
-                    "created_at": row["created_at"],
-                    "updated_at": updated_at,
-                }
-            )
-
-    return messages
-
-
-def update_mq_message_status_in_db(message_id: str, status: str, result: dict | None = None) -> dict | None:
+def _sqlite_update_mq_message_status_in_db(message_id: str, status: str, result: dict | None = None) -> dict | None:
     """更新 MQ 消息状态。"""
 
     ensure_database()
@@ -768,7 +735,7 @@ def update_mq_message_status_in_db(message_id: str, status: str, result: dict | 
     }
 
 
-def list_mq_messages_from_db(limit: int = 50) -> list[dict]:
+def _sqlite_list_mq_messages_from_db(limit: int = 50) -> list[dict]:
     """查看最近的 MQ 消息。"""
 
     ensure_database()
@@ -799,7 +766,7 @@ def list_mq_messages_from_db(limit: int = 50) -> list[dict]:
     ]
 
 
-def save_notification_to_db(notification: dict) -> dict:
+def _sqlite_save_notification_to_db(notification: dict) -> dict:
     """保存用户通知记录。"""
 
     ensure_database()
@@ -832,7 +799,7 @@ def save_notification_to_db(notification: dict) -> dict:
     return saved
 
 
-def save_agent_metric_to_db(trace: dict) -> None:
+def _sqlite_save_agent_metric_to_db(trace: dict) -> None:
     """把 trace 的关键指标落库，便于后续做评测和失败案例分析。"""
 
     ensure_database()
@@ -866,7 +833,7 @@ def save_agent_metric_to_db(trace: dict) -> None:
         )
 
 
-def list_agent_metrics_from_db(limit: int = 50) -> list[dict]:
+def _sqlite_list_agent_metrics_from_db(limit: int = 50) -> list[dict]:
     """查看最近 Agent 指标记录。"""
 
     ensure_database()
@@ -884,7 +851,7 @@ def list_agent_metrics_from_db(limit: int = 50) -> list[dict]:
     return [json.loads(row["payload"]) for row in rows]
 
 
-def save_ticket_to_db(ticket: dict) -> dict:
+def _sqlite_save_ticket_to_db(ticket: dict) -> dict:
     """保存工单草稿，并返回带 ticket_id 和 created_at 的工单。"""
 
     ensure_database()
@@ -899,14 +866,15 @@ def save_ticket_to_db(ticket: dict) -> dict:
         connection.execute(
             """
             INSERT INTO tickets (
-                ticket_id, order_id, issue_type, priority, status,
+                ticket_id, order_id, user_id, issue_type, priority, status,
                 user_request, payload, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 saved_ticket["ticket_id"],
                 saved_ticket.get("order_id"),
+                saved_ticket.get("user_id"),
                 saved_ticket["issue_type"],
                 saved_ticket["priority"],
                 saved_ticket["status"],
@@ -919,7 +887,7 @@ def save_ticket_to_db(ticket: dict) -> dict:
     return saved_ticket
 
 
-def list_tickets_from_db(limit: int = 50) -> list[dict]:
+def _sqlite_list_tickets_from_db(limit: int = 50) -> list[dict]:
     """按创建时间倒序读取最近的工单草稿。"""
 
     ensure_database()
@@ -940,7 +908,7 @@ def list_tickets_from_db(limit: int = 50) -> list[dict]:
     ]
 
 
-def append_message_to_db(conversation_id: str, role: str, content: str) -> None:
+def _sqlite_append_message_to_db(conversation_id: str, role: str, content: str) -> None:
     """保存一条会话消息。"""
 
     ensure_database()
@@ -955,7 +923,7 @@ def append_message_to_db(conversation_id: str, role: str, content: str) -> None:
         )
 
 
-def load_messages_from_db(conversation_id: str, limit: int) -> list[dict]:
+def _sqlite_load_messages_from_db(conversation_id: str, limit: int) -> list[dict]:
     """读取某个会话最近的消息。"""
 
     ensure_database()
@@ -983,7 +951,7 @@ def load_messages_from_db(conversation_id: str, limit: int) -> list[dict]:
     return list(reversed(messages))
 
 
-def set_pending_task_in_db(conversation_id: str, task: dict) -> None:
+def _sqlite_set_pending_task_in_db(conversation_id: str, task: dict) -> None:
     """保存或更新某个会话的待补全任务。"""
 
     ensure_database()
@@ -1005,7 +973,7 @@ def set_pending_task_in_db(conversation_id: str, task: dict) -> None:
         )
 
 
-def get_pending_task_from_db(conversation_id: str) -> dict | None:
+def _sqlite_get_pending_task_from_db(conversation_id: str) -> dict | None:
     """读取某个会话的待补全任务。"""
 
     ensure_database()
@@ -1022,7 +990,7 @@ def get_pending_task_from_db(conversation_id: str) -> dict | None:
     return json.loads(row["task_json"])
 
 
-def clear_pending_task_in_db(conversation_id: str) -> None:
+def _sqlite_clear_pending_task_in_db(conversation_id: str) -> None:
     """清除某个会话已经完成的待补全任务。"""
 
     ensure_database()
@@ -1034,7 +1002,7 @@ def clear_pending_task_in_db(conversation_id: str) -> None:
         )
 
 
-def save_feedback_to_db(conversation_id: str, score: int, comment: str | None) -> None:
+def _sqlite_save_feedback_to_db(conversation_id: str, score: int, comment: str | None) -> None:
     """保存用户反馈。"""
 
     ensure_database()
@@ -1049,38 +1017,7 @@ def save_feedback_to_db(conversation_id: str, score: int, comment: str | None) -
         )
 
 
-_sqlite_init_database = init_database
-_sqlite_ensure_database = ensure_database
-_sqlite_seed_orders_from_json = seed_orders_from_json
-_sqlite_seed_customer_profiles = seed_customer_profiles
-_sqlite_load_orders_from_db = load_orders_from_db
-_sqlite_get_order_from_db = get_order_from_db
-_sqlite_update_order_in_db = update_order_in_db
-_sqlite_get_customer_profile_from_db = get_customer_profile_from_db
-_sqlite_save_refund_request_to_db = save_refund_request_to_db
-_sqlite_get_refund_request_from_db = get_refund_request_from_db
-_sqlite_get_active_refund_request_by_order_id_from_db = get_active_refund_request_by_order_id_from_db
-_sqlite_update_refund_request_in_db = update_refund_request_in_db
-_sqlite_list_refund_requests_from_db = list_refund_requests_from_db
-_sqlite_save_manual_review_to_db = save_manual_review_to_db
-_sqlite_list_manual_reviews_from_db = list_manual_reviews_from_db
-_sqlite_enqueue_mq_message_to_db = enqueue_mq_message_to_db
-_sqlite_claim_mq_messages_from_db = claim_mq_messages_from_db
-_sqlite_update_mq_message_status_in_db = update_mq_message_status_in_db
-_sqlite_list_mq_messages_from_db = list_mq_messages_from_db
-_sqlite_save_notification_to_db = save_notification_to_db
-_sqlite_save_agent_metric_to_db = save_agent_metric_to_db
-_sqlite_list_agent_metrics_from_db = list_agent_metrics_from_db
-_sqlite_save_ticket_to_db = save_ticket_to_db
-_sqlite_list_tickets_from_db = list_tickets_from_db
-_sqlite_append_message_to_db = append_message_to_db
-_sqlite_load_messages_from_db = load_messages_from_db
-_sqlite_set_pending_task_in_db = set_pending_task_in_db
-_sqlite_get_pending_task_from_db = get_pending_task_from_db
-_sqlite_clear_pending_task_in_db = clear_pending_task_in_db
-_sqlite_save_feedback_to_db = save_feedback_to_db
-
-
+# Public facade: backend selection, transaction-aware caching and shared MQ recovery.
 def get_database_backend_name() -> str:
     from app.core.config import get_settings
 
@@ -1108,8 +1045,15 @@ def _mysql_backend():
 
 
 def _cache_get(key: str):
+    from app.storage.transactions import current_transaction
+    if current_transaction() is not None:
+        return None
     try:
-        from app.storage.cache import get_json_cache
+        from app.storage.cache import get_json_cache, cache_backend_name
+
+        # Process-local caches cannot observe a worker's committed updates.
+        if cache_backend_name() != "redis":
+            return None
 
         return get_json_cache(key)
     except Exception:
@@ -1117,11 +1061,19 @@ def _cache_get(key: str):
 
 
 def _cache_set(key: str, value: dict | list | None) -> None:
+    from app.storage.transactions import current_transaction
+    state = current_transaction()
+    if state is not None:
+        state.invalidate_keys.add(key)
+        return
     if value is None:
         return
 
     try:
-        from app.storage.cache import set_json_cache
+        from app.storage.cache import set_json_cache, cache_backend_name
+
+        if cache_backend_name() != "redis":
+            return
 
         set_json_cache(key, value)
     except Exception:
@@ -1129,6 +1081,11 @@ def _cache_set(key: str, value: dict | list | None) -> None:
 
 
 def _cache_delete(key: str) -> None:
+    from app.storage.transactions import current_transaction
+    state = current_transaction()
+    if state is not None:
+        state.invalidate_keys.add(key)
+        return
     try:
         from app.storage.cache import delete_cache
 
@@ -1292,10 +1249,8 @@ def enqueue_mq_message_to_db(topic: str, payload: dict) -> dict:
 
 
 def claim_mq_messages_from_db(topic: str | None = None, limit: int = 10) -> list[dict]:
-    if using_mysql_backend():
-        return _mysql_backend().claim_mq_messages_from_mysql(topic, limit)
-
-    return _sqlite_claim_mq_messages_from_db(topic, limit)
+    from app.mq.recovery import claim_messages
+    return claim_messages(topic, limit)
 
 
 def update_mq_message_status_in_db(
@@ -1406,9 +1361,14 @@ def database_health() -> dict:
     if using_mysql_backend():
         return _mysql_backend().mysql_health()
 
-    return {
-        "backend": "sqlite",
-        "configured": True,
-        "reachable": True,
-        "path": str(DB_PATH),
-    }
+    # Read-only open: probing a missing database must not create an empty file.
+    try:
+        connection = sqlite3.connect(DB_PATH.resolve().as_uri() + "?mode=ro", uri=True)
+        try:
+            connection.execute("SELECT 1 FROM orders LIMIT 1").fetchall()
+        finally:
+            connection.close()
+        return {"backend": "sqlite", "configured": True, "reachable": True}
+    except sqlite3.Error as error:
+        return {"backend": "sqlite", "configured": True, "reachable": False,
+                "error_type": type(error).__name__}

@@ -1,5 +1,6 @@
 from app.core.schemas import ToolResult
 from app.storage.database import save_ticket_to_db
+from app.tools.human_review import current_review_context
 
 
 def create_ticket(
@@ -8,9 +9,15 @@ def create_ticket(
     user_request: str,
     priority: str = "normal",
 ) -> ToolResult:
+    from app.core.security import current_principal
+    from app.storage.store import get_order_by_id
+    principal = current_principal.get()
+    order = get_order_by_id(order_id) if order_id and principal else None
     ticket = {
+        "user_id": order.get("user_id") if order else (principal.user_id if principal else None),
         "status": "pending_human_review",
-        "risk_notice": "该工具只生成工单草稿，不会执行真实退款、赔付、取消订单或修改数据库。",
+        "risk_notice": "该工具保存工单草稿，不会执行真实退款、赔付、取消订单或修改订单。",
+        "context": current_review_context(),
         "order_id": order_id or "未知订单",
         "issue_type": issue_type,
         "priority": priority,

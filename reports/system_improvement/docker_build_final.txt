@@ -1,0 +1,52 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 321B 0.0s done
+#1 DONE 3.7s
+
+#2 [internal] load metadata for docker.io/library/python:3.13-slim
+#2 DONE 0.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 340B done
+#3 DONE 0.4s
+
+#4 [internal] load build context
+#4 transferring context: 68.02kB 0.1s done
+#4 DONE 0.7s
+
+#5 [1/5] FROM docker.io/library/python:3.13-slim@sha256:9662417aace5ae7b8e2609cce472b72a8958e134ba372808abe9cc1a0c0125e6
+#5 resolve docker.io/library/python:3.13-slim@sha256:9662417aace5ae7b8e2609cce472b72a8958e134ba372808abe9cc1a0c0125e6
+#5 resolve docker.io/library/python:3.13-slim@sha256:9662417aace5ae7b8e2609cce472b72a8958e134ba372808abe9cc1a0c0125e6 0.8s done
+#5 DONE 1.0s
+
+#6 [3/5] COPY requirements.txt .
+#6 CACHED
+
+#7 [2/5] WORKDIR /app
+#7 CACHED
+
+#8 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [5/5] COPY . .
+#9 DONE 1.5s
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers 2.7s done
+#10 exporting manifest sha256:d20b4daa47a4e0b2589ee21a2b845eda0bfd10df122b06d59f92ed3a53128769
+#10 exporting manifest sha256:d20b4daa47a4e0b2589ee21a2b845eda0bfd10df122b06d59f92ed3a53128769 0.6s done
+#10 exporting config sha256:b298fe4a961dce0a17c0adef1a30d104abcc4d4ee6796eb6633da3d2409a6147
+#10 exporting config sha256:b298fe4a961dce0a17c0adef1a30d104abcc4d4ee6796eb6633da3d2409a6147 0.6s done
+#10 exporting attestation manifest sha256:e8577a7db2c835d1efa023d89663ba61dde57bf24d24d33bd096306b18a724c1
+#10 exporting attestation manifest sha256:e8577a7db2c835d1efa023d89663ba61dde57bf24d24d33bd096306b18a724c1 1.2s done
+#10 exporting manifest list sha256:142185089afe2014494bbc9ba325e95ceb9032e7f851e7a72bb49cda9ae28d9e
+#10 exporting manifest list sha256:142185089afe2014494bbc9ba325e95ceb9032e7f851e7a72bb49cda9ae28d9e 0.7s done
+#10 naming to docker.io/library/support-agent:release-check-final-20260908
+#10 naming to docker.io/library/support-agent:release-check-final-20260908 0.1s done
+#10 unpacking to docker.io/library/support-agent:release-check-final-20260908
+#10 unpacking to docker.io/library/support-agent:release-check-final-20260908 1.0s done
+#10 DONE 7.6s

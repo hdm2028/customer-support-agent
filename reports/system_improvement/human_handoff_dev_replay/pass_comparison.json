@@ -1,0 +1,23 @@
+{
+  "tools": {
+    "reference": "baseline_ready",
+    "before": 41,
+    "after": 41,
+    "regressions": [],
+    "improvements": []
+  },
+  "answer": {
+    "reference": "grounded_template_replies",
+    "before": 1,
+    "after": 1,
+    "regressions": [],
+    "improvements": []
+  },
+  "e2e": {
+    "reference": "grounded_template_replies",
+    "before": 9,
+    "after": 9,
+    "regressions": [],
+    "improvements": []
+  }
+}

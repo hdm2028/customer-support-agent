@@ -1,0 +1,25 @@
+{
+  "recorded_at": "2026-09-08T10:04:06.780504+00:00",
+  "server_version": "8.4.11",
+  "endpoint": "127.0.0.1:13307",
+  "bind_address": "127.0.0.1",
+  "isolation": "REPEATABLE-READ",
+  "server_uuid": "26108790-ab6c-11f1-b470-cc96e505608c",
+  "fresh_separate_datadir": true,
+  "test_account_schema_scope": "support_test_*",
+  "remaining_test_schemas": [],
+  "process_workers": 4,
+  "cache": "process-local memory",
+  "mq_backend": "database table",
+  "mysql_result": {
+    "passed": 11,
+    "seconds": 6.9,
+    "artifact": "refund_mysql_processes_verified.txt"
+  },
+  "restart_verified": true,
+  "business_service_changed": false,
+  "limitations": [
+    "No Redis distributed-lock validation",
+    "No external MQ broker or payment channel"
+  ]
+}

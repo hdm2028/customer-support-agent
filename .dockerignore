@@ -1,4 +1,11 @@
 .env
+.env.*
+.venv/
+.agents/
+reports/
+tests/
+data/eval/
+data/backups/
 __pycache__/
 *.pyc
 *.pyo

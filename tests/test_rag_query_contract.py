@@ -213,23 +213,38 @@ class HybridQueryContractTests(unittest.TestCase):
             observed["keyword"] = query
             return 1
 
-        with patch(
-            "app.rag.hybrid_index.keyword_score",
-            side_effect=fake_keyword_score,
-        ):
-            results = index.search(
-                RetrievalQuery(
-                    semantic_query="自然语言退款问题",
-                    lexical_query="退款 物流异常 商品破损",
-                ),
-                candidate_k=1,
-            )
+        for mode, embedding_input in (("", "自然语言退款问题"), ("route", "用户问题：自然语言退款问题\n业务主题：退款条件")):
+            with self.subTest(mode=mode), patch.dict("os.environ", {"RAG_SEMANTIC_CONTEXT": mode}), patch(
+                "app.rag.hybrid_index.keyword_score", side_effect=fake_keyword_score,
+            ):
+                results = index.search(
+                    RetrievalQuery(
+                        semantic_query="自然语言退款问题", lexical_query="退款 物流异常 商品破损",
+                        rerank_query="用户问题：自然语言退款问题\n业务主题：退款条件",
+                    ), candidate_k=1,
+                )
+                self.assertEqual(observed["embedding"], embedding_input)
+                self.assertEqual(observed["bm25"], "退款 物流异常 商品破损")
+                self.assertEqual(observed["keyword"], "退款 物流异常 商品破损")
+                self.assertEqual(len(results), 1)
+                self.assertNotIn("rerank_score", results[0])
 
-        self.assertEqual(observed["embedding"], "自然语言退款问题")
-        self.assertEqual(observed["bm25"], "退款 物流异常 商品破损")
-        self.assertEqual(observed["keyword"], "退款 物流异常 商品破损")
-        self.assertEqual(len(results), 1)
-        self.assertNotIn("rerank_score", results[0])
+    def test_embedding_context_cannot_reuse_raw_query_candidate_cache(self):
+        from app.rag.retriever import HybridRetriever
+        from app.rag.query_context import resolve_embedding_query
+        retriever = HybridRetriever(index_manager=object())
+        query = RetrievalQuery("原问句", "固定词法查询", "用户问题：原问句\n业务主题：物流状态")
+        with patch.dict("os.environ", {"RAG_SEMANTIC_CONTEXT": ""}):
+            original = retriever.candidate_cache_key(query, 20, "kb-fixed", "local-fixed")
+        with patch.dict("os.environ", {"RAG_SEMANTIC_CONTEXT": "route"}):
+            contextual = retriever.candidate_cache_key(query, 20, "kb-fixed", "local-fixed")
+            no_context = RetrievalQuery("原问句", "固定词法查询")
+            self.assertEqual(resolve_embedding_query(no_context), no_context.semantic_query)
+            self.assertEqual(retriever.candidate_cache_key(no_context, 20, "kb-fixed", "local-fixed"), original)
+        self.assertNotEqual(original, contextual)
+        with patch.dict("os.environ", {"RAG_SEMANTIC_CONTEXT": "invalid"}):
+            with self.assertRaises(ValueError):
+                resolve_embedding_query(query)
 
     def test_policy_tool_and_schema_use_the_dual_query_contract(self) -> None:
         with patch.object(

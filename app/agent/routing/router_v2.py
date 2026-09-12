@@ -16,16 +16,18 @@ from app.agent.routing.semantic import (
     SemanticRoute,
 )
 from app.core.schemas import RouteDecision
+from app.agent.routing.refund_withdrawal import WITHDRAWAL_TOPIC, mentions_refund_withdrawal
+from app.agent.routing.pending_task import can_retrieve_policy_while_clarifying
 
 
 def build_tool_plan(
     route: RouteDecision,
 ) -> list[str]:
-    if (
-        route.blocked_by_guardrail
-        or route.need_clarification
-    ):
+    if route.blocked_by_guardrail:
         return []
+
+    if route.need_clarification:
+        return ["policy_search"] if can_retrieve_policy_while_clarifying(route) else []
 
     if (
         route.handoff_required
@@ -92,6 +94,12 @@ def route_tools_v2(
             tool_plan=[],
             blocked_by_guardrail=True,
             guardrail_reason=reason,
+        )
+
+    if mentions_refund_withdrawal(user_message):
+        return RouteDecision(
+            intent="return_refund", action_type="query", topic=WITHDRAWAL_TOPIC,
+            confidence=1.0, routing_reason="退款撤销需选定已有申请，通过撤销接口检查当前状态",
         )
 
     order_id = extract_order_id(

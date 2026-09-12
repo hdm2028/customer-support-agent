@@ -1,0 +1,6 @@
+{
+  "returncode": 0,
+  "duration_seconds": 3.8023898997344077,
+  "suite": "tests/test_memory_consistency.py",
+  "isolated_schemas": true
+}

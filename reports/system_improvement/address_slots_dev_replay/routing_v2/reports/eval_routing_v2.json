@@ -1,0 +1,89 @@
+{
+  "router_version": "v2_llm_semantic",
+  "side_effects": [
+    "[READ ONLY]",
+    "[CALLS LLM]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-h7__3hhq\\data\\eval\\routing_eval.jsonl",
+  "total_cases": 24,
+  "passed_count": 23,
+  "failed_count": 1,
+  "routing_accuracy": 0.9583,
+  "semantic_accuracy": 0.9583,
+  "intent_accuracy": 1.0,
+  "action_type_accuracy": 1.0,
+  "topic_accuracy": 0.9583,
+  "route_accuracy": 1.0,
+  "clarification_accuracy": 1.0,
+  "side_effect_false_positive_count": 0,
+  "side_effect_false_positive_cases": [],
+  "llm_fallback_count": 0,
+  "llm_fallback_cases": [],
+  "failed_cases": [
+    {
+      "case_id": "routing_refund_002",
+      "query": "这个东西我不要了",
+      "expected": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "refund_apply"
+        },
+        "route": {
+          "need_policy": true,
+          "need_refund_request": false,
+          "need_clarification": true
+        }
+      },
+      "actual": {
+        "semantic": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "return_apply",
+          "related_topics": [],
+          "confidence": 0.95,
+          "reason": "用户明确表示不要商品，符合退货流程的意图。",
+          "source": "llm"
+        },
+        "route": {
+          "intent": "return_refund",
+          "action_type": "execute",
+          "topic": "return_apply",
+          "related_topics": [],
+          "confidence": 0.95,
+          "routing_reason": "用户明确表示不要商品，符合退货流程的意图。",
+          "agent_plan": [],
+          "tool_plan": [],
+          "order_id": null,
+          "need_order": false,
+          "need_policy": true,
+          "need_ticket": false,
+          "need_refund_request": false,
+          "need_risk_check": false,
+          "manual_review_required": false,
+          "need_handoff": false,
+          "blocked_by_guardrail": false,
+          "guardrail_reason": null,
+          "need_clarification": true,
+          "clarification_question": "请您提供订单号，我才能继续查询订单状态并判断售后方案。",
+          "handoff_required": false,
+          "handoff_reason": null,
+          "risk_level": "low",
+          "risk_flags": []
+        }
+      },
+      "metrics": {
+        "intent_correct": true,
+        "action_type_correct": true,
+        "topic_correct": false,
+        "semantic_correct": false,
+        "route_correct": true,
+        "clarification_correct": true
+      },
+      "passed": false,
+      "reason": "semantic.topic expected='refund_apply', actual='return_apply'"
+    }
+  ],
+  "report_name": "eval_routing_v2",
+  "created_at": "2026-09-08T21:36:05"
+}

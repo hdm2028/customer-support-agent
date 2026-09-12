@@ -1,0 +1,4 @@
+Starting answer: private DB/cache/knowledge
+Finished answer: {'total_cases': 4, 'passed_count': 2, 'failed_count': 2, 'exit_code': 1, 'duration_seconds': 33.34, 'actual_chat_usage': {'calls': 7, 'reported_calls': 7, 'failed_calls': 0, 'tokens': {'prompt_tokens': 24533, 'completion_tokens': 453, 'total_tokens': 24986}}, 'reply_modes': {'grounded_llm': 3, 'rule_fallback': 1}}
+Starting e2e: private DB/cache/knowledge
+Finished e2e: {'total_cases': 12, 'passed_count': 7, 'failed_count': 5, 'exit_code': 1, 'duration_seconds': 77.52, 'actual_chat_usage': {'calls': 14, 'reported_calls': 14, 'failed_calls': 0, 'tokens': {'prompt_tokens': 63016, 'completion_tokens': 1030, 'total_tokens': 64046}}, 'reply_modes': {'rule_fallback': 8, 'grounded_llm_partial': 1, 'grounded_llm': 2, 'grounded_no_evidence': 1}}

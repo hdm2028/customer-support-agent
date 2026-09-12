@@ -1,0 +1,73 @@
+{
+  "scope": "read-only live routing; no tools or business writes",
+  "rows": [
+    {
+      "message": "撤销订单10009的退款申请",
+      "route": {
+        "intent": "general_support",
+        "action_type": "unknown",
+        "topic": "general_question",
+        "related_topics": [],
+        "confidence": 0.0,
+        "routing_reason": "LLM semantic routing failed: ValueError: Invalid related topic: 'return_refund'",
+        "agent_plan": [],
+        "tool_plan": [
+          "order_lookup"
+        ],
+        "order_id": "10009",
+        "need_order": true,
+        "need_policy": false,
+        "need_ticket": false,
+        "need_refund_request": false,
+        "need_risk_check": false,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "duration_ms": 6319.7
+    },
+    {
+      "message": "取消退款申请，订单10009",
+      "route": {
+        "intent": "return_refund",
+        "action_type": "execute",
+        "topic": "refund_apply",
+        "related_topics": [],
+        "confidence": 0.95,
+        "routing_reason": "用户明确表示要取消退款申请，并提供了订单号10009，表明是针对特定订单的退款操作。",
+        "agent_plan": [],
+        "tool_plan": [
+          "order_lookup",
+          "policy_search",
+          "risk_check",
+          "refund_apply",
+          "create_ticket"
+        ],
+        "order_id": "10009",
+        "need_order": true,
+        "need_policy": true,
+        "need_ticket": true,
+        "need_refund_request": true,
+        "need_risk_check": true,
+        "manual_review_required": false,
+        "need_handoff": false,
+        "blocked_by_guardrail": false,
+        "guardrail_reason": null,
+        "need_clarification": false,
+        "clarification_question": null,
+        "handoff_required": false,
+        "handoff_reason": null,
+        "risk_level": "low",
+        "risk_flags": []
+      },
+      "duration_ms": 7409.6
+    }
+  ]
+}

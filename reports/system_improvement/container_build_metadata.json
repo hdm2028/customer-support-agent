@@ -1,0 +1,14 @@
+{
+  "image_id": "sha256:142185089afe2014494bbc9ba325e95ceb9032e7f851e7a72bb49cda9ae28d9e",
+  "inspect_size_bytes": 3282036259,
+  "cmd": [
+    "sh",
+    "-c",
+    "exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8012}"
+  ],
+  "native_build_exit_code": 0,
+  "compose_config_validated": true,
+  "ci_yaml_parsed": true,
+  "remote_ci_executed": false,
+  "source_check_manifest": "release_checks_final/manifest.json"
+}

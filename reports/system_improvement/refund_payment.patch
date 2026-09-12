@@ -1,0 +1,232 @@
+--- a/app/domain/refund_policy.py
++++ b/app/domain/refund_policy.py
+@@ -2,6 +2,19 @@
+ 
+ from app.domain.risk_policy import evaluate_refund_risk
+ from app.storage.database import get_customer_profile_from_db
++
++
++class RefundPaymentNotConfirmed(ValueError):
++    """The order has no confirmed payment from which to create a refund."""
++
++
++def require_confirmed_refund_payment(order: dict) -> None:
++    if order.get("payment_status") == "unpaid" or any(
++        status in (order.get("order_status") or "") for status in ("待支付", "待付款")
++    ):
++        raise RefundPaymentNotConfirmed("订单尚未支付，不会产生退款；用户可自行取消待支付订单。")
++    if order.get("payment_status") != "paid":
++        raise RefundPaymentNotConfirmed("订单尚未确认支付成功，暂不能创建或提交退款；请先核实支付结果。")
+ 
+ 
+ def parse_business_date(value: str | None) -> datetime | None:
+@@ -58,6 +71,12 @@
+ ) -> dict:
+     """判断退款申请是否可以进入自动业务流。"""
+ 
++    try:
++        require_confirmed_refund_payment(order)
++    except RefundPaymentNotConfirmed as error:
++        return {"eligible": False, "reason": str(error),
++                "refund_reason": infer_refund_reason(user_request), "review_required": False}
++
+     if risk_assessment is None:
+         profile = get_customer_profile_from_db(order.get("user_id"))
+         risk_assessment = evaluate_refund_risk(order, profile, user_request)
+@@ -68,14 +87,6 @@
+     reason = infer_refund_reason(user_request)
+     signed_days = days_since_signed(order)
+     return_window_days = int(order.get("return_window_days") or 0)
+-
+-    if order.get("payment_status") == "unpaid" or "待支付" in order_status:
+-        return {
+-            "eligible": False,
+-            "reason": "订单尚未支付，不会产生退款；用户可自行取消待支付订单。",
+-            "refund_reason": reason,
+-            "review_required": False,
+-        }
+ 
+     if "退货审核中" in order_status or "退款" in order_status:
+         return {
+--- a/app/tools/refund.py
++++ b/app/tools/refund.py
+@@ -6,7 +6,8 @@
+     wait_for_refund_idempotency,
+ )
+ from app.core.schemas import ToolResult
+-from app.domain.refund_policy import evaluate_refund_eligibility, infer_refund_reason
++from app.domain.refund_policy import (evaluate_refund_eligibility, infer_refund_reason,
++                                      RefundPaymentNotConfirmed, require_confirmed_refund_payment)
+ from app.domain.risk_policy import evaluate_refund_risk
+ from app.mq.queue import REFUND_CREATED_TOPIC, publish_message
+ from app.storage.database import (
+@@ -16,12 +17,20 @@
+     update_refund_request_in_db,
+ )
+ from app.storage.store import get_order_by_id
+-from app.storage.transactions import transaction
++from app.storage.transactions import lock_record, transaction
++import json
+ 
+ 
+ def _persist_refund_and_event(payload: dict) -> dict:
+     # MQ is a table in the same database: commit the intent and event together.
+     with transaction():
++        # Re-read under the write lock: the earlier order lookup/cache is only
++        # a snapshot and payment may have changed before persistence.
++        row = lock_record("orders", "order_id", payload["order_id"])
++        if row is None:
++            raise RefundPaymentNotConfirmed("订单不存在，无法核实支付状态，未创建退款。")
++        order = row["payload"] if isinstance(row["payload"], dict) else json.loads(row["payload"])
++        require_confirmed_refund_payment(order)
+         saved = save_refund_request_to_db(payload)
+         message = publish_message(REFUND_CREATED_TOPIC, {
+             "refund_id": saved["refund_id"], "order_id": saved["order_id"],
+@@ -89,6 +98,11 @@
+                 "next_step": "等待退款处理服务消费 MQ 消息。",
+             }
+         )
++    except RefundPaymentNotConfirmed as error:
++        return ToolResult(tool_name="refund_apply", success=False, result={
++            "reason": str(error), "refund_reason": infer_refund_reason(user_request),
++            "review_required": False, "fallback_action": "verify_payment_status",
++        })
+     except Exception:
+         existing_refund = get_active_refund_request_by_order_id_from_db(order_id)
+         if existing_refund is not None:
+--- a/app/services/payments.py
++++ b/app/services/payments.py
+@@ -7,6 +7,7 @@
+ from typing import Literal, Protocol
+ 
+ from app.core.security import authorize_order
++from app.domain.refund_policy import require_confirmed_refund_payment
+ from app.services.review_service import decode_payload, require_operator
+ from app.storage.database import (get_refund_request_from_db, save_notification_to_db,
+                                   update_order_in_db, update_refund_request_in_db)
+@@ -127,6 +128,10 @@
+                 return {"success": True, "idempotent_replay": True, "refund": refund}
+             if refund["status"] != "refund_processing":
+                 raise ValueError("退款未就绪或结果尚待核实，请查询状态，不能重复提交")
++            order_row = lock_record("orders", "order_id", refund["order_id"])
++            if order_row is None:
++                raise ValueError("退款订单不存在，无法核实支付状态")
++            require_confirmed_refund_payment(decode_payload(order_row))
+             refund = update_refund_request_in_db(refund_id, {
+                 "status": "payment_submitting", "payment_currency": request.currency,
+                 "payment_idempotency_key": request.idempotency_key,
+--- a/tests/test_payment_reconciliation.py
++++ b/tests/test_payment_reconciliation.py
+@@ -8,6 +8,8 @@
+ from app.core.security import Principal, current_principal
+ from app.services import payments, refund_service
+ from app.storage import database as db
++from app.tools import refund as refund_tool
++from app.domain.refund_policy import evaluate_refund_eligibility
+ 
+ 
+ class PaymentReconciliationTests(unittest.TestCase):
+@@ -75,6 +77,26 @@
+                 payments.submit_refund_payment(self.refund["refund_id"])
+         self.assertEqual(self.status(), "refund_processing")
+ 
++    def test_submit_rechecks_confirmed_payment_before_dispatch(self):
++        for payment_status in ["unpaid", "payment_pending", "pending", "failed", "unknown"]:
++            with self.subTest(payment_status=payment_status):
++                db.update_order_in_db("10009", {"payment_status": payment_status})
++                before = db.get_refund_request_from_db(self.refund["refund_id"])
++                with self.assertRaisesRegex(ValueError, "支付"):
++                    payments.submit_refund_payment(self.refund["refund_id"])
++                self.gateway.submit_refund.assert_not_called()
++                self.assertEqual(db.get_refund_request_from_db(self.refund["refund_id"]), before)
++
++    def test_reconciliation_remains_available_after_payment_status_changes(self):
++        self.gateway.submit_refund.side_effect = TimeoutError("response lost")
++        with self.assertRaises(TimeoutError):
++            payments.submit_refund_payment(self.refund["refund_id"])
++        db.update_order_in_db("10009", {"payment_status": "pending"})
++        self.gateway.query_refund.return_value = self.observation()
++        self.assertEqual(payments.reconcile_refund_payment(self.refund["refund_id"])["refund"]["status"], "refund_succeeded")
++        self.assertEqual(self.gateway.submit_refund.call_count, 1)
++        self.assertEqual(self.gateway.query_refund.call_count, 1)
++
+     def test_db_failure_after_channel_success_is_reconciled_without_resubmit(self):
+         self.gateway.submit_refund.return_value = self.observation()
+         with patch.object(payments, "save_notification_to_db", side_effect=RuntimeError("DB failure")):
+@@ -112,5 +134,57 @@
+         self.assertEqual(self.gateway.submit_refund.call_count, 1)
+ 
+ 
++class RefundPaymentPreconditionTests(unittest.TestCase):
++    def setUp(self):
++        self.fixture = fixtures.RefundConsistencyTests()
++        self.fixture.setUp()
++        self.addCleanup(self.fixture.doCleanups)
++
++    def test_unconfirmed_payment_never_creates_refund_or_event(self):
++        for payment_status in ["unpaid", "payment_pending", "pending", "failed", "unknown", ""]:
++            with self.subTest(payment_status=payment_status):
++                db.update_order_in_db("10009", {"payment_status": payment_status})
++                result = refund_tool.refund_apply("10009", "商品破损，申请退款")
++                self.assertFalse(result.success)
++                self.assertFalse(result.result["review_required"])
++                self.assertIn("支付", result.result["reason"])
++                self.assertEqual(self.fixture.count("refund_requests"), 0)
++                self.assertEqual(self.fixture.count("mq_messages"), 0)
++
++    def test_missing_payment_snapshot_is_ineligible_without_risk_lookup(self):
++        # MySQL forbids NULL payment_status at storage level; incomplete
++        # adapter/cache snapshots must also fail closed at the domain boundary.
++        for order in [{}, {"payment_status": None}]:
++            with self.subTest(order=order), patch(
++                "app.domain.refund_policy.get_customer_profile_from_db", side_effect=AssertionError("no risk lookup")
++            ):
++                result = evaluate_refund_eligibility(order, "申请退款")
++                self.assertFalse(result["eligible"])
++                self.assertFalse(result["review_required"])
++
++    def test_stale_paid_snapshot_is_rechecked_in_creation_transaction(self):
++        stale = db.get_order_from_db("10009")
++        self.assertEqual(stale["payment_status"], "paid")
++        db.update_order_in_db("10009", {"payment_status": "pending"})
++        with patch.object(refund_tool, "get_order_by_id", return_value=stale):
++            result = refund_tool.refund_apply("10009", "商品破损，申请退款")
++        self.assertFalse(result.success)
++        self.assertFalse(result.result["review_required"])
++        self.assertEqual(self.fixture.count("refund_requests"), 0)
++        self.assertEqual(self.fixture.count("mq_messages"), 0)
++
++    def test_confirmed_payment_can_retry_after_initial_rejection(self):
++        db.update_order_in_db("10009", {"payment_status": "pending"})
++        self.assertFalse(refund_tool.refund_apply("10009", "申请退款").success)
++        db.update_order_in_db("10009", {"payment_status": "paid"})
++        first = refund_tool.refund_apply("10009", "申请退款")
++        second = refund_tool.refund_apply("10009", "申请退款")
++        self.assertTrue(first.success)
++        self.assertEqual(first.result["refund_id"], second.result["refund_id"])
++        self.assertTrue(second.result["idempotent_replay"])
++        self.assertEqual(self.fixture.count("refund_requests"), 1)
++        self.assertEqual(self.fixture.count("mq_messages"), 1)
++
++
+ if __name__ == "__main__":
+     unittest.main()
+--- a/tests/test_tool_reliability.py
++++ b/tests/test_tool_reliability.py
+@@ -316,7 +316,7 @@
+ 
+ 
+ class RefundRecoveryTests(unittest.TestCase):
+-    ORDER = {"order_id": "10001", "user_id": "U-1", "amount": 100}
++    ORDER = {"order_id": "10001", "user_id": "U-1", "amount": 100, "payment_status": "paid"}
+     RISK = {"risk_level": "low", "risk_flags": [], "review_required": False}
+     ELIGIBILITY = {
+         "eligible": True,
+@@ -329,6 +329,7 @@
+         return patch.multiple(
+             refund_tool,
+             transaction=Mock(side_effect=nullcontext),
++            lock_record=Mock(return_value={"payload": self.ORDER}),
+             get_active_refund_request_by_order_id_from_db=Mock(return_value=None),
+             get_order_by_id=Mock(return_value=self.ORDER),
+             get_customer_profile_from_db=Mock(return_value={}),

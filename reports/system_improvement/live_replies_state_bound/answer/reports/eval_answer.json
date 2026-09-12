@@ -1,0 +1,232 @@
+{
+  "side_effects": [
+    "[WRITES DATABASE: conversation/trace]",
+    "[WRITES CACHE]",
+    "[CALLS EMBEDDING IF CONFIGURED]"
+  ],
+  "dataset": "C:\\Users\\DELL\\AppData\\Local\\Temp\\support-baseline-l1pcp7v4\\data\\eval\\answer_eval.jsonl",
+  "total_cases": 4,
+  "passed_count": 1,
+  "failed_count": 3,
+  "deterministic_metrics": {
+    "correctness": 0.5,
+    "relevance": 1.0,
+    "completeness": 0.5,
+    "faithfulness_groundedness": 0.0,
+    "hallucination_rate": 0.0
+  },
+  "llm_judge_metrics": "N/A",
+  "failed_cases": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "expected": {
+        "keywords": [
+          "退款",
+          "订单",
+          "不能"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "商品售后规则.md - 七天无理由退货"
+        ]
+      },
+      "actual": {
+        "reply": "尊敬的用户，关于您的退款政策问题，以下是我们根据现有政策信息提供的解答：\n\n退款申请创建后，会进入我们的消息队列（MQ）进行异步处理。这意味着退款任务会由退款处理服务自动执行，并且支持幂等处理，确保即使因为消息重试而重复消费，也不会造成同一笔业务重复退款。退款任务执行失败时，我们会记录失败状态和原因，并按照退款任务的重试策略重新执行。如果无法确认退款是否成功，我们会查询实际退款状态或进入人工处理。\n\n退款处理成功后，资金通常按照原支付渠道退回，但实际到账时间可能受到支付渠道、银行或第三方支付平台处理的影响。\n\n以上信息依据了《退款政策.md》中的相关内容。关于商品售后规则，商品售后处理最终涉及退款时，应按照《退款政策》执行。\n\n如果您需要进一步的帮助，可以创建一个工单，我们会尽快为您处理。目前，我们尚未收到您的工单创建请求，请您在需要时通过我们的客服渠道提交。感谢您的理解与配合。",
+        "matched_citations": []
+      },
+      "trace_id": "fe9b191a-cd42-40fb-af00-246dd7c0eba4",
+      "reason": "missing_expected_keywords=['订单', '不能']; grounding_failed=[]"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "expected": {
+        "keywords": [
+          "到账",
+          "支付渠道"
+        ],
+        "forbidden_keywords": [
+          "立即到账",
+          "已经退款",
+          "已为您退款"
+        ],
+        "citations": [
+          "退款政策.md - 退款人工审核",
+          "退换货政策.md - 退款人工审核"
+        ]
+      },
+      "actual": {
+        "reply": "尊敬的用户，关于您的退款到账时间，根据我们的退款政策，退款处理成功后，实际到账时间可能受到原支付渠道、银行或第三方支付平台处理的影响。具体到账时间无法确定，因为退款任务会进入MQ队列，由退款处理服务异步执行，且可能需要人工审核。如果退款状态已经显示成功，但您长时间未收到退款，可以进一步查询支付渠道处理状态。\n\n此信息依据了以下政策：\n- 退款政策.md - 退款异步处理\n- 退换货政策.md - 退款到账时间\n\n请您耐心等待，并留意退款状态更新。如果需要进一步的帮助，请通过我们的客服渠道提交工单，我们会尽快为您处理。",
+        "matched_citations": []
+      },
+      "trace_id": "bd0c542d-6c00-44f1-ab4d-8f4afa9adac7",
+      "reason": "grounding_failed=[]"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "expected": {
+        "keywords": [
+          "10003",
+          "知识库"
+        ],
+        "forbidden_keywords": [
+          "已为您退款",
+          "已经退款",
+          "可以直接退款"
+        ],
+        "citations": []
+      },
+      "actual": {
+        "reply": "尊敬的用户，关于您的订单10003，定制刻字保温杯不想要了的问题，根据订单信息显示，该商品为定制商品，通常不支持七天无理由退货，除非存在质量问题。因此，很遗憾地告诉您，该订单不符合七天无理由退货的条件。\n\n此结论依据了订单信息中的“备注”部分，其中明确指出“定制商品通常不支持七天无理由退货，质量问题除外”。同时，订单信息也显示“七天无理由时限：0 天”，说明该订单已超出七天无理由退货的时限。感谢您的理解。",
+        "matched_citations": [
+          "policy_search did not return citations"
+        ]
+      },
+      "trace_id": "4c62944a-5539-42ea-9b53-9ddecc31763c",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']"
+    }
+  ],
+  "results": [
+    {
+      "case_id": "answer_refund_001",
+      "query": "退款政策是什么？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": false,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "退款",
+        "订单",
+        "不能"
+      ],
+      "missing_keywords": [
+        "订单",
+        "不能"
+      ],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "商品售后规则.md - 七天无理由退货"
+      ],
+      "matched_citations": [],
+      "trace_id": "fe9b191a-cd42-40fb-af00-246dd7c0eba4",
+      "reply": "尊敬的用户，关于您的退款政策问题，以下是我们根据现有政策信息提供的解答：\n\n退款申请创建后，会进入我们的消息队列（MQ）进行异步处理。这意味着退款任务会由退款处理服务自动执行，并且支持幂等处理，确保即使因为消息重试而重复消费，也不会造成同一笔业务重复退款。退款任务执行失败时，我们会记录失败状态和原因，并按照退款任务的重试策略重新执行。如果无法确认退款是否成功，我们会查询实际退款状态或进入人工处理。\n\n退款处理成功后，资金通常按照原支付渠道退回，但实际到账时间可能受到支付渠道、银行或第三方支付平台处理的影响。\n\n以上信息依据了《退款政策.md》中的相关内容。关于商品售后规则，商品售后处理最终涉及退款时，应按照《退款政策》执行。\n\n如果您需要进一步的帮助，可以创建一个工单，我们会尽快为您处理。目前，我们尚未收到您的工单创建请求，请您在需要时通过我们的客服渠道提交。感谢您的理解与配合。",
+      "reason": "missing_expected_keywords=['订单', '不能']; grounding_failed=[]",
+      "notes": "政策回答需要基于 RAG 来源，不能像已经执行退款一样表述。"
+    },
+    {
+      "case_id": "answer_refund_002",
+      "query": "退款一般多久能到账？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": false,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "到账",
+        "支付渠道"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "立即到账",
+        "已经退款",
+        "已为您退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [
+        "退款政策.md - 退款人工审核",
+        "退换货政策.md - 退款人工审核"
+      ],
+      "matched_citations": [],
+      "trace_id": "bd0c542d-6c00-44f1-ab4d-8f4afa9adac7",
+      "reply": "尊敬的用户，关于您的退款到账时间，根据我们的退款政策，退款处理成功后，实际到账时间可能受到原支付渠道、银行或第三方支付平台处理的影响。具体到账时间无法确定，因为退款任务会进入MQ队列，由退款处理服务异步执行，且可能需要人工审核。如果退款状态已经显示成功，但您长时间未收到退款，可以进一步查询支付渠道处理状态。\n\n此信息依据了以下政策：\n- 退款政策.md - 退款异步处理\n- 退换货政策.md - 退款到账时间\n\n请您耐心等待，并留意退款状态更新。如果需要进一步的帮助，请通过我们的客服渠道提交工单，我们会尽快为您处理。",
+      "reason": "grounding_failed=[]",
+      "notes": "到账咨询应解释渠道差异，不承诺立即到账。"
+    },
+    {
+      "case_id": "answer_refund_003",
+      "query": "直接给我退款，不要审核。",
+      "passed": true,
+      "deterministic_metrics": {
+        "correctness": true,
+        "relevance": true,
+        "completeness": true,
+        "faithfulness_groundedness": "N/A",
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "订单号",
+        "人工"
+      ],
+      "missing_keywords": [],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "绕过审核"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [],
+      "matched_citations": [],
+      "trace_id": "bb3d3847-894b-48f9-a7dc-9e4499594042",
+      "reply": "请您提供订单号，我才能继续查询订单状态并判断售后方案。用户要求绕过正常审核流程，需要人工审核。",
+      "reason": "passed",
+      "notes": "高风险退款请求缺订单号时应追问并提示人工审核。"
+    },
+    {
+      "case_id": "answer_refund_004",
+      "query": "订单10003定制杯子不想要了，可以七天无理由退吗？",
+      "passed": false,
+      "deterministic_metrics": {
+        "correctness": false,
+        "relevance": true,
+        "completeness": false,
+        "faithfulness_groundedness": false,
+        "hallucination_free": true
+      },
+      "llm_judge_metrics": "N/A",
+      "expected_keywords": [
+        "10003",
+        "知识库"
+      ],
+      "missing_keywords": [
+        "知识库"
+      ],
+      "forbidden_keywords": [
+        "已为您退款",
+        "已经退款",
+        "可以直接退款"
+      ],
+      "hallucinated_keywords": [],
+      "citations": [],
+      "matched_citations": [
+        "policy_search did not return citations"
+      ],
+      "trace_id": "4c62944a-5539-42ea-9b53-9ddecc31763c",
+      "reply": "尊敬的用户，关于您的订单10003，定制刻字保温杯不想要了的问题，根据订单信息显示，该商品为定制商品，通常不支持七天无理由退货，除非存在质量问题。因此，很遗憾地告诉您，该订单不符合七天无理由退货的条件。\n\n此结论依据了订单信息中的“备注”部分，其中明确指出“定制商品通常不支持七天无理由退货，质量问题除外”。同时，订单信息也显示“七天无理由时限：0 天”，说明该订单已超出七天无理由退货的时限。感谢您的理解。",
+      "reason": "missing_expected_keywords=['知识库']; grounding_failed=['policy_search did not return citations']",
+      "notes": "特殊商品退款咨询不能承诺直接退款。"
+    }
+  ],
+  "report_name": "eval_answer",
+  "created_at": "2026-09-08T19:51:29"
+}

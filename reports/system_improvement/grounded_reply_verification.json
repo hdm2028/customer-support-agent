@@ -1,0 +1,143 @@
+{
+  "scope": "actual displayed text checked against frozen source chunks; no semantic paraphrase scoring",
+  "cases": [
+    {
+      "case_id": "rag_dev_candidate_b01_001",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 22
+    },
+    {
+      "case_id": "rag_dev_candidate_b01_002",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 22
+    },
+    {
+      "case_id": "rag_dev_candidate_b01_003",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 32
+    },
+    {
+      "case_id": "rag_dev_candidate_b01_004",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 25
+    },
+    {
+      "case_id": "rag_dev_candidate_b01_005",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 6
+    },
+    {
+      "case_id": "rag_dev_candidate_b01_006",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 13
+    },
+    {
+      "case_id": "rag_refund_001",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 12
+    },
+    {
+      "case_id": "rag_refund_002",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 1
+    },
+    {
+      "case_id": "rag_refund_003",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 28
+    },
+    {
+      "case_id": "rag_refund_004",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 5
+    },
+    {
+      "case_id": "rag_refund_005",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 1
+    },
+    {
+      "case_id": "rag_refund_006",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 29
+    },
+    {
+      "case_id": "rag_refund_007",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 4
+    },
+    {
+      "case_id": "rag_refund_008",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 13
+    },
+    {
+      "case_id": "rag_refund_009",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 9
+    },
+    {
+      "case_id": "rag_refund_010",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 3
+    },
+    {
+      "case_id": "rag_refund_011",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 4
+    },
+    {
+      "case_id": "rag_refund_012",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 1
+    },
+    {
+      "case_id": "rag_refund_013",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 1
+    },
+    {
+      "case_id": "rag_refund_014",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 27
+    },
+    {
+      "case_id": "rag_refund_015",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 25
+    },
+    {
+      "case_id": "rag_refund_016",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 18
+    },
+    {
+      "case_id": "rag_refund_017",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 15
+    },
+    {
+      "case_id": "rag_refund_018",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 2
+    },
+    {
+      "case_id": "rag_refund_019",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 1
+    },
+    {
+      "case_id": "rag_refund_020",
+      "all_displayed_excerpts_exact_and_cited": true,
+      "selected_excerpts": 8
+    }
+  ],
+  "live_generation_calls": 26,
+  "provider_usage_complete": true,
+  "provider_reported_tokens": {
+    "prompt_tokens": 120901,
+    "completion_tokens": 2078,
+    "total_tokens": 122979
+  },
+  "decode_replay_calls": 0
+}

@@ -4,7 +4,6 @@ import re
 from app.rag.models import (
     ChunkStrategy,
     DocumentChunk,
-    RawDocument,
     content_hash_text,
 )
 
@@ -387,34 +386,6 @@ def _fixed_chunk_covered_sections(
                 covered.append(title)
 
     return covered
-
-
-def split_text_with_overlap(
-    text,
-    max_chars,
-    overlap,
-):
-    """
-    保留旧接口名称。
-
-    注意：
-        参数名虽然叫 max_chars，
-        实际现在按 token 数量切分。
-    """
-    if (
-        max_chars <= 0
-        or overlap < 0
-        or overlap >= max_chars
-    ):
-        raise ValueError(
-            "invalid token chunk size/overlap"
-        )
-
-    return _fixed_token_chunks(
-        text,
-        max_chars,
-        overlap,
-    )
 
 
 def choose_chunk_strategy(document):

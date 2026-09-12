@@ -1,0 +1,2308 @@
+{
+  "baseline": "reports\\system_improvement\\address_slots_dev_replay",
+  "modified": "reports\\system_improvement\\complaint_query_dev_replay",
+  "suites": {
+    "routing_v2": {
+      "metrics": {
+        "total_cases": {
+          "A": 24,
+          "B": 24
+        },
+        "passed_count": {
+          "A": 23,
+          "B": 23
+        },
+        "failed_count": {
+          "A": 1,
+          "B": 1
+        },
+        "routing_accuracy": {
+          "A": 0.9583,
+          "B": 0.9583
+        },
+        "semantic_accuracy": {
+          "A": 0.9583,
+          "B": 0.9583
+        },
+        "intent_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "action_type_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "topic_accuracy": {
+          "A": 0.9583,
+          "B": 0.9583
+        },
+        "route_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "clarification_accuracy": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "side_effect_false_positive_count": {
+          "A": 0,
+          "B": 0
+        },
+        "llm_fallback_count": {
+          "A": 0,
+          "B": 0
+        }
+      },
+      "new_passes": [],
+      "regressions": [],
+      "unchanged_failures": [
+        "routing_refund_002"
+      ],
+      "cases": [],
+      "identical_first_responses": 24,
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    "tools": {
+      "metrics": {
+        "execute_writes": {
+          "A": true,
+          "B": true
+        },
+        "total_cases": {
+          "A": 55,
+          "B": 55
+        },
+        "passed_count": {
+          "A": 42,
+          "B": 43
+        },
+        "failed_count": {
+          "A": 13,
+          "B": 12
+        },
+        "tool_selection_accuracy": {
+          "A": 0.8364,
+          "B": 0.8545
+        },
+        "tool_argument_accuracy": {
+          "A": 0.7941,
+          "B": 0.7941
+        },
+        "tool_execution_success_rate": {
+          "A": 0.88,
+          "B": 0.88
+        },
+        "dangerous_tool_misuse_count": {
+          "A": 4,
+          "B": 3
+        }
+      },
+      "new_passes": [
+        "tool_contrast_quality_001"
+      ],
+      "regressions": [],
+      "unchanged_failures": [
+        "tool_boundary_complaint_only",
+        "tool_boundary_complaint_refund",
+        "tool_boundary_duplicate_refund",
+        "tool_boundary_not_found_refund",
+        "tool_boundary_payment_pending_refund",
+        "tool_boundary_unpaid_refund",
+        "tool_contrast_quality_002",
+        "tool_contrast_refund_002",
+        "tool_order_005",
+        "tool_policy_002",
+        "tool_ticket_pending_cancel",
+        "tool_ticket_shipped_address"
+      ],
+      "cases": [
+        {
+          "case_id": "tool_refund_001",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_refund_002",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_refund_003",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_refund_004",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_refund_005",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "refund_apply"
+              ],
+              "B": [
+                "refund_apply"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_001",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_002",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_003",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_004",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_005",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_006",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_order_007",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_policy_001",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_policy_002",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_policy_003",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_policy_004",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_policy_005",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_policy_006",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_contrast_refund_001",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_contrast_refund_002",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_manual_review"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_manual_review"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_contrast_quality_001",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": true
+            },
+            "selection_pass": {
+              "A": false,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "risk_check"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [
+                "risk_check"
+              ],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_contrast_quality_002",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_manual_review"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_manual_review"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_contrast_progress_001",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_contrast_progress_002",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_unpaid_refund",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review",
+                "transfer_to_human"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review",
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [
+                "create_manual_review"
+              ],
+              "B": [
+                "create_manual_review"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_duplicate_refund",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [
+                "refund_apply"
+              ],
+              "B": [
+                "refund_apply"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_payment_pending_refund",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review",
+                "transfer_to_human"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review",
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [
+                "create_manual_review"
+              ],
+              "B": [
+                "create_manual_review"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_not_found_refund",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_missing_refund",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_complaint_only",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "risk_check",
+                "create_manual_review"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_complaint_refund",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_boundary_risk_medium",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_ticket_payment_exception",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "create_ticket"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_ticket_shipped_address",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_ticket_pending_cancel",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "selection_pass": {
+              "A": false,
+              "B": false
+            },
+            "argument_pass": {
+              "A": false,
+              "B": false
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "risk_check",
+                "create_manual_review",
+                "create_ticket",
+                "transfer_to_human"
+              ],
+              "B": [
+                "order_lookup",
+                "risk_check",
+                "create_manual_review",
+                "create_ticket",
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_ticket_recent_shipping",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_ticket_warranty_material",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "create_ticket"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_handoff_001",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "transfer_to_human"
+              ],
+              "B": [
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_handoff_002",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "argument_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "transfer_to_human"
+              ],
+              "B": [
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_handoff_003",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_missing_ambiguous",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_missing_after_sales",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_customer_order",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_customer_risk",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "risk_check"
+              ],
+              "B": [
+                "risk_check"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_customer_manual",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "create_manual_review"
+              ],
+              "B": [
+                "create_manual_review"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_customer_ticket",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "create_ticket"
+              ],
+              "B": [
+                "create_ticket"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_customer_handoff",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "transfer_to_human"
+              ],
+              "B": [
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_after_sales_policy",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_after_sales_risk",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "risk_check"
+              ],
+              "B": [
+                "risk_check"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_risk_order",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_risk_policy",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_risk_refund",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "refund_apply"
+              ],
+              "B": [
+                "refund_apply"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_risk_manual",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "create_manual_review"
+              ],
+              "B": [
+                "create_manual_review"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_risk_ticket",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "create_ticket"
+              ],
+              "B": [
+                "create_ticket"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "tool_permission_risk_handoff",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "selection_pass": {
+              "A": true,
+              "B": true
+            },
+            "execution_pass": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "transfer_to_human"
+              ],
+              "B": [
+                "transfer_to_human"
+              ]
+            },
+            "dangerous_misuse": {
+              "A": [],
+              "B": []
+            }
+          }
+        }
+      ],
+      "identical_first_responses": 41,
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    "answer": {
+      "metrics": {
+        "total_cases": {
+          "A": 4,
+          "B": 4
+        },
+        "passed_count": {
+          "A": 1,
+          "B": 1
+        },
+        "failed_count": {
+          "A": 3,
+          "B": 3
+        }
+      },
+      "new_passes": [],
+      "regressions": [],
+      "unchanged_failures": [
+        "answer_refund_001",
+        "answer_refund_002",
+        "answer_refund_004"
+      ],
+      "cases": [
+        {
+          "case_id": "answer_refund_001",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            }
+          }
+        },
+        {
+          "case_id": "answer_refund_002",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            }
+          }
+        },
+        {
+          "case_id": "answer_refund_003",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            }
+          }
+        },
+        {
+          "case_id": "answer_refund_004",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            }
+          }
+        }
+      ],
+      "identical_first_responses": 4,
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    "e2e": {
+      "metrics": {
+        "total_cases": {
+          "A": 12,
+          "B": 12
+        },
+        "passed_count": {
+          "A": 9,
+          "B": 9
+        },
+        "failed_count": {
+          "A": 3,
+          "B": 3
+        },
+        "task_success_rate": {
+          "A": 0.75,
+          "B": 0.75
+        },
+        "routing_success_rate": {
+          "A": 0.9167,
+          "B": 0.9167
+        },
+        "agent_success_rate": {
+          "A": 0.9,
+          "B": 0.9
+        },
+        "rag_success_rate": {
+          "A": 0.8889,
+          "B": 0.8889
+        },
+        "tool_success_rate": {
+          "A": 0.9167,
+          "B": 0.9167
+        },
+        "tool_argument_success_rate": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "risk_success_rate": {
+          "A": 0.8571,
+          "B": 0.8571
+        },
+        "refund_success_rate": {
+          "A": 0.8333,
+          "B": 0.8333
+        },
+        "database_success_rate": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "mq_success_rate": {
+          "A": 1.0,
+          "B": 1.0
+        },
+        "workflow_success_rate": {
+          "A": 0.9167,
+          "B": 0.9167
+        },
+        "answer_success_rate": {
+          "A": 0.75,
+          "B": 0.75
+        }
+      },
+      "new_passes": [],
+      "regressions": [],
+      "unchanged_failures": [
+        "e2e_refund_001",
+        "e2e_refund_003",
+        "e2e_refund_009"
+      ],
+      "cases": [
+        {
+          "case_id": "e2e_refund_001",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_002",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_ticket"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_003",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "policy_search"
+              ],
+              "B": [
+                "policy_search"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_004",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_005",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_006",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup"
+              ],
+              "B": [
+                "order_lookup"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_007",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_008",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_009",
+          "metrics": {
+            "passed": {
+              "A": false,
+              "B": false
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "create_ticket"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_010",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_manual_review",
+                "create_ticket"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "refund_apply",
+                "create_manual_review",
+                "create_ticket"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_011",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review",
+                "transfer_to_human"
+              ],
+              "B": [
+                "order_lookup",
+                "policy_search",
+                "risk_check",
+                "create_manual_review",
+                "transfer_to_human"
+              ]
+            }
+          }
+        },
+        {
+          "case_id": "e2e_refund_012",
+          "metrics": {
+            "passed": {
+              "A": true,
+              "B": true
+            },
+            "actual_tools": {
+              "A": [],
+              "B": []
+            }
+          }
+        }
+      ],
+      "identical_first_responses": 11,
+      "replay_verification": {
+        "valid": true,
+        "remaining": 0,
+        "errors": []
+      }
+    }
+  },
+  "source_differences": [
+    "app/agent/routing/decision.py"
+  ],
+  "protected_inputs_and_evaluators_identical": true
+}

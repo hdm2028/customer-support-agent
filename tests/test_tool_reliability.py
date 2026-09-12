@@ -1,6 +1,6 @@
 import time
 import unittest
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import replace
 from unittest.mock import Mock, patch
 
@@ -232,7 +232,7 @@ class RiskFailClosedTests(unittest.TestCase):
             "order_lookup": Mock(
                 return_value=successful(
                     "order_lookup",
-                    {"order_id": "10001", "user_id": "U-1", "amount": 100},
+                    {"order_id": "10001", "user_id": "U-1", "amount": 100, "payment_status": "paid"},
                 )
             ),
             "risk_check": risk_handler,
@@ -293,7 +293,12 @@ class SideEffectFailureTests(unittest.TestCase):
         save.assert_called_once()
 
     def test_manual_review_db_failure_is_not_reported_as_success(self) -> None:
-        with patch("app.tools.human_review.get_order_by_id", return_value=None), patch(
+        order = {"order_id": "10001", "user_id": "U-1", "payment_status": "paid"}
+        with patch("app.tools.human_review.get_order_by_id", return_value=order), \
+             patch("app.tools.human_review.transaction", side_effect=nullcontext), \
+             patch("app.tools.human_review.lock_record", return_value={"payload": order}), \
+             patch("app.tools.human_review.execute", return_value=[]), \
+             patch("app.tools.human_review.get_active_refund_request_by_order_id_from_db", return_value=None), patch(
             "app.tools.human_review.save_manual_review_to_db",
             side_effect=ConnectionError("review db failed"),
         ) as save:
@@ -316,7 +321,7 @@ class SideEffectFailureTests(unittest.TestCase):
 
 
 class RefundRecoveryTests(unittest.TestCase):
-    ORDER = {"order_id": "10001", "user_id": "U-1", "amount": 100}
+    ORDER = {"order_id": "10001", "user_id": "U-1", "amount": 100, "payment_status": "paid"}
     RISK = {"risk_level": "low", "risk_flags": [], "review_required": False}
     ELIGIBILITY = {
         "eligible": True,
@@ -328,6 +333,9 @@ class RefundRecoveryTests(unittest.TestCase):
     def _refund_dependencies(self):
         return patch.multiple(
             refund_tool,
+            transaction=Mock(side_effect=nullcontext),
+            lock_record=Mock(return_value={"payload": self.ORDER}),
+            get_active_refund_request_by_order_id_from_db=Mock(return_value=None),
             get_order_by_id=Mock(return_value=self.ORDER),
             get_customer_profile_from_db=Mock(return_value={}),
             evaluate_refund_eligibility=Mock(return_value=self.ELIGIBILITY),
@@ -422,7 +430,7 @@ class RefundRecoveryTests(unittest.TestCase):
         self.assertEqual(result.result["fallback_action"], "retry_later")
         create.assert_not_called()
 
-    def test_mq_failure_keeps_single_refund_row_and_skips_message_update(self) -> None:
+    def test_mq_failure_propagates_and_skips_message_update(self) -> None:
         saved = {
             "refund_id": "R-created",
             "order_id": "10001",

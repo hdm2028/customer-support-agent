@@ -1,0 +1,12 @@
+....                                                                     [100%]
+=================================== PASSES ====================================
+_ RedisConsistencyTests.test_post_commit_redis_outage_does_not_report_refund_creation_failure _
+------------------------------ Captured log call ------------------------------
+WARNING  app.concurrency.refund_guard:refund_guard.py:47 Refund idempotency cache update unavailable: TimeoutError
+WARNING  app.concurrency.refund_guard:refund_guard.py:88 Refund lock release unavailable: TimeoutError
+=========================== short test summary info ===========================
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_expired_owner_cannot_delete_successors_lock
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_four_processes_create_one_refund_and_event_using_redis
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_post_commit_redis_outage_does_not_report_refund_creation_failure
+PASSED tests/test_redis_consistency.py::RedisConsistencyTests::test_terminated_owner_recovers_by_ttl
+4 passed in 12.67s

@@ -1,0 +1,334 @@
+{
+  "suite": "answer",
+  "case_id": "answer_dev_b01_014",
+  "a": {
+    "case_id": "answer_dev_b01_014",
+    "query": "订单10008物流显示签收，但我本人没收到。按物流政策需要核实哪些签收信息？我先咨询，不申请退款。",
+    "passed": false,
+    "deterministic_metrics": {
+      "correctness": false,
+      "relevance": true,
+      "completeness": false,
+      "faithfulness_groundedness": false,
+      "hallucination_free": true
+    },
+    "llm_judge_metrics": "N/A",
+    "expected_keywords": [
+      "10008",
+      "签收人员",
+      "代收"
+    ],
+    "missing_keywords": [
+      "签收人员",
+      "代收"
+    ],
+    "forbidden_keywords": [
+      "您本人已经收到商品",
+      "已为您退款"
+    ],
+    "hallucinated_keywords": [],
+    "citations": [],
+    "matched_citations": [
+      "policy_search did not return citations"
+    ],
+    "trace_id": "e5b83c4e-bee4-4daa-9db6-44e66835a111",
+    "reply": "已查询到订单 10008，商品是 办公显示器 M27，当前订单状态为已完成。但本轮没有检索到足够匹配的售后政策证据，我不能强行判断或创建工单。建议补充问题细节，或转人工客服核对政策后继续处理。",
+    "reason": "missing_expected_keywords=['签收人员', '代收']; grounding_failed=['policy_search did not return citations']",
+    "notes": "Dev B01 / AE14；依据 data/orders.json:10008、物流配送政策.md/已签收但用户未收到。签收记录不等于本人收货；只查政策，不按固定签收日期创建超时工单。"
+  },
+  "b": {
+    "case_id": "answer_dev_b01_014",
+    "query": "订单10008物流显示签收，但我本人没收到。按物流政策需要核实哪些签收信息？我先咨询，不申请退款。",
+    "passed": true,
+    "deterministic_metrics": {
+      "correctness": true,
+      "relevance": true,
+      "completeness": true,
+      "faithfulness_groundedness": true,
+      "hallucination_free": true
+    },
+    "llm_judge_metrics": "N/A",
+    "expected_keywords": [
+      "10008",
+      "签收人员",
+      "代收"
+    ],
+    "missing_keywords": [],
+    "forbidden_keywords": [
+      "您本人已经收到商品",
+      "已为您退款"
+    ],
+    "hallucinated_keywords": [],
+    "citations": [
+      "物流配送政策.md - 物流异常",
+      "物流配送政策.md - 物流配送政策",
+      "物流配送政策.md - 用户拒收",
+      "物流规则.md - 物流状态判断",
+      "商品售后规则.md - 售后处理类型"
+    ],
+    "matched_citations": [
+      "物流配送政策.md - 物流异常",
+      "物流配送政策.md - 物流配送政策"
+    ],
+    "trace_id": "b252f637-7237-425c-b1f9-dfc2f7b1b62b",
+    "reply": "订单 10008，商品：办公显示器 M27，当前订单状态：已完成。\n\n订单备注记录：订单已完成，支持申请电子发票；保修期内可按政策申请售后检测。\n\n本轮可核实的政策内容：\n\n《物流配送政策.md - 物流异常》：\n出现物流异常时，应先查询真实物流状态，再决定是否创建异常工单。\n\n《物流配送政策.md - 物流异常》（已签收但用户未收到）：\n如果物流系统显示商品已经签收，但用户表示没有收到商品，应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否由家人、前台或者代收点代收。\n\n无法确认商品实际去向时，可以创建物流争议工单。\n\n不能仅因为物流显示“已签收”就直接认定用户已经实际收到商品。\n\n《物流配送政策.md - 物流配送政策》（物流查询）：\n订单发货后，用户可以查询物流状态。\n\n客服查询物流问题时，应优先获取订单对应的最新物流信息。\n\n不能仅根据历史聊天记录判断当前物流状态。\n\n《物流配送政策.md - 物流配送政策》（正常运输）：\n订单显示运输中，并且物流信息正常更新时，通常属于正常配送过程。\n\n可以向用户说明当前物流节点以及预计后续配送流程。\n\n《物流配送政策.md - 物流配送政策》（长时间未更新）：\n如果物流信息超过 48 小时没有更新，可以视为可能存在物流异常。\n\n客服可以进一步查询物流状态。\n\n确认存在异常后，可以创建物流异常工单。",
+    "reason": "passed",
+    "notes": "Dev B01 / AE14；依据 data/orders.json:10008、物流配送政策.md/已签收但用户未收到。签收记录不等于本人收货；只查政策，不按固定签收日期创建超时工单。"
+  },
+  "same_observed_route": true,
+  "same_policy_query_arguments": true,
+  "same_pre_guardrail_evidence": true,
+  "policy_called": true,
+  "chunk_ids_a": [
+    [
+      "doc_b3377cfe0dac262b10bf7bd4:chunk:109aaccc7b3e5580f9af3985",
+      "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+      "doc_b3377cfe0dac262b10bf7bd4:chunk:bfd18572fe1a2a47dff6c6e7",
+      "doc_e624c6825315857037f266a7:chunk:ec41b53f97728660936f497f",
+      "doc_8ae3fda162d548bd3b86efff:chunk:d11503fecd622bbfc8b8c7cc"
+    ]
+  ],
+  "chunk_ids_b": [
+    [
+      "doc_b3377cfe0dac262b10bf7bd4:chunk:109aaccc7b3e5580f9af3985",
+      "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+      "doc_b3377cfe0dac262b10bf7bd4:chunk:bfd18572fe1a2a47dff6c6e7",
+      "doc_e624c6825315857037f266a7:chunk:ec41b53f97728660936f497f",
+      "doc_8ae3fda162d548bd3b86efff:chunk:d11503fecd622bbfc8b8c7cc"
+    ]
+  ],
+  "guardrail_a": [
+    {
+      "passed": false,
+      "report": {
+        "reason": "evidence_source_mismatch",
+        "profile": "return_refund",
+        "expected_sources": [
+          "退换货政策.md",
+          "退款政策.md",
+          "商品售后规则.md",
+          "历史问题案例.md",
+          "售后FAQ.md"
+        ],
+        "actual_sources": [
+          "物流配送政策.md",
+          "物流配送政策.md",
+          "物流配送政策.md"
+        ],
+        "evidence": [
+          {
+            "source": "物流配送政策.md",
+            "section": "物流异常",
+            "citation": "物流配送政策.md - 物流异常",
+            "score": 1.58,
+            "rerank_score": 1.58,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "section_match: 物流异常",
+              "phrase_match: 48 小时, 物流异常, 工单",
+              "keyword_coverage: 物流, 签收",
+              "order_state_match: 已签收"
+            ]
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "物流配送政策",
+            "citation": "物流配送政策.md - 物流配送政策",
+            "score": 1.0484,
+            "rerank_score": 1.0484,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "phrase_match: 48 小时, 物流异常, 工单",
+              "keyword_coverage: 物流"
+            ]
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "用户拒收",
+            "citation": "物流配送政策.md - 用户拒收",
+            "score": 1.0163,
+            "rerank_score": 1.0163,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "phrase_match: 物流异常",
+              "phrase_match: 退款",
+              "keyword_coverage: 退款, 物流"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "guardrail_b": [
+    {
+      "passed": true,
+      "report": {
+        "reason": "evidence_valid",
+        "profile": "shipping_exception",
+        "top_score": 1.58,
+        "evidence": [
+          {
+            "source": "物流配送政策.md",
+            "section": "物流异常",
+            "citation": "物流配送政策.md - 物流异常",
+            "score": 1.58,
+            "rerank_score": 1.58,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "section_match: 物流异常",
+              "phrase_match: 48 小时, 物流异常, 工单",
+              "keyword_coverage: 物流, 签收",
+              "order_state_match: 已签收"
+            ]
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "物流配送政策",
+            "citation": "物流配送政策.md - 物流配送政策",
+            "score": 1.0484,
+            "rerank_score": 1.0484,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "phrase_match: 48 小时, 物流异常, 工单",
+              "keyword_coverage: 物流"
+            ]
+          },
+          {
+            "source": "物流配送政策.md",
+            "section": "用户拒收",
+            "citation": "物流配送政策.md - 用户拒收",
+            "score": 1.0163,
+            "rerank_score": 1.0163,
+            "rerank_reasons": [
+              "source_match: shipping_exception",
+              "phrase_match: 物流异常",
+              "phrase_match: 退款",
+              "keyword_coverage: 退款, 物流"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "reply_mode_a": "rule_fallback",
+  "reply_mode_b": "grounded_llm",
+  "reply_evidence_check_a": [],
+  "reply_evidence_check_b": [
+    {
+      "offered_count": 31,
+      "proposal": "```json\n{\"evidence_ids\":[\"e1p2\",\"e1p4\",\"e1p6\",\"e1p7\",\"e2p3\",\"e2p4\",\"e2p5\",\"e2p7\",\"e2p8\",\"e2p10\",\"e2p11\",\"e2p12\"]}\n```",
+      "proposal_truncated": false,
+      "passed": true,
+      "selected": [
+        {
+          "id": "e1p2",
+          "text": "出现物流异常时，应先查询真实物流状态，再决定是否创建异常工单。",
+          "citation": "物流配送政策.md - 物流异常",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:109aaccc7b3e5580f9af3985",
+          "source": "物流配送政策.md",
+          "section": "物流异常",
+          "context_heading": "物流异常"
+        },
+        {
+          "id": "e1p4",
+          "text": "如果物流系统显示商品已经签收，但用户表示没有收到商品，应进一步核实：\n\n- 签收时间；\n- 签收地点；\n- 签收人员；\n- 是否由家人、前台或者代收点代收。",
+          "citation": "物流配送政策.md - 物流异常",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:109aaccc7b3e5580f9af3985",
+          "source": "物流配送政策.md",
+          "section": "物流异常",
+          "context_heading": "已签收但用户未收到"
+        },
+        {
+          "id": "e1p6",
+          "text": "无法确认商品实际去向时，可以创建物流争议工单。",
+          "citation": "物流配送政策.md - 物流异常",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:109aaccc7b3e5580f9af3985",
+          "source": "物流配送政策.md",
+          "section": "物流异常",
+          "context_heading": "已签收但用户未收到"
+        },
+        {
+          "id": "e1p7",
+          "text": "不能仅因为物流显示“已签收”就直接认定用户已经实际收到商品。",
+          "citation": "物流配送政策.md - 物流异常",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:109aaccc7b3e5580f9af3985",
+          "source": "物流配送政策.md",
+          "section": "物流异常",
+          "context_heading": "已签收但用户未收到"
+        },
+        {
+          "id": "e2p3",
+          "text": "订单发货后，用户可以查询物流状态。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "物流查询"
+        },
+        {
+          "id": "e2p4",
+          "text": "客服查询物流问题时，应优先获取订单对应的最新物流信息。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "物流查询"
+        },
+        {
+          "id": "e2p5",
+          "text": "不能仅根据历史聊天记录判断当前物流状态。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "物流查询"
+        },
+        {
+          "id": "e2p7",
+          "text": "订单显示运输中，并且物流信息正常更新时，通常属于正常配送过程。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "正常运输"
+        },
+        {
+          "id": "e2p8",
+          "text": "可以向用户说明当前物流节点以及预计后续配送流程。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "正常运输"
+        },
+        {
+          "id": "e2p10",
+          "text": "如果物流信息超过 48 小时没有更新，可以视为可能存在物流异常。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "长时间未更新"
+        },
+        {
+          "id": "e2p11",
+          "text": "客服可以进一步查询物流状态。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "长时间未更新"
+        },
+        {
+          "id": "e2p12",
+          "text": "确认存在异常后，可以创建物流异常工单。",
+          "citation": "物流配送政策.md - 物流配送政策",
+          "chunk_id": "doc_b3377cfe0dac262b10bf7bd4:chunk:95fa0f8ed8ec23abe3a62974",
+          "source": "物流配送政策.md",
+          "section": "物流配送政策",
+          "context_heading": "长时间未更新"
+        }
+      ]
+    }
+  ]
+}

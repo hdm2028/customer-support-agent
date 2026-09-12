@@ -8,6 +8,17 @@ from app.core.config import get_settings
 
 
 MYSQL_SCHEMA = [
+    """CREATE TABLE IF NOT EXISTS agent_persisted_turns (
+        turn_id VARCHAR(64) PRIMARY KEY, conversation_id VARCHAR(64) NOT NULL,
+        user_message LONGTEXT NOT NULL, reply LONGTEXT NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+    """
+    CREATE TABLE IF NOT EXISTS conversation_owners (
+        conversation_id VARCHAR(64) PRIMARY KEY,
+        user_id VARCHAR(64) NOT NULL,
+        INDEX idx_conversation_owner (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
     """
     CREATE TABLE IF NOT EXISTS customer_profiles (
         user_id VARCHAR(64) PRIMARY KEY,
@@ -196,6 +207,10 @@ def mysql_database_name() -> str | None:
 
 
 def get_mysql_connection(autocommit: bool = True):
+    from app.storage.transactions import borrowed_connection
+    borrowed = borrowed_connection(mysql=True)
+    if borrowed is not None:
+        return borrowed
     import pymysql
 
     options = parse_mysql_dsn(get_settings().mysql_dsn)
@@ -339,12 +354,7 @@ def seed_customer_profiles_to_mysql() -> None:
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
-                        user_name = VALUES(user_name),
-                        account_status = VALUES(account_status),
-                        refund_count_30d = VALUES(refund_count_30d),
-                        complaint_count_30d = VALUES(complaint_count_30d),
-                        risk_tags = VALUES(risk_tags),
-                        payload = VALUES(payload)
+                        user_id = customer_profiles.user_id
                     """,
                     (
                         profile["user_id"],
@@ -370,16 +380,15 @@ def seed_orders_to_mysql() -> None:
         with connection.cursor() as cursor:
             for order in orders:
                 normalized = normalize_order(order)
-                upsert_order(cursor, normalized)
+                upsert_order(cursor, normalized, update_existing=False)
 
 
 def signed_date_or_none(value):
     return value or None
 
 
-def upsert_order(cursor, order: dict) -> None:
-    cursor.execute(
-        """
+def upsert_order(cursor, order: dict, *, update_existing: bool = True) -> None:
+    statement = """
         INSERT INTO orders (
             order_id, user_id, product_name, category, amount, payment_status,
             order_status, shipping_status, signed_date, warranty_months,
@@ -400,7 +409,11 @@ def upsert_order(cursor, order: dict) -> None:
             after_sales_status = VALUES(after_sales_status),
             notes = VALUES(notes),
             payload = VALUES(payload)
-        """,
+        """
+    if not update_existing:
+        statement = statement.split("ON DUPLICATE KEY UPDATE", 1)[0] + "ON DUPLICATE KEY UPDATE order_id = orders.order_id"
+    cursor.execute(
+        statement,
         (
             str(order["order_id"]),
             order.get("user_id"),
@@ -708,67 +721,6 @@ def build_message_from_row(row: dict, status: str | None = None, attempts: int |
         "created_at": normalize_json_value(row["created_at"]),
         "updated_at": normalize_json_value(row["updated_at"]),
     }
-
-
-def claim_mq_messages_from_mysql(topic: str | None = None, limit: int = 10) -> list[dict]:
-    ensure_mysql_database()
-
-    connection = get_mysql_connection(autocommit=False)
-    try:
-        with connection.cursor() as cursor:
-            if topic:
-                cursor.execute(
-                    """
-                    SELECT message_id, topic, status, attempts, payload, result,
-                           created_at, updated_at
-                    FROM mq_messages
-                    WHERE status = 'pending' AND topic = %s
-                    ORDER BY created_at
-                    LIMIT %s
-                    FOR UPDATE
-                    """,
-                    (topic, limit),
-                )
-            else:
-                cursor.execute(
-                    """
-                    SELECT message_id, topic, status, attempts, payload, result,
-                           created_at, updated_at
-                    FROM mq_messages
-                    WHERE status = 'pending'
-                    ORDER BY created_at
-                    LIMIT %s
-                    FOR UPDATE
-                    """,
-                    (limit,),
-                )
-
-            rows = cursor.fetchall()
-            messages = []
-
-            for row in rows:
-                attempts = int(row["attempts"] or 0) + 1
-                updated_at = now_text()
-                cursor.execute(
-                    """
-                    UPDATE mq_messages
-                    SET status = 'processing', attempts = %s, updated_at = %s
-                    WHERE message_id = %s AND status = 'pending'
-                    """,
-                    (attempts, updated_at, row["message_id"]),
-                )
-                row["updated_at"] = updated_at
-                messages.append(
-                    build_message_from_row(row, status="processing", attempts=attempts)
-                )
-
-        connection.commit()
-        return messages
-    except Exception:
-        connection.rollback()
-        raise
-    finally:
-        connection.close()
 
 
 def update_mq_message_status_in_mysql(

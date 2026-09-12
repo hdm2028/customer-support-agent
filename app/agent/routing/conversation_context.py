@@ -1,5 +1,6 @@
 from app.agent.policies.fallback_policy import requires_order_id
 from app.agent.routing.parsing import extract_order_id
+from app.agent.routing.pending_task import cancels_pending_request
 
 ISSUE_CONTEXT_KEYWORDS = [
     "不想要",
@@ -47,6 +48,10 @@ def find_recent_order_id(history: list[dict]) -> str | None:
     """从最近的多轮聊天历史里查找最后一次出现的订单号。"""
 
     for message in reversed(history):
+        if message.get("role") != "user":
+            continue
+        if cancels_pending_request(message.get("content", "")):
+            return None
         order_id = extract_order_id(message.get("content", ""))
 
         if order_id:
@@ -63,6 +68,8 @@ def find_recent_issue_message(history: list[dict]) -> str | None:
             continue
 
         content = message.get("content", "").strip()
+        if cancels_pending_request(content):
+            return None
 
         if extract_order_id(content):
             continue
